@@ -1074,7 +1074,7 @@ def generate_df_per_param(scenario_code_name, data_per_param, num_time_slices_SD
                 techs_separadas=list()
                 reg_separadas=list()
                 fuels_separado=list()
-                mode_separado=list()
+                # mode_separado=list()
                 series_tiempo_separado=list()
                 mode_separado_dict={}
                 a=0
@@ -1095,7 +1095,7 @@ def generate_df_per_param(scenario_code_name, data_per_param, num_time_slices_SD
                         anios[len(anios)-1]=anios[len(anios)-1]
                         a=2
                     elif a==2 and '[' not in matriz[j]:
-                        mode_separado.append(matriz[j].split(' ')[0])
+                        # mode_separado.append(matriz[j].split(' ')[0])
                         aux=matriz[j].split(' ')[1:]
                         aux[len(aux)-1]=aux[len(aux)-1].replace('\n','')
                         series_tiempo_separado.append(aux)
@@ -1126,22 +1126,79 @@ def generate_df_per_param(scenario_code_name, data_per_param, num_time_slices_SD
             ##################################
             # 14 #############################
             ##################################
+            # if 'InputToNewCapacityRatio' in param:
+                
+            #     techs_separadas=list()
+            #     reg_separadas=list()
+            #     fuels_separado=list()
+            #     series_tiempo_separado=list()
+            #     a=0
+            #     for j in range(1,len(matriz)):
+            #         if '[' in matriz[j] and a==0:
+            #             a=1
+            #             region=matriz[j].split(',')[0].replace('[','')
+            #             tecno=matriz[j].split(',')[1].replace(',','')
+            #             fuel=matriz[j].split(',')[2].replace(',','').replace('[','')
+            #             reg_separadas.append(region)
+            #             techs_separadas.append(tecno)
+            #             fuels_separado.append(fuel)
+            #         elif a==1:
+            #             anios=matriz[j].split(' ')
+            #             if anios[len(anios)-1]==':=\n':
+            #                 anios=anios[0:len(matriz[j].split(' '))-1]
+            #             anios[len(anios)-1]=anios[len(anios)-1]
+            #             a=2
+            #         elif a==2 and '[' not in matriz[j]:
+            #             aux=matriz[j].split(' ')[1:]
+            #             aux[len(aux)-1]=aux[len(aux)-1].replace('\n','')
+                            
+            #             if aux[len(aux)-1].replace('\n', '') == '':
+            #                 aux.pop(len(aux)-1)
+            #             series_tiempo_separado.append(aux)
+
+            #         elif a==2 and '[' in matriz[j]:
+            #             region=matriz[j].split(',')[0].replace('[','')
+            #             tecno=matriz[j].split(',')[1].replace(',','')
+            #             fuel=matriz[j].split(',')[2].replace(',','').replace('[','')
+            #             reg_separadas.append(region)
+            #             techs_separadas.append(tecno)
+            #             fuels_separado.append(fuel)
+            #             a=1
+            #     matriz_escribir=list()
+            #     count_mode=0
+            #     tech_temp = []
+            #     for j in range(len(techs_separadas)):
+            #         # for k in range(len(fuels_separado)):                            
+            #         for l in range(len(anios)):
+            #             try:
+            #                 matriz_escribir.append(['InputToNewCapacityRatio',scenario_code_name,reg_separadas[j],techs_separadas[j],fuels_separado[j],'','',anios[l],'','','','','','','','',series_tiempo_separado[j][l]])
+            #             except IndexError as e:
+            #                 pass
+            #     # Store data
+            #     if matriz_escribir != list():
+            #         df = pd.DataFrame(matriz_escribir, columns=encabezado_param)
+            #         df=df.rename(columns={'Value': param})
+            #         list_dataframes.append(df)
+            #         dict_dataframes[f'{param}'] = df      
+
+
             if 'InputToNewCapacityRatio' in param:
                 
                 techs_separadas=list()
                 reg_separadas=list()
-                fuels_separado=list()
                 series_tiempo_separado=list()
+                fuels_separado_dict={}
                 a=0
                 for j in range(1,len(matriz)):
                     if '[' in matriz[j] and a==0:
                         a=1
                         region=matriz[j].split(',')[0].replace('[','')
                         tecno=matriz[j].split(',')[1].replace(',','')
-                        fuel=matriz[j].split(',')[2].replace(',','').replace('[','')
+                        # fuel=matriz[j].split(',')[2].replace(',','').replace('[','')
                         reg_separadas.append(region)
                         techs_separadas.append(tecno)
-                        fuels_separado.append(fuel)
+                        # fuels_separado.append(fuel)
+                        fuels_separado_dict[f'{tecno}']={}
                     elif a==1:
                         anios=matriz[j].split(' ')
                         if anios[len(anios)-1]==':=\n':
@@ -1149,37 +1206,33 @@ def generate_df_per_param(scenario_code_name, data_per_param, num_time_slices_SD
                         anios[len(anios)-1]=anios[len(anios)-1]
                         a=2
                     elif a==2 and '[' not in matriz[j]:
+                        # mode_separado.append(matriz[j].split(' ')[0])
                         aux=matriz[j].split(' ')[1:]
                         aux[len(aux)-1]=aux[len(aux)-1].replace('\n','')
-                            
-                        if aux[len(aux)-1].replace('\n', '') == '':
-                            aux.pop(len(aux)-1)
                         series_tiempo_separado.append(aux)
-
+                        key = str(matriz[j].split(' ')[0])
+                        fuels_separado_dict[f'{tecno}'][key]=aux
                     elif a==2 and '[' in matriz[j]:
                         region=matriz[j].split(',')[0].replace('[','')
                         tecno=matriz[j].split(',')[1].replace(',','')
-                        fuel=matriz[j].split(',')[2].replace(',','').replace('[','')
+                        # fuel=matriz[j].split(',')[2].replace(',','').replace('[','')
                         reg_separadas.append(region)
                         techs_separadas.append(tecno)
-                        fuels_separado.append(fuel)
+                        # fuels_separado.append(fuel)
+                        fuels_separado_dict[f'{tecno}']={}
                         a=1
                 matriz_escribir=list()
-                count_mode=0
-                tech_temp = []
                 for j in range(len(techs_separadas)):
-                    # for k in range(len(fuels_separado)):                            
-                    for l in range(len(anios)):
-                        try:
-                            matriz_escribir.append(['InputToNewCapacityRatio',scenario_code_name,reg_separadas[j],techs_separadas[j],fuels_separado[j],'','',anios[l],'','','','','','','','',series_tiempo_separado[j][l]])
-                        except IndexError as e:
-                            pass
+                    fuels_separado_temp = fuels_separado_dict[f'{techs_separadas[j]}']
+                    for fuels_separado_temp, serie_datos_temp in fuels_separado_temp.items():
+                        for l in range(len(anios)):                   
+                            matriz_escribir.append(['InputToNewCapacityRatio',scenario_code_name,reg_separadas[j],techs_separadas[j],fuels_separado_temp,'','',anios[l],'','','','','','','','',serie_datos_temp[l]])
                 # Store data
                 if matriz_escribir != list():
                     df = pd.DataFrame(matriz_escribir, columns=encabezado_param)
                     df=df.rename(columns={'Value': param})
                     list_dataframes.append(df)
-                    dict_dataframes[f'{param}'] = df                    
+                    dict_dataframes[f'{param}'] = df 
 
             ##################################
             # 15 #############################
@@ -1713,96 +1766,199 @@ def generate_df_per_param(scenario_code_name, data_per_param, num_time_slices_SD
             ##################################
             # 28 #############################
             ##################################
-            if 'TechnologyActivityDecreaseByModeLimit' in param:
+            # if 'TechnologyActivityDecreaseByModeLimit' in param:
                 
-                techs_separadas=list()
-                reg_separadas=list()
-                mode_separado=list()
-                series_tiempo_separado=list()
-                a=0
-                for j in range(1,len(matriz)):
-                    if '[' in matriz[j] and a==0:
-                        a=1
-                        region=matriz[j].split(',')[0].replace(',','').replace('[','')
-                        tecno=matriz[j].split(',')[1].replace(',','')
-                        reg_separadas.append(region)
-                        techs_separadas.append(tecno)
-                    elif a==1:
-                        anios=matriz[j].split(' ')
-                        if anios[len(anios)-1]==':=\n':
-                            anios=anios[0:len(matriz[j].split(' '))-1]
-                        anios[len(anios)-1]=anios[len(anios)-1]
-                        a=2
-                    elif a==2 and '[' not in matriz[j]:
-                        mode_separado.append(matriz[j].split(' ')[0])
-                        aux=matriz[j].split(' ')[1:]
-                        aux[len(aux)-1]=aux[len(aux)-1].replace('\n','')
-                        series_tiempo_separado.append(aux)
-                    elif a==2 and '[' in matriz[j]:
-                        region=matriz[j].split(',')[0].replace(',','').replace('[','')
-                        tecno=matriz[j].split(',')[1].replace(',','')
-                        a=1
-                        reg_separadas.append(region)
-                        techs_separadas.append(tecno)
-                matriz_escribir=list()
-                for j in range(len(techs_separadas)):
-                    for k in range(0,1):
-                        for l in range(len(anios)):
-                            matriz_escribir.append(['TechnologyActivityDecreaseByModeLimit',scenario_code_name,reg_separadas[j],techs_separadas[j],'','',mode_separado[j],anios[l],'','','','','','','','',series_tiempo_separado[(1*j)+k][l]])
+            #     techs_separadas=list()
+            #     reg_separadas=list()
+            #     mode_separado=list()
+            #     series_tiempo_separado=list()
+            #     a=0
+            #     for j in range(1,len(matriz)):
+            #         if '[' in matriz[j] and a==0:
+            #             a=1
+            #             region=matriz[j].split(',')[0].replace(',','').replace('[','')
+            #             tecno=matriz[j].split(',')[1].replace(',','')
+            #             reg_separadas.append(region)
+            #             techs_separadas.append(tecno)
+            #         elif a==1:
+            #             anios=matriz[j].split(' ')
+            #             if anios[len(anios)-1]==':=\n':
+            #                 anios=anios[0:len(matriz[j].split(' '))-1]
+            #             anios[len(anios)-1]=anios[len(anios)-1]
+            #             a=2
+            #         elif a==2 and '[' not in matriz[j]:
+            #             mode_separado.append(matriz[j].split(' ')[0])
+            #             aux=matriz[j].split(' ')[1:]
+            #             aux[len(aux)-1]=aux[len(aux)-1].replace('\n','')
+            #             series_tiempo_separado.append(aux)
+            #         elif a==2 and '[' in matriz[j]:
+            #             region=matriz[j].split(',')[0].replace(',','').replace('[','')
+            #             tecno=matriz[j].split(',')[1].replace(',','')
+            #             a=1
+            #             reg_separadas.append(region)
+            #             techs_separadas.append(tecno)
+            #     matriz_escribir=list()
+            #     for j in range(len(techs_separadas)):
+            #         for k in range(0,1):
+            #             for l in range(len(anios)):
+            #                 matriz_escribir.append(['TechnologyActivityDecreaseByModeLimit',scenario_code_name,reg_separadas[j],techs_separadas[j],'','',mode_separado[j],anios[l],'','','','','','','','',series_tiempo_separado[(1*j)+k][l]])
+                            
+            if 'TechnologyActivityDecreaseByModeLimit' in param:
+            	
+            	techs_separadas=list()
+            	reg_separadas=list()
+            	mode_separado=list()
+            	series_tiempo_separado=list()
+            	mode_separado_dict={}
+            	a=0
+            	for j in range(1,len(matriz)):
+            		if '[' in matriz[j] and a==0:
+            			a=1
+            			region=matriz[j].split(',')[0].replace(',','').replace('[','')
+            			tecno=matriz[j].split(',')[1].replace(',','')
+            			reg_separadas.append(region)
+            			techs_separadas.append(tecno)
+            		elif a==1:
+            			anios=matriz[j].split(' ')
+            			if anios[len(anios)-1]==':=\n':
+            				anios=anios[0:len(matriz[j].split(' '))-1]
+            			anios[len(anios)-1]=anios[len(anios)-1]
+            			a=2
+            		elif a==2 and '[' not in matriz[j]:
+            			mode_separado.append(matriz[j].split(' ')[0])
+            			aux=matriz[j].split(' ')[1:]
+            			aux[len(aux)-1]=aux[len(aux)-1].replace('\n','')
+            			series_tiempo_separado.append(aux)
+            			if tecno not in mode_separado_dict:
+            				mode_separado_dict[tecno] = {}
+            			key = str(matriz[j].split(' ')[0])
+            			mode_separado_dict[tecno][key]=aux
+            		elif a==2 and '[' in matriz[j]:
+            			region=matriz[j].split(',')[0].replace(',','').replace('[','')
+            			tecno=matriz[j].split(',')[1].replace(',','')
+            			a=1
+            			reg_separadas.append(region)
+            			techs_separadas.append(tecno)
+            	matriz_escribir=list()
+            	for j in range(len(techs_separadas)):
+            		modes_separado_temp = mode_separado_dict[techs_separadas[j]]
+            		for mode_separado_temp, serie_datos_temp in modes_separado_temp.items():
+            		# for k in range(0,1):
+            			for l in range(len(anios)):
+            				matriz_escribir.append(['TechnologyActivityDecreaseByModeLimit',scenario_code_name,reg_separadas[j],techs_separadas[j],'','',mode_separado_temp,anios[l],'','','','','','','','',serie_datos_temp[l]])
+            
+            	# Store data
+            	if matriz_escribir != list():
+            		df = pd.DataFrame(matriz_escribir, columns=encabezado_param)
+            		df=df.rename(columns={'Value': param})
+            		list_dataframes.append(df)
+            		dict_dataframes[f'{param}'] = df
 
             ##################################
             # 29 #############################
             ##################################
-            if 'TechnologyActivityIncreaseByModeLimit' in param:
+            # if 'TechnologyActivityIncreaseByModeLimit' in param:
                 
-                techs_separadas=list()
-                reg_separadas=list()
-                mode_separado=list()
-                series_tiempo_separado=list()
-                a=0
-                for j in range(1,len(matriz)):
-                    if '[' in matriz[j] and a==0:
-                        a=1
-                        region=matriz[j].split(',')[0].replace(',','').replace('[','')
-                        tecno=matriz[j].split(',')[1].replace(',','')
-                        reg_separadas.append(region)
-                        techs_separadas.append(tecno)
-                    elif a==1:
-                        anios=matriz[j].split(' ')
-                        if anios[len(anios)-1]==':=\n':
-                            anios=anios[0:len(matriz[j].split(' '))-1]
-                        anios[len(anios)-1]=anios[len(anios)-1]
-                        a=2
-                    elif a==2 and '[' not in matriz[j]:
-                        mode_separado.append(matriz[j].split(' ')[0])
-                        aux=matriz[j].split(' ')[1:]
-                        aux[len(aux)-1]=aux[len(aux)-1].replace('\n','')
-                        series_tiempo_separado.append(aux)
-                    elif a==2 and '[' in matriz[j]:
-                        region=matriz[j].split(',')[0].replace(',','').replace('[','')
-                        tecno=matriz[j].split(',')[1].replace(',','')
-                        a=1
-                        reg_separadas.append(region)
-                        techs_separadas.append(tecno)
-                matriz_escribir=list()
-                for j in range(len(techs_separadas)):
-                    for k in range(0,1):
-                        for l in range(len(anios)):
-                            matriz_escribir.append(['TechnologyActivityIncreaseByModeLimit',scenario_code_name,reg_separadas[j],techs_separadas[j],'','',mode_separado[j],anios[l],'','','','','','','','',series_tiempo_separado[(1*j)+k][l]])
+            #     techs_separadas=list()
+            #     reg_separadas=list()
+            #     mode_separado=list()
+            #     series_tiempo_separado=list()
+            #     a=0
+            #     for j in range(1,len(matriz)):
+            #         if '[' in matriz[j] and a==0:
+            #             a=1
+            #             region=matriz[j].split(',')[0].replace(',','').replace('[','')
+            #             tecno=matriz[j].split(',')[1].replace(',','')
+            #             reg_separadas.append(region)
+            #             techs_separadas.append(tecno)
+            #         elif a==1:
+            #             anios=matriz[j].split(' ')
+            #             if anios[len(anios)-1]==':=\n':
+            #                 anios=anios[0:len(matriz[j].split(' '))-1]
+            #             anios[len(anios)-1]=anios[len(anios)-1]
+            #             a=2
+            #         elif a==2 and '[' not in matriz[j]:
+            #             mode_separado.append(matriz[j].split(' ')[0])
+            #             aux=matriz[j].split(' ')[1:]
+            #             aux[len(aux)-1]=aux[len(aux)-1].replace('\n','')
+            #             series_tiempo_separado.append(aux)
+            #         elif a==2 and '[' in matriz[j]:
+            #             region=matriz[j].split(',')[0].replace(',','').replace('[','')
+            #             tecno=matriz[j].split(',')[1].replace(',','')
+            #             a=1
+            #             reg_separadas.append(region)
+            #             techs_separadas.append(tecno)
+            #     matriz_escribir=list()
+            #     for j in range(len(techs_separadas)):
+            #         for k in range(0,1):
+            #             for l in range(len(anios)):
+            #                 matriz_escribir.append(['TechnologyActivityIncreaseByModeLimit',scenario_code_name,reg_separadas[j],techs_separadas[j],'','',mode_separado[j],anios[l],'','','','','','','','',series_tiempo_separado[(1*j)+k][l]])
                     
-                # Store data
-                if matriz_escribir != list():
-                    df = pd.DataFrame(matriz_escribir, columns=encabezado_param)
-                    df=df.rename(columns={'Value': param})
-                    list_dataframes.append(df)
-                    dict_dataframes[f'{param}'] = df
+            #     # Store data
+            #     if matriz_escribir != list():
+            #         df = pd.DataFrame(matriz_escribir, columns=encabezado_param)
+            #         df=df.rename(columns={'Value': param})
+            #         list_dataframes.append(df)
+            #         dict_dataframes[f'{param}'] = df
                   
-                # Store data
-                if matriz_escribir != list():
-                    df = pd.DataFrame(matriz_escribir, columns=encabezado_param)
-                    df=df.rename(columns={'Value': param})
-                    list_dataframes.append(df)
-                    dict_dataframes[f'{param}'] = df
+            #     # Store data
+            #     if matriz_escribir != list():
+            #         df = pd.DataFrame(matriz_escribir, columns=encabezado_param)
+            #         df=df.rename(columns={'Value': param})
+            #         list_dataframes.append(df)
+            #         dict_dataframes[f'{param}'] = df
+                    
+                    
+            if 'TechnologyActivityIncreaseByModeLimit' in param:
+            	
+            	techs_separadas=list()
+            	reg_separadas=list()
+            	mode_separado=list()
+            	series_tiempo_separado=list()
+            	mode_separado_dict={}
+            	a=0
+            	for j in range(1,len(matriz)):
+            		if '[' in matriz[j] and a==0:
+            			a=1
+            			region=matriz[j].split(',')[0].replace(',','').replace('[','')
+            			tecno=matriz[j].split(',')[1].replace(',','')
+            			reg_separadas.append(region)
+            			techs_separadas.append(tecno)
+            		elif a==1:
+            			anios=matriz[j].split(' ')
+            			if anios[len(anios)-1]==':=\n':
+            				anios=anios[0:len(matriz[j].split(' '))-1]
+            			anios[len(anios)-1]=anios[len(anios)-1]
+            			a=2
+            		elif a==2 and '[' not in matriz[j]:
+            			mode_separado.append(matriz[j].split(' ')[0])
+            			aux=matriz[j].split(' ')[1:]
+            			aux[len(aux)-1]=aux[len(aux)-1].replace('\n','')
+            			series_tiempo_separado.append(aux)
+            			if tecno not in mode_separado_dict:
+            				mode_separado_dict[tecno] = {}
+            			key = str(matriz[j].split(' ')[0])
+            			mode_separado_dict[tecno][key]=aux
+            		elif a==2 and '[' in matriz[j]:
+            			region=matriz[j].split(',')[0].replace(',','').replace('[','')
+            			tecno=matriz[j].split(',')[1].replace(',','')
+            			a=1
+            			reg_separadas.append(region)
+            			techs_separadas.append(tecno)
+            	matriz_escribir=list()
+            	for j in range(len(techs_separadas)):
+            		modes_separado_temp = mode_separado_dict[techs_separadas[j]]
+            		for mode_separado_temp, serie_datos_temp in modes_separado_temp.items():
+            		# for k in range(0,1):
+            			for l in range(len(anios)):
+            				matriz_escribir.append(['TechnologyActivityIncreaseByModeLimit',scenario_code_name,reg_separadas[j],techs_separadas[j],'','',mode_separado_temp,anios[l],'','','','','','','','',serie_datos_temp[l]])
+            
+            	# Store data
+            	if matriz_escribir != list():
+            		df = pd.DataFrame(matriz_escribir, columns=encabezado_param)
+            		df=df.rename(columns={'Value': param})
+            		list_dataframes.append(df)
+            		dict_dataframes[f'{param}'] = df
                         
             ##################################
             # 30 #############################
@@ -2162,24 +2318,91 @@ def generate_df_per_param(scenario_code_name, data_per_param, num_time_slices_SD
             ##################################
             # 41 #############################
             ##################################
+            # if 'EmissionToActivityChangeRatio' in param:
+                
+            #     techs_separadas=list()
+            #     reg_separadas=list()
+            #     fuels_separado=list()
+            #     mode_separado=list()
+            #     series_tiempo_separado=list()
+            #     mode_tech_separado={}
+            #     a=0
+            #     for j in range(1,len(matriz)):
+            #         if '[' in matriz[j] and a==0:
+            #             a=1
+            #             region=matriz[j].split(',')[0].replace('[','')
+            #             tecno=matriz[j].split(',')[1].replace(',','')
+            #             fuel=matriz[j].split(',')[2].replace(',','').replace('[','')
+            #             reg_separadas.append(region)
+            #             techs_separadas.append(tecno)
+            #             fuels_separado.append(fuel)
+            #         elif a==1:
+            #             anios=matriz[j].split(' ')
+            #             if anios[len(anios)-1]==':=\n':
+            #                 anios=anios[0:len(matriz[j].split(' '))-1]
+            #             anios[len(anios)-1]=anios[len(anios)-1]
+            #             a=2
+            #         elif a==2 and '[' not in matriz[j]:
+            #             mode_separado.append(matriz[j].split(' ')[0])
+            #             aux=matriz[j].split(' ')[1:]
+            #             aux[len(aux)-1]=aux[len(aux)-1].replace('\n','')
+                            
+            #             if aux[len(aux)-1].replace('\n', '') == '':
+            #                 aux.pop(len(aux)-1)
+            #             series_tiempo_separado.append(aux)
+
+            #             if tecno not in mode_tech_separado:
+            #                 mode_tech_separado[tecno] = [matriz[j].split(' ')[0]]
+            #             else:
+            #                 mode_tech_separado[tecno].append(matriz[j].split(' ')[0])
+            #         elif a==2 and '[' in matriz[j]:
+            #             region=matriz[j].split(',')[0].replace('[','')
+            #             tecno=matriz[j].split(',')[1].replace(',','')
+            #             fuel=matriz[j].split(',')[2].replace(',','').replace('[','')
+            #             reg_separadas.append(region)
+            #             techs_separadas.append(tecno)
+            #             fuels_separado.append(fuel)
+            #             a=1
+            #     matriz_escribir=list()
+            #     count_mode=0
+            #     tech_temp = []
+            #     for j in range(len(techs_separadas)):
+            #         mode_per_tech = mode_tech_separado[techs_separadas[j]]
+            #         for k in range(len(mode_per_tech)):
+            #             if k > 0 and len(tech_temp) < len(mode_per_tech)-1:
+            #                 count_mode+=1
+            #                 tech_temp.append(techs_separadas[j])
+                            
+            #             for l in range(len(anios)):
+            #                 try:
+            #                     matriz_escribir.append(['EmissionToActivityChangeRatio',scenario_code_name,reg_separadas[j],techs_separadas[j],fuels_separado[j],'',mode_per_tech[k],anios[l],'','','','','','','','',series_tiempo_separado[j+count_mode][l]])
+            #                 except IndexError as e:
+            #                     pass
+            #     # Store data
+            #     if matriz_escribir != list():
+            #         df = pd.DataFrame(matriz_escribir, columns=encabezado_param)
+            #         df=df.rename(columns={'Value': param})
+            #         list_dataframes.append(df)
+            #         dict_dataframes[f'{param}'] = df
+                    
             if 'EmissionToActivityChangeRatio' in param:
                 
                 techs_separadas=list()
                 reg_separadas=list()
-                fuels_separado=list()
+                emissions_separado=list()
                 mode_separado=list()
                 series_tiempo_separado=list()
-                mode_tech_separado={}
+                mode_separado_dict={}
                 a=0
                 for j in range(1,len(matriz)):
                     if '[' in matriz[j] and a==0:
                         a=1
                         region=matriz[j].split(',')[0].replace('[','')
-                        tecno=matriz[j].split(',')[1].replace(',','')
-                        fuel=matriz[j].split(',')[2].replace(',','').replace('[','')
-                        reg_separadas.append(region)
+                        tecno=matriz[j].split(',')[1]
+                        emission=matriz[j].split(',')[2]
                         techs_separadas.append(tecno)
-                        fuels_separado.append(fuel)
+                        reg_separadas.append(region)
+                        emissions_separado.append(emission)
                     elif a==1:
                         anios=matriz[j].split(' ')
                         if anios[len(anios)-1]==':=\n':
@@ -2190,38 +2413,26 @@ def generate_df_per_param(scenario_code_name, data_per_param, num_time_slices_SD
                         mode_separado.append(matriz[j].split(' ')[0])
                         aux=matriz[j].split(' ')[1:]
                         aux[len(aux)-1]=aux[len(aux)-1].replace('\n','')
-                            
-                        if aux[len(aux)-1].replace('\n', '') == '':
-                            aux.pop(len(aux)-1)
                         series_tiempo_separado.append(aux)
-
-                        if tecno not in mode_tech_separado:
-                            mode_tech_separado[tecno] = [matriz[j].split(' ')[0]]
-                        else:
-                            mode_tech_separado[tecno].append(matriz[j].split(' ')[0])
+                        if f'{tecno}/{emission}' not in mode_separado_dict:
+                            mode_separado_dict[f'{tecno}/{emission}'] = {}
+                        key = str(matriz[j].split(' ')[0])
+                        mode_separado_dict[f'{tecno}/{emission}'][key]=aux
                     elif a==2 and '[' in matriz[j]:
                         region=matriz[j].split(',')[0].replace('[','')
-                        tecno=matriz[j].split(',')[1].replace(',','')
-                        fuel=matriz[j].split(',')[2].replace(',','').replace('[','')
-                        reg_separadas.append(region)
+                        tecno=matriz[j].split(',')[1]
+                        emission=matriz[j].split(',')[2]
                         techs_separadas.append(tecno)
-                        fuels_separado.append(fuel)
+                        reg_separadas.append(region)
+                        emissions_separado.append(emission)
                         a=1
                 matriz_escribir=list()
-                count_mode=0
-                tech_temp = []
                 for j in range(len(techs_separadas)):
-                    mode_per_tech = mode_tech_separado[techs_separadas[j]]
-                    for k in range(len(mode_per_tech)):
-                        if k > 0 and len(tech_temp) < len(mode_per_tech)-1:
-                            count_mode+=1
-                            tech_temp.append(techs_separadas[j])
-                            
+                    modes_separado_temp = mode_separado_dict[f'{techs_separadas[j]}/{emissions_separado[j]}']
+                    for mode_separado_temp, serie_datos_temp in modes_separado_temp.items():
                         for l in range(len(anios)):
-                            try:
-                                matriz_escribir.append(['EmissionToActivityChangeRatio',scenario_code_name,reg_separadas[j],techs_separadas[j],fuels_separado[j],'',mode_per_tech[k],anios[l],'','','','','','','','',series_tiempo_separado[j+count_mode][l]])
-                            except IndexError as e:
-                                pass
+                            matriz_escribir.append(['EmissionToActivityChangeRatio',scenario_code_name,reg_separadas[j],techs_separadas[j],'',emissions_separado[j],mode_separado_temp,anios[l],'','','','','','','','',serie_datos_temp[l]])
+
                 # Store data
                 if matriz_escribir != list():
                     df = pd.DataFrame(matriz_escribir, columns=encabezado_param)

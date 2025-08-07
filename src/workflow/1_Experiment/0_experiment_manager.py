@@ -184,7 +184,7 @@ def function_C_mathprog_parallel( fut_index, scen, inherited_scenarios, unpackag
     # g.write( 'set STORAGE :=  ;\n' )
     #
     for n1 in range( len( S_DICT_sets_structure['set'] ) ):
-        if S_DICT_sets_structure['number_of_elements'][n1] != 0:
+        if S_DICT_sets_structure['number_of_elements'][n1] >= 0:
             g.write( 'set ' + S_DICT_sets_structure['set'][n1] + ' := ' )
             #
             for n2 in range( S_DICT_sets_structure['number_of_elements'][n1] ):
@@ -702,10 +702,11 @@ if __name__ == '__main__':
     osemosys_model = main_path[2]
     Interface_RDM = main_path[3]
     shape_file = main_path[4]
-    # osemosys_model = 'model.v.5.0.txt'
-    # Interface_RDM = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\Kenya_RDM\src\Interface_RDM.xlsx'
+    
+    # osemosys_model = 'model.v.5.3.txt'
+    # Interface_RDM = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\CCG_RDM\src\Interface_RDM.xlsx'
     # solver = 'cplex'
-    # shape_file = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\Kenya_RDM\src\workflow\2_Miscellaneous\shape_of_demand.csv'
+    # shape_file = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\CCG_RDM\src\workflow\2_Miscellaneous\shape_of_demand.csv'
 
     book=pd.ExcelFile(Interface_RDM)
     '''
@@ -755,7 +756,7 @@ if __name__ == '__main__':
         #
         element_number = int( sheet_sets_structure.iat[2, col] )
         this_elements_list = []
-        if element_number > 0:
+        if element_number >= 0:
             for n in range( 1, element_number+1 ):
                 this_elements_list.append( sheet_sets_structure.iat[2+n, col] )
         S_DICT_sets_structure['elements_list'].append( this_elements_list )
@@ -1600,7 +1601,7 @@ if __name__ == '__main__':
                                         value_list = [ float( value_list[j] ) for j in range( len( value_list ) ) ]
                                         #--------------------------------------------------------------------#
                                         # now that the value is extracted, we must manipulate the result and assign back
-                                        new_value_list = [selected_curve[int(this_set_second) - 1]] * len(value_list)
+                                        new_value_list = [selected_curve[int(all_timeslices.index(this_set_second)) - 1]] * len(value_list)
 
                                         
                                         
