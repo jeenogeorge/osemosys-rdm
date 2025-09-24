@@ -161,7 +161,7 @@ if __name__ == '__main__':
     sets_corrects.insert(0,'Parameter')
     sets_corrects.append('VALUE')
     
-    sets_csv = ['YEAR', 'TECHNOLOGY', 'FUEL', 'EMISSION']
+    sets_csv = ['YEAR', 'TECHNOLOGY', 'COMMODITY', 'EMISSION']
     sets_csv_temp = deepcopy(sets_csv)
     sets_csv_temp.insert(0,'Parameter')
     sets_csv_temp.append('VALUE')
