@@ -703,10 +703,10 @@ if __name__ == '__main__':
     Interface_RDM = main_path[3]
     shape_file = main_path[4]
     
-    # osemosys_model = 'model.v.5.3.txt'
-    # Interface_RDM = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\CCG_RDM\src\Interface_RDM.xlsx'
     # solver = 'cplex'
-    # shape_file = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\CCG_RDM\src\workflow\2_Miscellaneous\shape_of_demand.csv'
+    # osemosys_model = 'model.v.5.3.txt'
+    # Interface_RDM = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\AFR_RDM\src\Interface_RDM.xlsx'
+    # shape_file = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\AFR_RDM\src\workflow\2_Miscellaneous\shape_of_demand.csv'
 
     book=pd.ExcelFile(Interface_RDM)
     '''
