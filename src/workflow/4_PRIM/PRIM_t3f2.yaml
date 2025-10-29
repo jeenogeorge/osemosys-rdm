@@ -1,0 +1,179 @@
+# MOMF Tier 1 A (A1 and A2) build parameterization yaml file
+
+# Model external dependencies: Directories, Files, sheets and columns
+########################################################################################
+# Directories
+dir_exps: '1_Experiment'
+dir_sdisc: './t3b_sdiscovery'
+experi_data: '/experiment_data/'
+Executables: 'Executables'
+Experi_Plat: 'Experimental_Platform'
+Futures: 'Futures'
+
+# Prim files creator figs cntrl
+# File (First letter of the word y uppercase)
+Prim_files_crea_figs: 'prim_files_creator_figs_cntrl.xlsx'
+# Prim files creator cntrl
+# File
+Prim_files_crea_cntrl: 'prim_files_creator_cntrl.xlsx'
+# Sheets (First letter of the word y uppercase)
+Periods: 'periods'
+Mat_exp_ana: 'match_exp_ana'
+# Pickle Prim files creator
+# File
+Prim_files_crea: 'prim_files_creator.pickle'
+# Pickle All Comp PFD
+# File
+All_comp_pdf: 'all_comp_pfd.pickle'
+# Prim files creator cntrl 100
+# File
+Prim_files_crea_cnt_100: 'prim_files_creator_cntrl_100.xlsx'
+# Sheets
+dType: 'dtype'
+# Pickle All Comp PFD Figs
+# File
+All_comp_pdf_figs: 'all_comp_pfd_figs.pickle'
+########################################################################################
+
+################################# Variable definitions #################################
+# Clean Regions function
+#----------------------------------------------------------------------------#
+dict_2_replace_stuck_regions:  {
+  HUETARATLANTICA: 'HUETAR ATLANTICA',
+  HUETARNORTE: 'HUETAR NORTE',
+  PACIFICOCENTRAL: 'PACIFICO CENTRAL'
+  }
+#----------------------------------------------------------------------------#
+
+# f2 exe postprocfunction
+#----------------------------------------------------------------------------#
+set_selector_headers: {
+  Actor: 'Actor',
+  Tech: 'TECHNOLOGY',
+  Fuel: 'COMMODITY',
+  Owner: 'Owner',
+  Emission: 'EMISSION',
+  Region: 'REGION'
+  }
+  
+# Sets:
+#----------------------------------------------------------------------------#
+Year: 'YEAR'
+Technology: 'TECHNOLOGY'
+Fuel: 'COMMODITY'
+Emission: 'EMISSION'
+
+#----------------------------------------------------------------------------#
+
+#sup_sets: ['ELE_DIST'] # Not avaiable
+
+sup_sets_solar: ['PWRSOL001', 'PWRSOL002', 'PWRCSP001']
+
+#sup_sets_2: ['E6TDPASPRI', 'E6TDPASPUB', 'E6TRNOMOT'] # Not avaiable
+
+#sup_sets_3: ['Techs_Trains_Freight', 'Techs_He_Freight'] # Not avaiable
+
+#sup_sets_4: ['Techs_Buses_Pub', 'Techs_Buses_Micro', 'Techs_Taxi'] # Not avaiable
+#----------------------------------------------------------------------------#
+########################################################################################
+
+####################################### Conditions #####################################
+input: 'input'
+output: 'output'
+tem: 'tem'
+reg: 'reg'
+upg: 'upgraded'
+regf: 'regfull'
+gini: 'gini'
+reg_1: 'HUETARATLANTICA'
+reg_2: 'HUETARNORTE'
+reg_3: 'PACIFICOCENTRAL'
+exp_data: 'Experiment data'
+q_tot: 'Q Total'
+spe_fiscal_cost: 'special_FiscalCost'
+spe_biofuel: 'special_Biofuel'
+gdp_growth: 'GDP_growth'
+average: 'average'
+direct: 'direct'
+sum: 'sum'
+cumulative: 'cumulative'
+spe_EaImp: 'special_EaseImp'
+spe_ExM: 'special_ExtMng'
+multiply: 'multiply'
+gdp: 'GDP'
+com_set_type: 'combine_set_type'
+rel: 'rel'
+share: 'share'
+renewable_gen: 'renewable_gen'
+renewable_total: 'renewable_total'
+re_gen: ['PWRWND001', 'PWRWND002', 'PWRHYD001', 'PWRHYD002', 'PWRHYD003', 'PWRHYD004', 'PWRSOL001','PWRSOL002', 'PWRCSP001', 'PWRGEO001', 'PWRBIO001', 'PWRLFG001']
+re_total: ['PWRWND001', 'PWRWND002', 'PWRHYD001', 'PWRHYD002', 'PWRHYD003', 'PWRHYD004', 'PWRSOL001','PWRSOL002', 'PWRCSP001', 'PWRGEO001', 'PWRBIO001', 'PWRLFG001']
+electric: 'electric'
+ele: 'ELE'
+for: 'Bosques'
+clk: 'CLK_PROD'
+cem: 'CEM_PROD'
+forest: 'forest'
+clinker: 'clinker'
+per_cap_gen_sol: 'per_cap_gen_sol'
+sol_dem: 'E5TSWTSW'
+per_cap_gen_wat: 'per_cap_gen_wat'
+wat_dem: 'E5TWWTWW'
+circ_econ_sol: 'circ_econ_sol'
+green_sol: ['WSTGLS', 'WSTPLR', 'WSTPAR', 'WSTMTR', 'WSTCMP', 'WSTSEP', 'WSTORG']
+treat_wat: 'treat_wat'
+green_wat: ['WSTDGS']
+# Mha of total area of Jamaica
+area: 1.09
+h2: 'H2'
+hyd: 'HYD'
+lpg: 'LPG'
+zev: 'ZEV'
+spe: 'special'
+spe_elas: 'special_elasticity'
+spe_mode_shift: 'special_mode_shift'
+spe_PT_dist: 'special_PT_dist'
+spe_fre_shift: 'special_freight_shift'
+wrt_bau_ex: 'wrt_BAU_excess'
+den_gdp: 'Den_GDP'
+tracost_at: 'tracost_at'
+totcost_at: 'totcost_at'
+tot: 'tot'
+tra: 'tra'
+end : 'END'
+start: 'START'
+avg: 'AVG'
+ana: 'Analysis'
+gather: 'Gather'
+spend: 'Spend'
+fle: 'Fleet'
+spe_gen: 'special_gencost'
+spe_t&d: 'special_t&dcost'
+spe_psc: 'special_powersectorcost'
+gen_cost: '_gencost'
+psc: '_powersectorcost'
+spe_us_solar_prod: 'special_ussolarprod'
+spe_dis_solar_prod: 'special_disolarprod'
+spe_w_prod: 'special_windprod'
+name: 'Financial impacts on public transport operators'
+per_name: '41-50'
+########################################################################################
+
+###################################### General Var #####################################
+ose_inputs: 'OSeMOSYS-UGA inputs'
+ose_oupts: 'OSeMOSYS-UGA outputs'
+tem_out: 'TEM output'
+tem_out_fis: 'TEM output fiscal'
+tem_reg: 'TEM region'
+
+
+# Scenarios
+#----------------------------------------------------------------------------#
+BAU: 'Scenario1'
+#----------------------------------------------------------------------------#
+
+# Control
+#----------------------------------------------------------------------------#
+max_per_batch: 1
+#----------------------------------------------------------------------------#
+########################################################################################

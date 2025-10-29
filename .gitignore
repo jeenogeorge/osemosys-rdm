@@ -12,6 +12,8 @@ Review_Outputs_New.twbx
 # From 1_Experiment
 src/workflow/1_Experiment/Results
 src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
+src/workflow/1_Experiment/OSEMOSYS_UGA_Energy_Input.csv
+src/workflow/1_Experiment/OSEMOSYS_UGA_Energy_Output.csv
 
 # From Executables
 src/workflow/1_Experiment/Executables/input_dataset_0.csv
