@@ -2,7 +2,8 @@
 """
 Created on Sun Jan 14 17:00:45 2024
 
-@author: IgnacioAlfaroCorrale
+@author: ClimateLeadGroup, Ignacio Alfaro-Corrales,
+Andrey Salazar-Vargas
 """
 
 import xlsxwriter
@@ -2899,7 +2900,7 @@ def generate_df_per_param(scenario_code_name, data_per_param, num_time_slices_SD
                 
                 techs_separadas=list()
                 reg_separadas=list()
-                mode_separado=list()
+                storage=list()
                 series_tiempo_separado=list()
                 a=0
                 for j in range(1,len(matriz)):
@@ -2910,13 +2911,13 @@ def generate_df_per_param(scenario_code_name, data_per_param, num_time_slices_SD
                         reg_separadas.append(region)
                         techs_separadas.append(tecno)
                     elif a==1:
-                        storage=matriz[j].split(' ')
-                        if storage[len(storage)-1]==':=\n':
-                            storage=storage[0:len(matriz[j].split(' '))-1]
-                        storage[len(storage)-1]=storage[len(storage)-1].replace(':=\n','')
+                        mode_separado=matriz[j].split(' ')
+                        if mode_separado[len(mode_separado)-1]==':=\n':
+                            mode_separado=mode_separado[0:len(matriz[j].split(' '))-1]
+                        mode_separado[len(mode_separado)-1]=mode_separado[len(mode_separado)-1].replace(':=\n','')
                         a=2
                     elif a==2 and '[' not in matriz[j]:
-                        mode_separado.append(matriz[j].split(' ')[0])
+                        storage.append(matriz[j].split(' ')[0])
                         aux=matriz[j].split(' ')[1:]
                         aux[len(aux)-1]=aux[len(aux)-1].replace('\n','')
                         series_tiempo_separado.append(aux)
@@ -2929,7 +2930,7 @@ def generate_df_per_param(scenario_code_name, data_per_param, num_time_slices_SD
                 matriz_escribir=list()
                 for j in range(len(techs_separadas)):
                     for k in range(0,1):
-                        for l in range(len(storage)):
+                        for l in range(len(mode_separado)):
                             matriz_escribir.append(['TechnologyToStorage',scenario_code_name,reg_separadas[j],techs_separadas[j],'','',mode_separado[j],'','','','','',storage[l],'','','',series_tiempo_separado[(1*j)+k][l]])
                     
                 # Store data
@@ -2946,7 +2947,7 @@ def generate_df_per_param(scenario_code_name, data_per_param, num_time_slices_SD
                 
                 techs_separadas=list()
                 reg_separadas=list()
-                mode_separado=list()
+                storage=list()
                 series_tiempo_separado=list()
                 a=0
                 for j in range(1,len(matriz)):
@@ -2957,13 +2958,14 @@ def generate_df_per_param(scenario_code_name, data_per_param, num_time_slices_SD
                         reg_separadas.append(region)
                         techs_separadas.append(tecno)
                     elif a==1:
-                        storage=matriz[j].split(' ')
-                        if storage[len(storage)-1]==':=\n':
-                            storage=storage[0:len(matriz[j].split(' '))-1]
-                        storage[len(storage)-1]=storage[len(storage)-1].replace(':=\n','')
+                        mode_separado=matriz[j].split(' ')
+                        if mode_separado[len(mode_separado)-1]==':=\n':
+                            mode_separado=mode_separado[0:len(matriz[j].split(' '))-1]
+                        mode_separado[len(mode_separado)-1]=mode_separado[len(mode_separado)-1].replace(':=\n','')
                         a=2
                     elif a==2 and '[' not in matriz[j]:
-                        mode_separado.append(matriz[j].split(' ')[0])
+                        # mode_separado.append(matriz[j].split(' ')[0])
+                        storage.append(matriz[j].split(' ')[0])
                         aux=matriz[j].split(' ')[1:]
                         aux[len(aux)-1]=aux[len(aux)-1].replace('\n','')
                         series_tiempo_separado.append(aux)
@@ -2976,7 +2978,7 @@ def generate_df_per_param(scenario_code_name, data_per_param, num_time_slices_SD
                 matriz_escribir=list()
                 for j in range(len(techs_separadas)):
                     for k in range(0,1):
-                        for l in range(len(storage)):
+                        for l in range(len(mode_separado)):
                             matriz_escribir.append(['TechnologyFromStorage',scenario_code_name,reg_separadas[j],techs_separadas[j],'','',mode_separado[j],'','','','','',storage[l],'','','',series_tiempo_separado[(1*j)+k][l]])
                     
                 # Store data
@@ -3623,8 +3625,8 @@ def run_osemosys( solver, scenario_dir, data_file, model_file, output_file ):
     
 def run_scripts( script, solver=None, osemosys_model=None, Interface_RDM=None, shape_file=None):
     
-    if solver == None:
-        str_scripts = 'python -u ' + script
+    if osemosys_model == None:
+        str_scripts = 'python -u ' + script + ' ' + solver
     else:
         str_scripts = 'python -u ' + script + ' ' + solver + ' ' + osemosys_model + ' ' + Interface_RDM + ' ' + shape_file
     subprocess.run(str_scripts, shell=True, check=True)
@@ -4045,3 +4047,62 @@ def data_processor_new(output_file, model_structure, strategy, fut_id, solver, p
     elif solver == 'glpk':
         shutil.os.remove(output_file)
 
+from pathlib import Path
+import logging
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+
+def copy_results_to_experiment(source_dir: str = "Results", 
+                                dest_dir: str = "workflow/1_Experiment") -> bool:
+    """
+    Copia archivos desde la carpeta 'Results' a 'workflow/1_Experiment'.
+    
+    Args:
+        source_dir (str): Ruta de la carpeta origen. Por defecto "Results"
+        dest_dir (str): Ruta de la carpeta destino. Por defecto "workflow/1_Experiment"
+    
+    Returns:
+        bool: True si la copia fue exitosa, False en caso contrario
+    """
+    
+    source_path = Path(source_dir)
+    dest_path = Path(dest_dir)
+    
+    # Verificar si la carpeta "Results" existe
+    if not source_path.exists():
+        logger.warning(f"La carpeta '{source_dir}' no existe.")
+        return False
+    
+    if not source_path.is_dir():
+        logger.warning(f"'{source_dir}' no es una carpeta.")
+        return False
+    
+    # Obtener lista de archivos en la carpeta "Results"
+    files = list(source_path.glob('*'))
+    
+    # Filtrar solo archivos (no carpetas)
+    files_only = [f for f in files if f.is_file()]
+    
+    if not files_only:
+        logger.warning(f"No hay archivos en la carpeta '{source_dir}'.")
+        return False
+    
+    # Crear la carpeta destino si no existe
+    dest_path.mkdir(parents=True, exist_ok=True)
+    
+    # Copiar archivos
+    try:
+        for file in files_only:
+            dest_file = dest_path / file.name
+            shutil.copy2(file, dest_file)
+            logger.info(f"Archivo copiado: {file.name}")
+        
+        logger.info(f"Se copiaron {len(files_only)} archivo(s) exitosamente a '{dest_dir}'.")
+        return True
+    
+    except Exception as e:
+        logger.error(f"Error al copiar archivos: {e}")
+        return False

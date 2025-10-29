@@ -28,6 +28,9 @@ solver = str( setup_table.loc[ 0 ,'Solver'] )
 'Name of the OSeMOSYS model use to solve problem'
 osemosys_model = str( setup_table.loc[ 0 ,'OSeMOSYS_Model_Name'] )
 
+'Name of the OSeMOSYS model use to solve problem'
+region = str( setup_table.loc[ 0 ,'Region'] )
+
 'Parameters to print'
 parameters_to_print = book.parse( 'To_Print' , 0)
 
@@ -163,10 +166,10 @@ if run_base_future == 'Yes':
     for i in range(len(list_scenarios)):
         # Run OSeMOSYS for each scenario
         AUX.run_osemosys(solver,
-                         './workflow/1_Experiment/Executables/'+list_scenarios[i].replace('.txt','_0/'),
-                         './workflow/1_Experiment/Executables/'+list_scenarios[i].replace('.txt','_0/')+list_scenarios[i].replace('.txt','_0.txt'),
-                         './workflow/' + osemosys_model, 
-                         './workflow/1_Experiment/Executables/'+list_scenarios[i].replace('.txt','_0/')+list_scenarios[i].replace('.txt',''))
+                          './workflow/1_Experiment/Executables/'+list_scenarios[i].replace('.txt','_0/'),
+                          './workflow/1_Experiment/Executables/'+list_scenarios[i].replace('.txt','_0/')+list_scenarios[i].replace('.txt','_0.txt'),
+                          './workflow/' + osemosys_model, 
+                          './workflow/1_Experiment/Executables/'+list_scenarios[i].replace('.txt','_0/')+list_scenarios[i].replace('.txt',''))
         
         print('Step 9.Input finished')
         
@@ -181,20 +184,20 @@ if run_base_future == 'Yes':
         #    AUX.create_output_dataset_future_0(0, time_range_vector, first_list,'./workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx')
         if solver == 'cbc' or solver == 'cplex':
             AUX.data_processor_new('./workflow/1_Experiment/Executables/'+list_scenarios[i].replace('.txt','_0/')+list_scenarios[i].replace('.txt','_0_Output.sol'),
-                                   './workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx',
-                                   list_scenarios[i].replace('.txt',''),
-                                   str(0),
-                                   solver,
-                                   parameters_to_print,
-                                   'csv')
+                                    './workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx',
+                                    list_scenarios[i].replace('.txt',''),
+                                    str(0),
+                                    solver,
+                                    parameters_to_print,
+                                    'csv')
         elif solver == 'glpk':
             AUX.data_processor_new('./workflow/1_Experiment/Executables/'+list_scenarios[i].replace('.txt','_0/')+list_scenarios[i].replace('.txt','_0_Output.txt'),
-                                   './workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx',
-                                   list_scenarios[i].replace('.txt',''),
-                                   str(0),
-                                   solver,
-                                   parameters_to_print,
-                                   'csv')
+                                    './workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx',
+                                    list_scenarios[i].replace('.txt',''),
+                                    str(0),
+                                    solver,
+                                    parameters_to_print,
+                                    'csv')
         print('Step 9.Output finished')    
     print('Step 9 finished')
     end_1 = time.time()
@@ -212,7 +215,7 @@ if run_RDM == 'Yes':
     'Step 11: Execute RDM experiment'
     start3 = time.time()
     print('Start Output Dataset Creator\n')
-    AUX.run_scripts('./workflow/1_Experiment/1_output_dataset_creator.py')
+    AUX.run_scripts('./workflow/1_Experiment/1_output_dataset_creator.py', region)
     
     print('Step 11 finished\n')
     end_3 = time.time()
@@ -223,6 +226,13 @@ if solver == 'cplex':
     for file in ['cplex.log', 'clone1.log', 'clone2.log']:
         if os.path.exists(file):
             os.remove(file)
+
+success = AUX.copy_results_to_experiment()
+    
+if success:
+    print("✓ Copia completada exitosamente")
+else:
+    print("✗ La copia no se pudo completar")
 
 print('#####################################')
 print('Processing completed successfully.')
