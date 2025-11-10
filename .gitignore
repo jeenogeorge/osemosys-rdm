@@ -3,8 +3,11 @@ src/Results/*
 
 # User guide
 RDMmodel.pdf
+src/Guides/Guide ARF_RDM.html
+src/Guides/Guide PRIM Module Configuration.html
 
 # Dashboard test
+Dashboard.twbx
 Dashboard_RDM.twbx
 Review_Outputs.twbx
 Review_Outputs_New.twbx
