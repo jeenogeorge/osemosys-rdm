@@ -62,8 +62,23 @@ def f1_create_prim_files(dir_elements, dirl, scen, dict_pfcp, analysis_list,
     #              in dir_elements if 'txt' in e.lower()][0])}
     # Extract future according to directory:
     # print(dir_elements)
-    future = int([e.replace('.csv', '').split('_')[1] for e
-                 in dir_elements if 'csv' in e.lower()][0])
+    # future = int([e.replace('.csv', '').split('_')[1] for e
+    #              in dir_elements if 'csv' in e.lower()][0])
+    # Define valid file extensions we care about
+    valid_ext = ('.csv', '.parquet')
+    
+    # Filter only files that end with .csv or .parquet (case insensitive)
+    valid_files = [f for f in dir_elements if Path(f).suffix.lower() in valid_ext]
+    
+    if valid_files:
+        # Take the first matching file
+        file_name = Path(valid_files[0]).stem  # file name without extension
+    
+        # Split the file name into parts (e.g., 'Scenario1_10_Input' → ['Scenario1', '10', 'Input'])
+        parts = file_name.split('_')
+    
+        # Extract the first numeric part and convert it to integer
+        future = next((int(p) for p in parts if p.isdigit()), None)
     # print(future)
     # sys.exit()
 
@@ -109,20 +124,25 @@ def f1_create_prim_files(dir_elements, dirl, scen, dict_pfcp, analysis_list,
     #     a_df.Year = a_df.Year.astype(int)
     #     df_input.append(deepcopy(a_df))
 
-
     for afile in acc_input:
         afile_path = Path(afile)
         # Detectar extensión (minúsculas por seguridad)
         ext = afile_path.suffix.lower()
     
         if ext == '.csv':
-            a_df = pd.read_csv(afile_path, dtype=use_dtype_inp)
+            a_df = pd.read_csv(afile_path, dtype=use_dtype_inp,low_memory=False)
         elif ext == '.parquet':
             a_df = pd.read_parquet(afile_path)
         else:
             print(f"⚠️ Tipo de archivo no soportado: {afile_path}")
             continue  # salta al siguiente archivo
-    
+        if "_1" in str(afile_path):
+            # Definir el nombre de salida (puedes personalizarlo)
+            print(1111111111111111,acc_input)
+            # output_path = str(afile_path).replace(".parquet", ".xlsx")
+            
+            # # Guardar el DataFrame como archivo Excel
+            # a_df.to_excel(output_path, index=False)
         # Ajustes comunes a ambos tipos
         if params['Year'] in a_df.columns:
             a_df[params['Year']] = a_df[params['Year']].fillna(0).astype(int)
@@ -290,6 +310,7 @@ def f1_create_prim_files(dir_elements, dirl, scen, dict_pfcp, analysis_list,
                                                  df_prim_set_matching, i,
                                                  'outcome', ana_ID, exp_id,
                                                  params, dicPop)
+                    # return prim_tbl_o
                 else:
                     print('     **Scenario ' + str(scen) +
                           ' not in outcome ' + o_name)
@@ -366,6 +387,7 @@ def f1_create_prim_files(dir_elements, dirl, scen, dict_pfcp, analysis_list,
                                                  df_prim_set_matching,
                                                  i, 'driver', ana_ID, exp_id,
                                                  params, dicPop)
+                    # return prim_tbl_d
                 else:
                     print('     **Scenario ' + str(scen) +
                           ' not in driver ' + d_name)
@@ -497,6 +519,7 @@ def f2_exe_postproc(prim_tbl, prim_tbl_bau,
         file_is_csv = False
 
     elif len(source_list) > 1:
+        print(222222222222222444444444444,source_list)
         if (len(source_list) == 3 and params['ose_oupts'] in source_list
                 and params['tem_out'] in source_list and params['ose_inputs'] in
                 source_list):
@@ -692,7 +715,7 @@ def f2_exe_postproc(prim_tbl, prim_tbl_bau,
                 # NOTE 3: for *direct*, assume last-year-of-period extraction
                 # NOTE 4: we have to control the numerator expression, i.e.,
                 # whether we use sums or subtractions
-
+                
                 local_num = [0 for y in range(len(apyr))]
                 local_den = [0 for y in range(len(apyr))]
                 if params['spe_fiscal_cost'] in num_frml:  # tr: tem reference
@@ -1164,10 +1187,13 @@ def f2_exe_postproc(prim_tbl, prim_tbl_bau,
                     rel_den += sum(file_data_f3)
 
                 # Store the elements of relative:
+                # print(12345,store_res_lists_sum,rel_den,prms,rel_yr)
+                # return rel_mask_y
                 try:
                     res_lists_sum = \
                         [store_res_lists_sum[y]/rel_den
                          for y in range(len(apyr))]
+                    
                 except Exception:
                     # If the denominator is 0, define the variable as 0:
                     res_lists_sum = [0 for i in range(len(apyr))]
@@ -1279,6 +1305,7 @@ def f2_exe_postproc(prim_tbl, prim_tbl_bau,
             # this_value -= prim_tbl_bau[col_name]['vl'][0]
 
             # /////////// Store the value ///////////
+            # print(222,this_value,num_frml)
             value_list[per_name].append(this_value)
             store_num_lists[per_name].append(store_res_lists_sum)
 
@@ -1622,7 +1649,16 @@ if __name__ == '__main__':
                                 specific_dir_elements = os.listdir(specific_dir
                                                                 )
                                 # print('ENTRO ACA')
-                                # sys.exit()
+                                # prueba=f1_create_prim_files(specific_dir_elements,
+                                #       specific_dir, scen,
+                                #       dict_pfcp,
+                                #       e_analysis_list,
+                                #       dict_set_matching,
+                                #       period_control,
+                                #       all_exp_data,
+                                #       exp_id, params,dicPop)
+                                # sys.exit(29)
+                                
                                 p = mp.Process(target=f1_create_prim_files,
                                                args=(specific_dir_elements,
                                                      specific_dir, scen,
@@ -1662,7 +1698,7 @@ if __name__ == '__main__':
 
                 print('*: We have finished the work of the parallel '
                       + 'functions for Experiment_' + str(exp_id))
-                print('Now compíling the files of Experiment_' +
+                print('Now compiling the files of Experiment_' +
                       str(exp_id))
 
                 for adir in list_dirs_compile_dir:

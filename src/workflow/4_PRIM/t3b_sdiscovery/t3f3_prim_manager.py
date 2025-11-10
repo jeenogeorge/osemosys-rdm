@@ -184,7 +184,6 @@ def f1_prim_box_execute(o_thresh_list, outc_array, outc_list, inp_df,
                     val_thr = float(this_e_info[-1])
 
             if '_' not in this_t or type_thr != 'skip':
-
                 # Apply PRIM for standard threshold:
                 try:
                     p = prim.Prim(inp_df, outc_list,
@@ -202,7 +201,7 @@ def f1_prim_box_execute(o_thresh_list, outc_array, outc_list, inp_df,
                     print(this_t)
                     print('\n')
                     sys.exit()
-
+                # print(this_t,outc_list)
                 # SELECTION CRITERIA: max(avg(coverage, density)) if dim == 2
                 # if dim > 2, select the highest dim with coverages of at least
                 # 0.7 ; then, out of that selected dim, apply index of
@@ -250,6 +249,7 @@ def f1_prim_box_execute(o_thresh_list, outc_array, outc_list, inp_df,
                             maxxavgidx_glob_idx = local_xidx[maxxavgidx_local]
 
                 box.select(maxxavgidx_glob_idx)
+                
 
                 base_cov = box.coverage
                 base_den = box.density
@@ -258,6 +258,8 @@ def f1_prim_box_execute(o_thresh_list, outc_array, outc_list, inp_df,
                 base_val_thr = val_thr
                 base_limit_tbl = box.limits
                 base_pred_d = base_limit_tbl.index.tolist()  # pred: predominant //
+                
+                
                 # d: driver
                 base_pred_d_min = [base_limit_tbl.loc[i, 'min'] for i in
                                 base_pred_d]
@@ -276,6 +278,8 @@ def f1_prim_box_execute(o_thresh_list, outc_array, outc_list, inp_df,
                     info_dict_1.update({t: this_info_dict_1})
                 else:
                     info_dict_1.update({'e' + this_e_info[0]: this_info_dict_1})
+                    
+    
 
     return info_dict_1, info_dict_2, error_type_a, error_type_b
 
@@ -1780,12 +1784,14 @@ if __name__ == '__main__':
                                                                 scale_zero[c],
                                                                 py
                                                                 )
+                                        
                                         this_dict_infos = {1: info_dict_1,
                                                            2: info_dict_2}
                                         dict_infos.update({c: this_dict_infos})
 
                                         bug_acts = True
-
+                            # if c == "Benefit_direct":
+                            #     sys.exit(89)
                             add_str = \
                                 '         > Report on the PRIM findings for ' \
                                 + 'valid columns.'

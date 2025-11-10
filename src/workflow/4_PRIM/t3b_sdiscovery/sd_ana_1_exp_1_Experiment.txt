@@ -4,290 +4,120 @@ This is a PRIM analysis. The Analysis ID is: 1 // The Experiment ID is: 1_Experi
 Analysis of block 1
 
 
-     ===> Analyzing outcome (table): 1 // Benefit
+     ===> Analyzing outcome (table): 1 // Costs
 
-     => Working with column family: o_pure_direct_d_pure_direct and period 21-30 for Benefit (1)
+     => Working with column family: o_pure_direct_d_pure_direct and period 21-30 for Costs (1)
 
          > Action! Applying thresholds : High, Low,
          > Report on the PRIM findings for valid columns.
-         >> Column: Benefit_direct // Level: 1
+         >> Column: Costs_direct // Level: 1
          >> Thld. type: High (base) // Thld. range: 75 // Thld. value: 4.04e-01
-             >>> Coverage: 1.0 // Density: 0.4166666666666667 // Avg(Cov, Den) : 0.7083333333333334
-             >>> Driver: Benefit Waste_direct // Min (norm): 0.36 // Min (real): 1.04e+02 // Max (norm): 1.00 // Max (real): 1.50e+02
-             >>> Driver: Benefit EneTra_direct // Min (norm): 0.12 // Min (real): 5.30e+03 // Max (norm): 1.00 // Max (real): 7.77e+03
-         >> Column: Benefit_direct // Level: 1
-         >> Thld. type: Low (base) // Thld. range: 25 // Thld. value: 2.99e-01
-             >>> Coverage: 1.0 // Density: 0.625 // Avg(Cov, Den) : 0.8125
-             >>> Driver: Benefit EneTra_direct // Min (norm): 0.00 // Min (real): 4.97e+03 // Max (norm): 0.18 // Max (real): 5.49e+03
-         > (PRIM results for level 2 dependecies).         >> Column: Benefit EneTra_direct // Level: 2 // Dependency: Benefit_direct
-         > (PRIM results for level 2 dependecies).         >> Thld. type: High (dep) // Thld. range: 11.656021835572469 // Thld. value: 1.17e-01
-         > (PRIM results for level 2 dependecies).             >>> Coverage: 0.9375 // Density: 0.8333333333333334 // Avg(Cov, Den) : 0.8854166666666667
-         > (PRIM results for level 2 dependecies).             >>> Driver: Generation renewables_direct // Min (norm): 4.59e-01 // Min (real): 2.69e+01 // Max (norm): 1.00e+00 // Max (real): 2.73e+01
-         > (PRIM results for level 2 dependecies).         >> Column: Benefit Waste_direct // Level: 2 // Dependency: Benefit_direct
-         > (PRIM results for level 2 dependecies).         >> Has equal Min. (0.35604843838203715) and Max. (1.0). Hence, PRIM is not applied.
-         > (PRIM results for level 2 dependecies).         >> Column: Benefit EneTra_direct // Level: 2 // Dependency: Benefit_direct
-         > (PRIM results for level 2 dependecies).         >> Thld. type: Low (dep) // Thld. range: 18.412727605816265 // Thld. value: 1.84e-01
-         > (PRIM results for level 2 dependecies).             >>> Coverage: 1.0 // Density: 0.5714285714285714 // Avg(Cov, Den) : 0.7857142857142857
-         > (PRIM results for level 2 dependecies).             >>> Driver: Generation renewables_direct // Min (norm): 0.00e+00 // Min (real): 2.65e+01 // Max (norm): 7.69e-01 // Max (real): 2.71e+01
-         > (PRIM results for level 3 dependecies).         >> Column: Generation renewables_direct // Level: 3 // Dependency: Benefit_direct
-         > (PRIM results for level 3 dependecies).         >> Has equal Min. (0.45851991167603534) and Max. (1.0). Hence, PRIM is not applied.
-         > (PRIM results for level 3 dependecies).         >> Column: Generation renewables_direct // Level: 3 // Dependency: Benefit_direct
-         > (PRIM results for level 3 dependecies).         >> Has equal Min. (0.0) and Max. (0.7688159206958209). Hence, PRIM is not applied.
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 31-40 for Benefit (1)
-
-         > Action! Applying thresholds : High, Low,
-         > Report on the PRIM findings for valid columns.
-         >> Column: Benefit_direct // Level: 1
-         >> Thld. type: High (base) // Thld. range: 75 // Thld. value: 7.54e-01
-             >>> Coverage: 1.0 // Density: 0.625 // Avg(Cov, Den) : 0.8125
-             >>> Driver: Benefit EneTra_direct // Min (norm): 0.29 // Min (real): 1.02e+04 // Max (norm): 1.00 // Max (real): 1.45e+04
-         >> Column: Benefit_direct // Level: 1
-         >> Thld. type: Low (base) // Thld. range: 25 // Thld. value: 3.95e-01
              >>> Coverage: 1.0 // Density: 1.0 // Avg(Cov, Den) : 1.0
-             >>> Driver: Benefit Waste_direct // Min (norm): 0.14 // Min (real): 1.09e+02 // Max (norm): 0.51 // Max (real): 1.33e+02
-             >>> Driver: Benefit EneTra_direct // Min (norm): 0.00 // Min (real): 8.36e+03 // Max (norm): 0.29 // Max (real): 1.01e+04
-         > (PRIM results for level 2 dependecies).         >> Column: Benefit EneTra_direct // Level: 2 // Dependency: Benefit_direct
-         > (PRIM results for level 2 dependecies).         >> Thld. type: High (dep) // Thld. range: 29.40488059012736 // Thld. value: 2.94e-01
-         > (PRIM results for level 2 dependecies).             >>> Coverage: 1.0 // Density: 0.38095238095238093 // Avg(Cov, Den) : 0.6904761904761905
-         > (PRIM results for level 2 dependecies).         >> Column: Benefit EneTra_direct // Level: 2 // Dependency: Benefit_direct
-         > (PRIM results for level 2 dependecies).         >> Thld. type: Low (dep) // Thld. range: 28.722481140664318 // Thld. value: 2.87e-01
-         > (PRIM results for level 2 dependecies).             >>> Coverage: 0.9166666666666666 // Density: 0.5789473684210527 // Avg(Cov, Den) : 0.7478070175438596
-         > (PRIM results for level 2 dependecies).             >>> Driver: Generation renewables_direct // Min (norm): 0.00e+00 // Min (real): 6.61e+01 // Max (norm): 9.37e-01 // Max (real): 7.19e+01
-         > (PRIM results for level 2 dependecies).         >> Column: Benefit Waste_direct // Level: 2 // Dependency: Benefit_direct
-         > (PRIM results for level 2 dependecies).         >> Has equal Min. (0.1433621023066815) and Max. (0.5089088654167908). Hence, PRIM is not applied.
-         > (PRIM results for level 3 dependecies).         >> Column: Generation renewables_direct // Level: 3 // Dependency: Benefit_direct
-         > (PRIM results for level 3 dependecies).         >> Has equal Min. (0.0) and Max. (0.9370536182115632). Hence, PRIM is not applied.
+             >>> Driver: Variable Costs Import Fuels_direct // Min (norm): 0.14 // Min (real): 9.37e-01 // Max (norm): 0.97 // Max (real): 9.63e-01
+             >>> Driver: Capital Costs Electric Transport_direct // Min (norm): 0.15 // Min (real): 9.76e-01 // Max (norm): 0.96 // Max (real): 1.00e+00
+             >>> Driver: Capital Costs ICE Transport_direct // Min (norm): 0.08 // Min (real): 1.00e+00 // Max (norm): 0.72 // Max (real): 1.01e+00
+             >>> Driver: Fixed Costs Electric Transport_direct // Min (norm): 0.00 // Min (real): 9.97e-01 // Max (norm): 0.86 // Max (real): 1.01e+00
+             >>> Driver: Capital Costs Industry_direct // Min (norm): 0.04 // Min (real): 9.97e-01 // Max (norm): 1.00 // Max (real): 1.01e+00
+             >>> Driver: Fixed Costs Crops_direct // Min (norm): 0.09 // Min (real): 9.96e-01 // Max (norm): 1.00 // Max (real): 1.02e+00
+         >> Column: Costs_direct // Level: 1
+         >> Thld. type: Low (base) // Thld. range: 25 // Thld. value: 2.99e-01
+             >>> Coverage: 1.0 // Density: 1.0 // Avg(Cov, Den) : 1.0
+             >>> Driver: Capital Costs Industry_direct // Min (norm): 0.21 // Min (real): 1.00e+00 // Max (norm): 0.69 // Max (real): 1.01e+00
+             >>> Driver: Capital Costs ICE Transport_direct // Min (norm): 0.06 // Min (real): 9.99e-01 // Max (norm): 0.39 // Max (real): 1.00e+00
+             >>> Driver: Fixed Costs Electric Transport_direct // Min (norm): 0.00 // Min (real): 9.97e-01 // Max (norm): 0.64 // Max (real): 1.00e+00
+             >>> Driver: Capital Costs Electric Transport_direct // Min (norm): 0.07 // Min (real): 9.73e-01 // Max (norm): 0.89 // Max (real): 1.00e+00
 
-     => Working with column family: o_pure_direct_d_pure_direct and period 41-50 for Benefit (1)
+     => Working with column family: o_pure_direct_d_pure_direct and period 31-40 for Costs (1)
 
          > Action! Applying thresholds : High, Low,
          > Report on the PRIM findings for valid columns.
-         >> Column: Benefit_direct // Level: 1
+         >> Column: Costs_direct // Level: 1
+         >> Thld. type: High (base) // Thld. range: 75 // Thld. value: 7.54e-01
+             >>> Coverage: 0.2 // Density: 0.5 // Avg(Cov, Den) : 0.35
+             >>> Driver: Fuel Demand_direct // Min (norm): 0.31 // Min (real): 1.39e+02 // Max (norm): 1.00 // Max (real): 1.41e+02
+         >> Column: Costs_direct // Level: 1
+         >> Thld. type: Low (base) // Thld. range: 25 // Thld. value: 3.95e-01
+             >>> Coverage: 0.2 // Density: 0.5 // Avg(Cov, Den) : 0.35
+             >>> Driver: Fuel Demand_direct // Min (norm): 0.31 // Min (real): 1.39e+02 // Max (norm): 1.00 // Max (real): 1.41e+02
+
+     => Working with column family: o_pure_direct_d_pure_direct and period 41-50 for Costs (1)
+
+         > Action! Applying thresholds : High, Low,
+         > Report on the PRIM findings for valid columns.
+         >> Column: Costs_direct // Level: 1
          >> Thld. type: High (base) // Thld. range: 75 // Thld. value: 7.64e-01
-             >>> Coverage: 1.0 // Density: 0.8333333333333334 // Avg(Cov, Den) : 0.9166666666666667
-             >>> Driver: Benefit Waste_direct // Min (norm): 0.64 // Min (real): 1.55e+02 // Max (norm): 1.00 // Max (real): 1.78e+02
-             >>> Driver: Benefit EneTra_direct // Min (norm): 0.20 // Min (real): 1.99e+04 // Max (norm): 1.00 // Max (real): 2.82e+04
-         >> Column: Benefit_direct // Level: 1
+             >>> Coverage: 1.0 // Density: 1.0 // Avg(Cov, Den) : 1.0
+             >>> Driver: Capital Costs Electric Transport_direct // Min (norm): 0.28 // Min (real): 9.29e-01 // Max (norm): 0.79 // Max (real): 1.13e+00
+             >>> Driver: Capital Costs ICE Transport_direct // Min (norm): 0.00 // Min (real): 9.53e-01 // Max (norm): 0.69 // Max (real): 1.09e+00
+             >>> Driver: Residential Demand_direct // Min (norm): 0.30 // Min (real): 2.13e+02 // Max (norm): 1.00 // Max (real): 2.41e+02
+             >>> Driver: Capital Costs Industry_direct // Min (norm): 0.04 // Min (real): 9.60e-01 // Max (norm): 1.00 // Max (real): 1.18e+00
+             >>> Driver: Fixed Costs Crops_direct // Min (norm): 0.09 // Min (real): 9.47e-01 // Max (norm): 1.00 // Max (real): 1.24e+00
+         >> Column: Costs_direct // Level: 1
          >> Thld. type: Low (base) // Thld. range: 25 // Thld. value: 4.35e-01
-             >>> Coverage: 1.0 // Density: 0.38461538461538464 // Avg(Cov, Den) : 0.6923076923076923
-             >>> Driver: Benefit EneTra_direct // Min (norm): 0.03 // Min (real): 1.81e+04 // Max (norm): 0.29 // Max (real): 2.08e+04
-             >>> Driver: Benefit Waste_direct // Min (norm): 0.15 // Min (real): 1.23e+02 // Max (norm): 0.81 // Max (real): 1.66e+02
-         > (PRIM results for level 2 dependecies).         >> Column: Benefit EneTra_direct // Level: 2 // Dependency: Benefit_direct
-         > (PRIM results for level 2 dependecies).         >> Thld. type: High (dep) // Thld. range: 20.200644883902896 // Thld. value: 2.02e-01
-         > (PRIM results for level 2 dependecies).             >>> Coverage: 1.0 // Density: 0.55 // Avg(Cov, Den) : 0.775
-         > (PRIM results for level 2 dependecies).             >>> Driver: Generation renewables_direct // Min (norm): 0.00e+00 // Min (real): 1.57e+02 // Max (norm): 9.73e-01 // Max (real): 1.73e+02
-         > (PRIM results for level 2 dependecies).         >> Column: Benefit Waste_direct // Level: 2 // Dependency: Benefit_direct
-         > (PRIM results for level 2 dependecies).         >> Has equal Min. (0.6431545887531684) and Max. (1.0). Hence, PRIM is not applied.
-         > (PRIM results for level 2 dependecies).         >> Column: Benefit EneTra_direct // Level: 2 // Dependency: Benefit_direct
-         > (PRIM results for level 2 dependecies).         >> Thld. type: Low (dep) // Thld. range: 29.37384306612929 // Thld. value: 2.94e-01
-         > (PRIM results for level 2 dependecies).             >>> Coverage: 0.9375 // Density: 0.7894736842105263 // Avg(Cov, Den) : 0.8634868421052632
-         > (PRIM results for level 2 dependecies).             >>> Driver: Generation renewables_direct // Min (norm): 0.00e+00 // Min (real): 1.57e+02 // Max (norm): 9.45e-01 // Max (real): 1.73e+02
-         > (PRIM results for level 2 dependecies).         >> Column: Benefit Waste_direct // Level: 2 // Dependency: Benefit_direct
-         > (PRIM results for level 2 dependecies).         >> Has equal Min. (0.14598211095160682) and Max. (0.8055059487073772). Hence, PRIM is not applied.
-         > (PRIM results for level 3 dependecies).         >> Column: Generation renewables_direct // Level: 3 // Dependency: Benefit_direct
-         > (PRIM results for level 3 dependecies).         >> Has equal Min. (0.0) and Max. (0.9732000842879676). Hence, PRIM is not applied.
-         > (PRIM results for level 3 dependecies).         >> Column: Generation renewables_direct // Level: 3 // Dependency: Benefit_direct
-         > (PRIM results for level 3 dependecies).         >> Has equal Min. (0.0) and Max. (0.9452861305831733). Hence, PRIM is not applied.
+             >>> Coverage: 1.0 // Density: 1.0 // Avg(Cov, Den) : 1.0
+             >>> Driver: Capital Costs ICE Transport_direct // Min (norm): 0.00 // Min (real): 9.53e-01 // Max (norm): 0.51 // Max (real): 1.05e+00
+             >>> Driver: Variable Costs Crops_direct // Min (norm): 0.00 // Min (real): 9.63e-01 // Max (norm): 0.38 // Max (real): 1.04e+00
+             >>> Driver: Capital Costs Electric Transport_direct // Min (norm): 0.00 // Min (real): 8.24e-01 // Max (norm): 0.93 // Max (real): 1.18e+00
+             >>> Driver: Fixed Costs Electric Transport_direct // Min (norm): 0.00 // Min (real): 9.61e-01 // Max (norm): 0.64 // Max (real): 1.06e+00
+             >>> Driver: Fixed Costs ICE Transport_direct // Min (norm): 0.00 // Min (real): 9.57e-01 // Max (norm): 0.57 // Max (real): 1.03e+00
+             >>> Driver: Fuel Demand_direct // Min (norm): 0.14 // Min (real): 2.53e+02 // Max (norm): 0.61 // Max (real): 2.56e+02
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Analysis of block 2
 
 
-     ===> Analyzing outcome (table): 2 // Benefit EneTra
+     ===> Analyzing outcome (table): 2 // Emissions
 
-     => Working with column family: o_pure_direct_d_pure_direct and period 21-30 for Benefit EneTra (2)
-
-         > No action for this family and period.  The threshold for this column depends on other metrics.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 31-40 for Benefit EneTra (2)
-
-         > No action for this family and period.  The threshold for this column depends on other metrics.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 41-50 for Benefit EneTra (2)
-
-         > No action for this family and period.  The threshold for this column depends on other metrics.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Analysis of block 3
-
-
-     ===> Analyzing outcome (table): 3 // Benefit Waste
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 21-30 for Benefit Waste (3)
-
-         > No action for this family and period.  The threshold for this column depends on other metrics.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 31-40 for Benefit Waste (3)
-
-         > No action for this family and period.  The threshold for this column depends on other metrics.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 41-50 for Benefit Waste (3)
-
-         > No action for this family and period.  The threshold for this column depends on other metrics.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Analysis of block 4
-
-
-     ===> Analyzing outcome (table): 4 // ZEV Penetration of transport
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 21-30 for ZEV Penetration of transport (4)
-
-         > No action for this family and period. Columns are zero.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 31-40 for ZEV Penetration of transport (4)
-
-         > No action for this family and period. Columns are zero.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 41-50 for ZEV Penetration of transport (4)
-
-         > No action for this family and period. Columns are zero.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Analysis of block 5
-
-
-     ===> Analyzing outcome (table): 5 // Generation renewables
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 21-30 for Generation renewables (5)
-
-         > No action for this family and period.  The threshold for this column depends on other metrics.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 31-40 for Generation renewables (5)
-
-         > No action for this family and period.  The threshold for this column depends on other metrics.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 41-50 for Generation renewables (5)
-
-         > No action for this family and period.  The threshold for this column depends on other metrics.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Analysis of block 6
-
-
-     ===> Analyzing outcome (table): 6 // Emissions National
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 21-30 for Emissions National (6)
+     => Working with column family: o_pure_direct_d_pure_direct and period 21-30 for Emissions (2)
 
          > Action! Applying thresholds : High, Low,
          > Report on the PRIM findings for valid columns.
-         >> Column: Emissions National_direct // Level: 1
+         >> Column: Emissions_direct // Level: 1
          >> Thld. type: High (base) // Thld. range: 75 // Thld. value: 6.06e-01
-             >>> Coverage: 1.0 // Density: 0.2631578947368421 // Avg(Cov, Den) : 0.631578947368421
-             >>> Driver: Emissions EneTra_direct // Min (norm): 0.00 // Min (real): -2.04e+01 // Max (norm): 0.92 // Max (real): -1.97e+01
-         >> Column: Emissions National_direct // Level: 1
+             >>> Coverage: 0.2 // Density: 0.5 // Avg(Cov, Den) : 0.35
+             >>> Driver: Fuel Demand_direct // Min (norm): 0.26 // Min (real): 7.73e+01 // Max (norm): 1.00 // Max (real): 7.75e+01
+         >> Column: Emissions_direct // Level: 1
          >> Thld. type: Low (base) // Thld. range: 25 // Thld. value: 1.54e-01
-             >>> Coverage: 1.0 // Density: 0.2777777777777778 // Avg(Cov, Den) : 0.6388888888888888
-             >>> Driver: Emissions EneTra_direct // Min (norm): 0.12 // Min (real): -2.03e+01 // Max (norm): 1.00 // Max (real): -1.97e+01
-         > (PRIM results for level 2 dependecies).         >> Column: Emissions EneTra_direct // Level: 2 // Dependency: Emissions National_direct
-         > (PRIM results for level 2 dependecies).         >> Thld. type: Low (dep) // Thld. range: 92.26881907134863 // Thld. value: 9.23e-01
-         > (PRIM results for level 2 dependecies).             >>> Coverage: 1.0 // Density: 0.9047619047619048 // Avg(Cov, Den) : 0.9523809523809523
-         > (PRIM results for level 2 dependecies).         >> Column: Emissions EneTra_direct // Level: 2 // Dependency: Emissions National_direct
-         > (PRIM results for level 2 dependecies).         >> Thld. type: High (dep) // Thld. range: 12.456787716450146 // Thld. value: 1.25e-01
-         > (PRIM results for level 2 dependecies).             >>> Coverage: 1.0 // Density: 0.8571428571428571 // Avg(Cov, Den) : 0.9285714285714286
+             >>> Coverage: 1.0 // Density: 1.0 // Avg(Cov, Den) : 1.0
+             >>> Driver: Capital Costs ICE Transport_direct // Min (norm): 0.25 // Min (real): 1.00e+00 // Max (norm): 1.00 // Max (real): 1.01e+00
+             >>> Driver: Fixed Costs Crops_direct // Min (norm): 0.00 // Min (real): 9.94e-01 // Max (norm): 0.50 // Max (real): 1.01e+00
+             >>> Driver: Capital Costs Electric Transport_direct // Min (norm): 0.20 // Min (real): 9.78e-01 // Max (norm): 1.00 // Max (real): 1.00e+00
+             >>> Driver: Capital Costs Industry_direct // Min (norm): 0.14 // Min (real): 9.99e-01 // Max (norm): 1.00 // Max (real): 1.01e+00
+             >>> Driver: Fixed Costs Electric Transport_direct // Min (norm): 0.00 // Min (real): 9.97e-01 // Max (norm): 0.92 // Max (real): 1.01e+00
 
-     => Working with column family: o_pure_direct_d_pure_direct and period 31-40 for Emissions National (6)
+     => Working with column family: o_pure_direct_d_pure_direct and period 31-40 for Emissions (2)
 
          > Action! Applying thresholds : High, Low,
          > Report on the PRIM findings for valid columns.
-         >> Column: Emissions National_direct // Level: 1
+         >> Column: Emissions_direct // Level: 1
          >> Thld. type: High (base) // Thld. range: 75 // Thld. value: 7.41e-01
-             >>> Coverage: 1.0 // Density: 0.35714285714285715 // Avg(Cov, Den) : 0.6785714285714286
-             >>> Driver: Emissions EneTra_direct // Min (norm): 0.00 // Min (real): -2.93e+01 // Max (norm): 0.66 // Max (real): -2.63e+01
-         >> Column: Emissions National_direct // Level: 1
+             >>> Coverage: 0.2 // Density: 0.5 // Avg(Cov, Den) : 0.35
+             >>> Driver: Fuel Demand_direct // Min (norm): 0.31 // Min (real): 1.39e+02 // Max (norm): 1.00 // Max (real): 1.41e+02
+         >> Column: Emissions_direct // Level: 1
          >> Thld. type: Low (base) // Thld. range: 25 // Thld. value: 3.94e-01
-             >>> Coverage: 1.0 // Density: 0.29411764705882354 // Avg(Cov, Den) : 0.6470588235294118
-             >>> Driver: Emissions EneTra_direct // Min (norm): 0.18 // Min (real): -2.85e+01 // Max (norm): 1.00 // Max (real): -2.47e+01
-         > (PRIM results for level 2 dependecies).         >> Column: Emissions EneTra_direct // Level: 2 // Dependency: Emissions National_direct
-         > (PRIM results for level 2 dependecies).         >> Thld. type: Low (dep) // Thld. range: 66.05026644627077 // Thld. value: 6.61e-01
-         > (PRIM results for level 2 dependecies).             >>> Coverage: 1.0 // Density: 0.6666666666666666 // Avg(Cov, Den) : 0.8333333333333333
-         > (PRIM results for level 2 dependecies).         >> Column: Emissions EneTra_direct // Level: 2 // Dependency: Emissions National_direct
-         > (PRIM results for level 2 dependecies).         >> Thld. type: High (dep) // Thld. range: 18.23465314875461 // Thld. value: 1.82e-01
-         > (PRIM results for level 2 dependecies).             >>> Coverage: 1.0 // Density: 0.8095238095238095 // Avg(Cov, Den) : 0.9047619047619048
+             >>> Coverage: 1.0 // Density: 1.0 // Avg(Cov, Den) : 1.0
+             >>> Driver: Capital Costs ICE Transport_direct // Min (norm): 0.25 // Min (real): 1.00e+00 // Max (norm): 1.00 // Max (real): 1.09e+00
+             >>> Driver: Fixed Costs Crops_direct // Min (norm): 0.00 // Min (real): 9.58e-01 // Max (norm): 0.50 // Max (real): 1.04e+00
+             >>> Driver: Capital Costs Industry_direct // Min (norm): 0.14 // Min (real): 9.91e-01 // Max (norm): 0.78 // Max (real): 1.06e+00
+             >>> Driver: Capital Costs Electric Transport_direct // Min (norm): 0.20 // Min (real): 9.22e-01 // Max (norm): 1.00 // Max (real): 1.09e+00
 
-     => Working with column family: o_pure_direct_d_pure_direct and period 41-50 for Emissions National (6)
+     => Working with column family: o_pure_direct_d_pure_direct and period 41-50 for Emissions (2)
 
          > Action! Applying thresholds : High, Low,
          > Report on the PRIM findings for valid columns.
-         >> Column: Emissions National_direct // Level: 1
+         >> Column: Emissions_direct // Level: 1
          >> Thld. type: High (base) // Thld. range: 75 // Thld. value: 6.90e-01
-             >>> Coverage: 1.0 // Density: 0.35714285714285715 // Avg(Cov, Den) : 0.6785714285714286
-             >>> Driver: Emissions EneTra_direct // Min (norm): 0.00 // Min (real): -3.02e+01 // Max (norm): 0.64 // Max (real): -2.68e+01
-         >> Column: Emissions National_direct // Level: 1
+             >>> Coverage: 1.0 // Density: 1.0 // Avg(Cov, Den) : 1.0
+             >>> Driver: Fuel Demand_direct // Min (norm): 0.14 // Min (real): 2.53e+02 // Max (norm): 1.00 // Max (real): 2.59e+02
+             >>> Driver: Capital Costs Electric Transport_direct // Min (norm): 0.00 // Min (real): 8.24e-01 // Max (norm): 0.57 // Max (real): 1.04e+00
+             >>> Driver: Capital Costs ICE Transport_direct // Min (norm): 0.00 // Min (real): 9.53e-01 // Max (norm): 0.51 // Max (real): 1.05e+00
+             >>> Driver: Capital Costs Industry_direct // Min (norm): 0.27 // Min (real): 1.01e+00 // Max (norm): 1.00 // Max (real): 1.18e+00
+             >>> Driver: Variable Costs Import Fuels_direct // Min (norm): 0.01 // Min (real): 8.65e-01 // Max (norm): 1.00 // Max (real): 1.29e+00
+         >> Column: Emissions_direct // Level: 1
          >> Thld. type: Low (base) // Thld. range: 25 // Thld. value: 3.24e-01
-             >>> Coverage: 1.0 // Density: 0.2777777777777778 // Avg(Cov, Den) : 0.6388888888888888
-             >>> Driver: Emissions EneTra_direct // Min (norm): 0.12 // Min (real): -2.96e+01 // Max (norm): 1.00 // Max (real): -2.49e+01
-         > (PRIM results for level 2 dependecies).         >> Column: Emissions EneTra_direct // Level: 2 // Dependency: Emissions National_direct
-         > (PRIM results for level 2 dependecies).         >> Thld. type: Low (dep) // Thld. range: 64.01564036187503 // Thld. value: 6.40e-01
-         > (PRIM results for level 2 dependecies).             >>> Coverage: 1.0 // Density: 0.6666666666666666 // Avg(Cov, Den) : 0.8333333333333333
-         > (PRIM results for level 2 dependecies).         >> Column: Emissions EneTra_direct // Level: 2 // Dependency: Emissions National_direct
-         > (PRIM results for level 2 dependecies).         >> Thld. type: High (dep) // Thld. range: 12.45684577393497 // Thld. value: 1.25e-01
-         > (PRIM results for level 2 dependecies).             >>> Coverage: 1.0 // Density: 0.8571428571428571 // Avg(Cov, Den) : 0.9285714285714286
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Analysis of block 7
-
-
-     ===> Analyzing outcome (table): 7 // Emissions EneTra
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 21-30 for Emissions EneTra (7)
-
-         > No action for this family and period.  The threshold for this column depends on other metrics.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 31-40 for Emissions EneTra (7)
-
-         > No action for this family and period.  The threshold for this column depends on other metrics.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 41-50 for Emissions EneTra (7)
-
-         > No action for this family and period.  The threshold for this column depends on other metrics.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Analysis of block 8
-
-
-     ===> Analyzing outcome (table): 8 // Emissions Waste
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 21-30 for Emissions Waste (8)
-
-         > No action for this family and period.  The threshold for this column depends on other metrics.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 31-40 for Emissions Waste (8)
-
-         > No action for this family and period.  The threshold for this column depends on other metrics.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
-
-     => Working with column family: o_pure_direct_d_pure_direct and period 41-50 for Emissions Waste (8)
-
-         > No action for this family and period.  The threshold for this column depends on other metrics.
-         > Report on the PRIM findings for valid columns.
-         > No PRIM to report for family. No *dict_infos* content.
+             >>> Coverage: 1.0 // Density: 1.0 // Avg(Cov, Den) : 1.0
+             >>> Driver: Capital Costs ICE Transport_direct // Min (norm): 0.25 // Min (real): 1.00e+00 // Max (norm): 1.00 // Max (real): 1.15e+00
+             >>> Driver: Fixed Costs Crops_direct // Min (norm): 0.00 // Min (real): 9.18e-01 // Max (norm): 0.50 // Max (real): 1.08e+00
+             >>> Driver: Capital Costs Industry_direct // Min (norm): 0.14 // Min (real): 9.83e-01 // Max (norm): 0.78 // Max (real): 1.13e+00
+             >>> Driver: Capital Costs Electric Transport_direct // Min (norm): 0.20 // Min (real): 9.01e-01 // Max (norm): 1.00 // Max (real): 1.20e+00
 
 9. The automatic PRIM results (from the structured analysis) have been completed.

@@ -355,9 +355,13 @@ def frml_ind_2_colinfo(elmnt_id, o_OR_d, name, srce, frml, inv_sets, sup_sets,
         for k in range(frml_num_elmnts.count('average_across')):
             frml_num_list.append('average_across')
 
-    if 'average_across_rel2018' in frml_num_elmnts:
-        for k in range(frml_num_elmnts.count('average_across_rel2018')):
-            frml_num_list.append('average_across_rel2018')
+    # if 'average_across_rel2018' in frml_num_elmnts:
+    #     for k in range(frml_num_elmnts.count('average_across_rel2018')):
+    #         frml_num_list.append('average_across_rel2018')
+
+    if 'average_across_rel' in frml_num_elmnts[0]:
+        for k in range(frml_num_elmnts.count(frml_num_elmnts[0])):
+            frml_num_list.append(frml_num_elmnts[0])
 
     if 'direct' in frml_num_elmnts:
         for k in range(frml_num_elmnts.count('direct')):
@@ -367,9 +371,13 @@ def frml_ind_2_colinfo(elmnt_id, o_OR_d, name, srce, frml, inv_sets, sup_sets,
         for k in range(frml_num_elmnts.count('cumulative')):
             frml_num_list.append('cumulative')
 
-    if 'direct_rel2018' in frml_num_elmnts:
-        for k in range(frml_num_elmnts.count('direct_rel2018')):
-            frml_num_list.append('direct_rel2018')
+    if 'direct_rel' in frml_num_elmnts[0]:
+        for k in range(frml_num_elmnts.count(frml_num_elmnts[0])):
+            frml_num_list.append(frml_num_elmnts[0])
+
+    # if 'direct_rel2018' in frml_num_elmnts:
+    #     for k in range(frml_num_elmnts.count('direct_rel2018')):
+    #         frml_num_list.append('direct_rel2018')
 
     if 'multiply_sum_across' in frml_num_elmnts:
         for k in range(frml_num_elmnts.count('multiply_sum_across')):

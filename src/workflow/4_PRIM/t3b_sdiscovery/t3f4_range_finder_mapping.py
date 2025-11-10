@@ -86,14 +86,14 @@ prim_structure['Driver']
 
 # Define the separation between desirable and risk outcomes:
 desirable_outcomes = {\
-    'Benefit':'high',
-    'Emissions National':'low',
+    'Costs':'low',
+    'Emissions':'low',
     'CAPEX':'low',
     'Bus Price':'low',
     'Electricity price':'low'}
 risk_outcomes = {\
-    'Benefit':'low',
-    'Emissions National':'high',
+    'Costs':'high',
+    'Emissions':'high',
     'CAPEX':'high',
     'Bus Price':'high',
     'Electricity price':'high'}
@@ -715,129 +715,129 @@ print('The identification of ranges (thresholds and directions) ' + \
 #### PASO EXTRA DE MAPEO
 #########################
 
-libro_u=pd.ExcelFile( 'Units.xlsx' )
-hoja_u=libro_u.parse( 'Units' , skiprows = 0 )
-encabezados_u=list(hoja_u)
-col_d=list(hoja_u[encabezados_u[0]])
-col_u=list(hoja_u[encabezados_u[1]])
-dicUnits=dict(zip(col_d,col_u))
+# libro_u=pd.ExcelFile( 'Units.xlsx' )
+# hoja_u=libro_u.parse( 'Units' , skiprows = 0 )
+# encabezados_u=list(hoja_u)
+# col_d=list(hoja_u[encabezados_u[0]])
+# col_u=list(hoja_u[encabezados_u[1]])
+# dicUnits=dict(zip(col_d,col_u))
 
 
-libro=pd.ExcelFile( filename_end_result )
-hoja=libro.parse( 'ranges' , skiprows = 0 )
-encabezados=list(hoja)
-# print(encabezados)
+# libro=pd.ExcelFile( filename_end_result )
+# hoja=libro.parse( 'ranges' , skiprows = 0 )
+# encabezados=list(hoja)
+# # print(encabezados)
 
-encabezados_mod=['Outcome_Type', 'Metric', 'Period', 'Driver', 'Driver_Type', 'Min', 'Max', 'Units', 'Min_Norm', 'Max_Norm', 'base_thr', 'thr_type', 'thr_range', 'thr_value', 'thr_value_norm', 'Case', 'Condition', 'Tiebreaker']
+# encabezados_mod=['Outcome_Type', 'Metric', 'Period', 'Driver', 'Driver_Type', 'Min', 'Max', 'Units', 'Min_Norm', 'Max_Norm', 'base_thr', 'thr_type', 'thr_range', 'thr_value', 'thr_value_norm', 'Case', 'Condition', 'Tiebreaker']
 
-col_min_norm=list( hoja['Min_Norm'] )
-col_max_norm=list( hoja['Max_Norm'] )
-matriz=list()
-for i in range(len(encabezados)):
-    matriz.append(list( hoja[encabezados[i]] ))
-
-
-tabla=pd.read_csv('sd_ana_1_exp_1_Experiment.csv')
-
-col_min2 = tabla['min'].tolist()
-col_max2 = tabla['max'].tolist()
-col_min_norm2 = tabla['min_norm'].tolist()
-col_max_norm2 = tabla['max_norm'].tolist()
-col_driver = tabla['driver_col'].tolist()
-
-############################
-### NUEVAS COLUMNAS
-############################
-col_base_thr = tabla['base_thr'].tolist()
-col_thr_type = tabla['thr_type'].tolist()
-col_thr_range = tabla['thr_range'].tolist()
-col_thr_value = tabla['thr_value'].tolist()
-col_thr_value_norm = tabla['thr_value_norm'].tolist()
-############################
+# col_min_norm=list( hoja['Min_Norm'] )
+# col_max_norm=list( hoja['Max_Norm'] )
+# matriz=list()
+# for i in range(len(encabezados)):
+#     matriz.append(list( hoja[encabezados[i]] ))
 
 
-#dic_min=dict(zip(col_min_norm2,col_min2))
-#dic_max=dict(zip(col_max_norm2,col_max2))
+# tabla=pd.read_csv('sd_ana_1_exp_1_Experiment.csv')
 
-mapeo_min=list()
-mapeo_max=list()
-mapeo_units=list()
+# col_min2 = tabla['min'].tolist()
+# col_max2 = tabla['max'].tolist()
+# col_min_norm2 = tabla['min_norm'].tolist()
+# col_max_norm2 = tabla['max_norm'].tolist()
+# col_driver = tabla['driver_col'].tolist()
 
-mapeo_base_thr=list()
-mapeo_thr_type=list()
-mapeo_thr_range=list()
-mapeo_thr_value=list()
-mapeo_thr_value_norm=list()
+# ############################
+# ### NUEVAS COLUMNAS
+# ############################
+# col_base_thr = tabla['base_thr'].tolist()
+# col_thr_type = tabla['thr_type'].tolist()
+# col_thr_range = tabla['thr_range'].tolist()
+# col_thr_value = tabla['thr_value'].tolist()
+# col_thr_value_norm = tabla['thr_value_norm'].tolist()
+# ############################
 
-for i in range(len(matriz[0])):
-    a=1
-    for j in range(len(list(col_min2))):
-        if matriz[5][i] == col_min_norm2[j] and matriz[6][i]== col_max_norm2[j]:
-            mapeo_min.append(col_min2[j])
-            mapeo_max.append(col_max2[j])
-            mapeo_units.append(dicUnits[col_driver[j]])
-            mapeo_base_thr.append(col_base_thr[j])
-            mapeo_thr_type.append(col_thr_type[j])
-            mapeo_thr_range.append(col_thr_range[j])
-            mapeo_thr_value.append(col_thr_value[j])
-            mapeo_thr_value_norm.append(col_thr_value_norm[j])
-            a=2
-            # print('IN')
-            break
-        elif matriz[5][i] == col_min_norm2[j] and matriz[5][i] != 0 and matriz[5][i] != 1:
-            mapeo_min.append(col_min2[j])
-            mapeo_max.append(col_max2[j])
-            mapeo_units.append(dicUnits[col_driver[j]])
-            mapeo_base_thr.append(col_base_thr[j])
-            mapeo_thr_type.append(col_thr_type[j])
-            mapeo_thr_range.append(col_thr_range[j])
-            mapeo_thr_value.append(col_thr_value[j])
-            mapeo_thr_value_norm.append(col_thr_value_norm[j])
-            a=2
-            # print('IN')
-            break
-        elif matriz[5][i] == col_max_norm2[j] and matriz[5][i] != 0 and matriz[5][i] != 1:
-            mapeo_min.append(col_min2[j])
-            mapeo_max.append(col_max2[j])
-            mapeo_units.append(dicUnits[col_driver[j]])
-            mapeo_base_thr.append(col_base_thr[j])
-            mapeo_thr_type.append(col_thr_type[j])
-            mapeo_thr_range.append(col_thr_range[j])
-            mapeo_thr_value.append(col_thr_value[j])
-            mapeo_thr_value_norm.append(col_thr_value_norm[j])
-            a=2
-            # print('IN')
-            break
-    if a==1:
-        # print(i+1)
-        mapeo_min.append('CANNOT BE FOUND')
-        mapeo_max.append('CANNOT BE FOUND')
-        mapeo_units.append('CANNOT BE FOUND')
-        mapeo_base_thr.append('CANNOT BE FOUND')
-        mapeo_thr_type.append('CANNOT BE FOUND')
-        mapeo_thr_range.append('CANNOT BE FOUND')
-        mapeo_thr_value.append('CANNOT BE FOUND')
-        mapeo_thr_value_norm.append('CANNOT BE FOUND')
-    else:
-        a=1
+
+# #dic_min=dict(zip(col_min_norm2,col_min2))
+# #dic_max=dict(zip(col_max_norm2,col_max2))
+
+# mapeo_min=list()
+# mapeo_max=list()
+# mapeo_units=list()
+
+# mapeo_base_thr=list()
+# mapeo_thr_type=list()
+# mapeo_thr_range=list()
+# mapeo_thr_value=list()
+# mapeo_thr_value_norm=list()
+
+# for i in range(len(matriz[0])):
+#     a=1
+#     for j in range(len(list(col_min2))):
+#         if matriz[5][i] == col_min_norm2[j] and matriz[6][i]== col_max_norm2[j]:
+#             mapeo_min.append(col_min2[j])
+#             mapeo_max.append(col_max2[j])
+#             mapeo_units.append(dicUnits[col_driver[j]])
+#             mapeo_base_thr.append(col_base_thr[j])
+#             mapeo_thr_type.append(col_thr_type[j])
+#             mapeo_thr_range.append(col_thr_range[j])
+#             mapeo_thr_value.append(col_thr_value[j])
+#             mapeo_thr_value_norm.append(col_thr_value_norm[j])
+#             a=2
+#             # print('IN')
+#             break
+#         elif matriz[5][i] == col_min_norm2[j] and matriz[5][i] != 0 and matriz[5][i] != 1:
+#             mapeo_min.append(col_min2[j])
+#             mapeo_max.append(col_max2[j])
+#             mapeo_units.append(dicUnits[col_driver[j]])
+#             mapeo_base_thr.append(col_base_thr[j])
+#             mapeo_thr_type.append(col_thr_type[j])
+#             mapeo_thr_range.append(col_thr_range[j])
+#             mapeo_thr_value.append(col_thr_value[j])
+#             mapeo_thr_value_norm.append(col_thr_value_norm[j])
+#             a=2
+#             # print('IN')
+#             break
+#         elif matriz[5][i] == col_max_norm2[j] and matriz[5][i] != 0 and matriz[5][i] != 1:
+#             mapeo_min.append(col_min2[j])
+#             mapeo_max.append(col_max2[j])
+#             mapeo_units.append(dicUnits[col_driver[j]])
+#             mapeo_base_thr.append(col_base_thr[j])
+#             mapeo_thr_type.append(col_thr_type[j])
+#             mapeo_thr_range.append(col_thr_range[j])
+#             mapeo_thr_value.append(col_thr_value[j])
+#             mapeo_thr_value_norm.append(col_thr_value_norm[j])
+#             a=2
+#             # print('IN')
+#             break
+#     if a==1:
+#         # print(i+1)
+#         mapeo_min.append('CANNOT BE FOUND')
+#         mapeo_max.append('CANNOT BE FOUND')
+#         mapeo_units.append('CANNOT BE FOUND')
+#         mapeo_base_thr.append('CANNOT BE FOUND')
+#         mapeo_thr_type.append('CANNOT BE FOUND')
+#         mapeo_thr_range.append('CANNOT BE FOUND')
+#         mapeo_thr_value.append('CANNOT BE FOUND')
+#         mapeo_thr_value_norm.append('CANNOT BE FOUND')
+#     else:
+#         a=1
             
-# print(len(mapeo_min),len(col_min2),len(matriz[0]))
-# print(len(mapeo_max),len(col_max2))
+# # print(len(mapeo_min),len(col_min2),len(matriz[0]))
+# # print(len(mapeo_max),len(col_max2))
     
 
-matriz.insert(5,mapeo_min)
-matriz.insert(6,mapeo_max)
-matriz.insert(7,mapeo_units)
+# matriz.insert(5,mapeo_min)
+# matriz.insert(6,mapeo_max)
+# matriz.insert(7,mapeo_units)
 
-matriz.insert(10,mapeo_base_thr)
-matriz.insert(11,mapeo_thr_type)
-matriz.insert(12,mapeo_thr_range)
-matriz.insert(13,mapeo_thr_value)
-matriz.insert(14,mapeo_thr_value_norm)
+# matriz.insert(10,mapeo_base_thr)
+# matriz.insert(11,mapeo_thr_type)
+# matriz.insert(12,mapeo_thr_range)
+# matriz.insert(13,mapeo_thr_value)
+# matriz.insert(14,mapeo_thr_value_norm)
 
-wb=xlsxwriter.Workbook('t3f4_predominant_ranges_NOMINALES.xlsx')
-sheet=wb.add_worksheet('ranges')
-sheet.write_row(0,0,encabezados_mod)
-for i in range(len(matriz)):
-    sheet.write_column(1,i,matriz[i])
-wb.close()
+# wb=xlsxwriter.Workbook('t3f4_predominant_ranges_NOMINALES.xlsx')
+# sheet=wb.add_worksheet('ranges')
+# sheet.write_row(0,0,encabezados_mod)
+# for i in range(len(matriz)):
+#     sheet.write_column(1,i,matriz[i])
+# wb.close()

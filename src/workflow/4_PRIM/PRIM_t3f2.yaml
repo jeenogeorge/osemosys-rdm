@@ -65,15 +65,15 @@ Emission: 'EMISSION'
 
 #----------------------------------------------------------------------------#
 
-#sup_sets: ['ELE_DIST'] # Not avaiable
+sup_sets: ['PWRWND001', 'PWRWND002', 'PWRHYD001', 'PWRHYD002', 'PWRHYD003', 'PWRHYD004', 'PWRSOL001','PWRSOL002', 'PWRCSP001', 'PWRGEO001', 'PWRBIO001', 'PWRLFG001'] # Not avaiable
 
 sup_sets_solar: ['PWRSOL001', 'PWRSOL002', 'PWRCSP001']
 
-#sup_sets_2: ['E6TDPASPRI', 'E6TDPASPUB', 'E6TRNOMOT'] # Not avaiable
+sup_sets_2: ['E6TDPASPRI', 'E6TDPASPUB', 'E6TRNOMOT'] # Not avaiable
 
-#sup_sets_3: ['Techs_Trains_Freight', 'Techs_He_Freight'] # Not avaiable
+sup_sets_3: ['Techs_Trains_Freight', 'Techs_He_Freight'] # Not avaiable
 
-#sup_sets_4: ['Techs_Buses_Pub', 'Techs_Buses_Micro', 'Techs_Taxi'] # Not avaiable
+sup_sets_4: ['Techs_Buses_Pub', 'Techs_Buses_Micro', 'Techs_Taxi'] # Not avaiable
 #----------------------------------------------------------------------------#
 ########################################################################################
 
