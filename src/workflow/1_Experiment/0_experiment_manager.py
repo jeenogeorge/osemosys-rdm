@@ -360,9 +360,14 @@ def function_C_mathprog_parallel( fut_index, scen, inherited_scenarios, unpackag
                                     
                                     
                         for y in range( len( last_set_element_unique ) ):
-                            g.write( str( last_set_element_unique[y] ) + ' ')
+                            if this_param == 'TechnologyToStorage' or this_param == 'TechnologyFromStorage':
+                                g.write( str( second_last_set_element_unique[count_storage]  ) + ' ')
+                            else:
+                                g.write( str( last_set_element_unique[y] ) + ' ')
                         if this_param != 'TechnologyToStorage' or this_param != 'TechnologyFromStorage':
                             g.write(':=\n')
+                        else:
+                            g.write( str( last_set_element_unique[y] ) + ' ')
                         
                         if this_param == 'TechnologyToStorage' or this_param == 'TechnologyFromStorage':
                             second_last_set_element_unique_iter = [this_set_element_unique_2[n2]]
@@ -392,7 +397,8 @@ def function_C_mathprog_parallel( fut_index, scen, inherited_scenarios, unpackag
                                         these_values.append( this_scenario_data[ this_param ]['value'][ value_indices[val] ] )
                                     if these_values != []:
                                         if p == 0:
-                                            g.write( second_last_set_element_unique[count_storage] + ' ' )
+                                            # g.write( second_last_set_element_unique[count_storage] + ' ' )
+                                            g.write( last_set_element_unique[y] + ' ' )
                                     for val in range( len( these_values ) ):
                                         g.write( str( these_values[val] ) + ' ' )
                                 count_storage += 1

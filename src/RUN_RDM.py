@@ -227,13 +227,6 @@ if solver == 'cplex':
         if os.path.exists(file):
             os.remove(file)
 
-success = AUX.copy_results_to_experiment()
-    
-if success:
-    print("✓ Copia completada exitosamente")
-else:
-    print("✗ La copia no se pudo completar")
-
 print('#####################################')
 print('Processing completed successfully.')
 print('#####################################')
