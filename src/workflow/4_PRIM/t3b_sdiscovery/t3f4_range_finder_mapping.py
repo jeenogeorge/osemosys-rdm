@@ -2,7 +2,7 @@
 """
 Created on Mon Feb 14 2022
 
-@author: luisf
+@author: Luis Victor-Gallardo, Andrey Salazar-Vargas, Ignacio Alfaro-Corrales
 """
 
 '''

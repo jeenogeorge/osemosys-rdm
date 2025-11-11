@@ -2,7 +2,7 @@
 """
 Created on Wed May  5 16:45:01 2021
 
-@author: luisf
+@author: Luis Victor-Gallardo, Andrey Salazar-Vargas
 """
 
 import sys

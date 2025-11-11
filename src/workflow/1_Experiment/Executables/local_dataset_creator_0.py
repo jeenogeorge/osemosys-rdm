@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""
+@author: Luis Victor-Gallardo, Andrey Salazar-Vargas
+"""
+
 import os
 import re
 import csv

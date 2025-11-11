@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-@author: luisf
+@author: Luis Victor-Gallardo, Andrey Salazar-Vargas
 """
 
 

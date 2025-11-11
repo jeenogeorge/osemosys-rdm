@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""
+@author: Luis Victor-Gallardo, Andrey Salazar-Vargas
+"""
+
 ' Libraries'
 import os, shutil, sys, time
 import pandas as pd

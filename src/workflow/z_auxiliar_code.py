@@ -2,8 +2,7 @@
 """
 Created on Sun Jan 14 17:00:45 2024
 
-@author: ClimateLeadGroup, Ignacio Alfaro-Corrales,
-Andrey Salazar-Vargas
+@author: Luis Victor-Gallardo, Andrey Salazar-Vargas, Ignacio Alfaro-Corrales
 """
 
 import xlsxwriter

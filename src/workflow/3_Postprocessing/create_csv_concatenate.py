@@ -2,7 +2,7 @@
 """
 Created on Fri Apr 19 18:37:25 2024
 
-@author: andreysava
+@author: Andrey Salazar-Vargas
 """
 
 import os

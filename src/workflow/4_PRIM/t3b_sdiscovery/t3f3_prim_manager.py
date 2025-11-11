@@ -2,7 +2,7 @@
 """
 Created on Wed May  5 15:44:25 2021
 
-@author: luisf
+@author: Luis Victor-Gallardo, Andrey Salazar-Vargas
 """
 
 import pandas as pd

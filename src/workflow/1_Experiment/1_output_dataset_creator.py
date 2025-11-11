@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""
+@author: Luis Victor-Gallardo, Andrey Salazar-Vargas
+"""
+
 from datetime import date
 import sys
 import pandas as pd
