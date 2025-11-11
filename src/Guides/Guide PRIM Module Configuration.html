@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRIM Module Configuration - Documentation</title>
+    <style>
+        :root {
+            --lvg-dark: #1A2B4A;           /* Azul oscuro profundo (reemplaza el verde oscuro) */
+            --lvg-teal: #4A90E2;           /* Azul medio vibrante (reemplaza el teal) */
+            --lvg-light: #E8EEF5;          /* Azul muy claro/grisáceo (reemplaza el gris claro) */
+            --lvg-teal-light: #4A90E220;   /* Azul medio con 12% opacidad */
+            --lvg-teal-medium: #4A90E260;  /* Azul medio con 38% opacidad */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--lvg-dark) 0%, var(--lvg-teal) 100%);
+            color: white;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .header-text h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .header-text p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .logo {
+            height: 80px;
+            position: absolute;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: calc(100vh - 140px);
+        }
+
+        .sidebar {
+            width: 280px;
+            background: white;
+            padding: 2rem 1rem;
+            position: sticky;
+            top: 140px;
+            height: calc(100vh - 140px);
+            overflow-y: auto;
+            border-right: 1px solid var(--lvg-light);
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+        }
+
+        .sidebar h3 {
+            color: var(--lvg-dark);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--lvg-teal);
+        }
+
+        .sidebar ul {
+            list-style: none;
+        }
+
+        .sidebar ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar ul li a {
+            color: #555;
+            text-decoration: none;
+            display: block;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .sidebar ul li a:hover {
+            background: var(--lvg-teal-light);
+            color: var(--lvg-teal);
+            padding-left: 1rem;
+        }
+
+        .sidebar ul ul {
+            margin-left: 1rem;
+            margin-top: 0.3rem;
+        }
+
+        .sidebar ul ul li a {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .content {
+            flex: 1;
+            padding: 3rem;
+            background: white;
+            margin: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .content h2 {
+            color: var(--lvg-dark);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--lvg-teal);
+            font-size: 1.8rem;
+        }
+
+        .content h3 {
+            color: var(--lvg-teal);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .content h4 {
+            color: var(--lvg-dark);
+            margin-top: 1.5rem;
+            margin-bottom: 0.8rem;
+            font-size: 1.2rem;
+        }
+
+        .content p {
+            margin-bottom: 1rem;
+            color: #444;
+        }
+
+        .content ul, .content ol {
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .content li {
+            margin-bottom: 0.5rem;
+            color: #444;
+        }
+
+        strong {
+            color: var(--lvg-dark);
+            font-weight: 600;
+        }
+
+        code {
+            background: var(--lvg-teal-light);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: var(--lvg-dark);
+        }
+
+        pre {
+            background: #f5f5f5;
+            border-left: 4px solid var(--lvg-teal);
+            padding: 1rem;
+            overflow-x: auto;
+            border-radius: 4px;
+            margin: 1.5rem 0;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: #333;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            min-width: 800px;
+        }
+
+        th {
+            background: var(--lvg-dark);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid var(--lvg-light);
+            color: #444;
+            font-size: 0.9rem;
+        }
+
+        tr:hover {
+            background: var(--lvg-teal-light);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .note {
+            background: var(--lvg-teal-light);
+            border-left: 4px solid var(--lvg-teal);
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        .note strong {
+            color: var(--lvg-teal);
+        }
+
+        .back-to-top {
+            display: inline-block;
+            margin-top: 2rem;
+            color: var(--lvg-teal);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .back-to-top:hover {
+            color: var(--lvg-dark);
+            transform: translateY(-2px);
+        }
+
+        .important-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                display: none;
+            }
+
+            .content {
+                margin: 1rem;
+                padding: 2rem;
+            }
+
+            .logo {
+                height: 60px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-text h1 {
+                font-size: 1.5rem;
+            }
+
+            .content {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="header-text">
+                <h1>PRIM Module Configuration</h1>
+                <p>Complete Guide for Parameter Setup and Template Configuration</p>
+            </div>
+        </div>
+    </header>
+
+
+
+        <main class="content">
+            <section id="overview">
+                <h2>Overview</h2>
+                <p><strong>Objective:</strong> Establish the steps and artifacts necessary to set parameters of the PRIM (Excel inputs and YAML files).</p>
+            </section>
+
+            <section id="pipeline">
+                <h2>Pipeline of Set Parameters</h2>
+                <h3>Execution Order to Replicate PRIM:</h3>
+                <ol>
+                    <li><strong>Input Data Preparation</strong>
+                        <ul>
+                            <li>Complete <code>prim_structure.xlsx</code> (Sequences and Outcomes sheets)</li>
+                            <li>Fill <code>Population.xlsx</code> file with demographic data</li>
+                            <li>Configure <code>prim_files_creator_cntrl.xlsx</code> with control parameters</li>
+                            <li>Configure <code>Units.xlsx</code> with measurement units for drivers</li>
+                        </ul>
+                    </li>
+                    <li><strong>YAML Configuration</strong>
+                        <ul>
+                            <li>Verify and adjust <code>PRIM_t3f2.yaml</code> according to project needs</li>
+                        </ul>
+                    </li>
+                </ol>
+            </section>
+
+            <section id="required-inputs">
+                <h2>Required Inputs</h2>
+                <ul>
+                    <li><code>t3b_sdiscovery/Analysis_1/prim_structure.xlsx</code> (Sequences and Outcomes sheets)</li>
+                    <li><code>Population.xlsx</code> (historical/projected population)</li>
+                    <li><code>prim_files_creator_cntrl.xlsx</code> (execution control)</li>
+                    <li>YAML configuration file: <code>PRIM_t3f2.yaml</code></li>
+                    <li><code>t3b_sdiscovery/Units.xlsx</code> (unit definition per driver)</li>
+                </ul>
+                
+                <div class="note">
+                    <strong>Important Notes:</strong>
+                    <ul>
+                        <li>Maintain column names exactly as they appear in the templates</li>
+                        <li>Unused sheets in <code>prim_structure.xlsx</code> are: Indications, Qs_and_Notes, Command_Desc, Set_Matching_4_Param_Mult</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="fill-templates">
+                <h2>Fill Templates</h2>
+
+                <section id="prim-structure">
+                    <h3>1. prim_structure.xlsx</h3>
+                    
+                    <h4>Sheet: Sequences</h4>
+                    <p>This sheet defines the complete PRIM analysis structure with drivers and outcomes.</p>
+                    
+                    <div class="important-box">
+                        <strong>IMPORTANT:</strong> When format requires semicolon separation, always use: space + semicolon + space (example: "value1 ; value2 ; value3")
+                    </div>
+
+                    <h4>Identification Columns</h4>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Column Name</th>
+                                    <th>Explanation</th>
+                                    <th>Fill Format</th>
+                                    <th>Predefined Values</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Table_ID</strong></td>
+                                    <td>Unique identifier for PRIM table</td>
+                                    <td>Positive integer</td>
+                                    <td>Sequential starting at 1</td>
+                                    <td>1</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Level</strong></td>
+                                    <td>Hierarchical level of analysis</td>
+                                    <td>Integer</td>
+                                    <td>1, 2, 3</td>
+                                    <td>1</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Block_ID</strong></td>
+                                    <td>Thematic block identifier</td>
+                                    <td>Same value as "Table_ID" column</td>
+                                    <td>Positive integer</td>
+                                    <td>1</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Apply</strong></td>
+                                    <td>Indicator to apply this configuration</td>
+                                    <td>Text</td>
+                                    <td>YES/NO</td>
+                                    <td>YES</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h4>Driver Columns</h4>
+                    <p>When using the “wrt_BAU” option, the scenario does not refer literally to a “BAU” scenario, but to the base scenario that is subsequently defined in the yaml configuration file.</p>
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Column Name</th>
+                                    <th>Explanation</th>
+                                    <th>Fill Format</th>
+                                    <th>Predefined Values</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Outcome_ID_as_Driver</strong></td>
+                                    <td>ID when an outcome acts as driver, only used when "Driver_Type" column value is "Metric of interest" or "Intermediary", otherwise left empty, only when "Driver_U_ID" column has no values, otherwise left empty. Note that when a driver_type "Intermediary" is not considered as outcome, no value should be added.</td>
+                                    <td>Value from "Outcome_ID" column of "Outcomes" sheet, with same name</td>
+                                    <td>Integer or empty</td>
+                                    <td>2</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_U_ID</strong></td>
+                                    <td>Unique driver identifier to avoid duplication, only when "Outcome_ID_as_Driver" column has no values, otherwise left empty. Generally used when driver_type is "Uncertainty", also when driver_type is "Intermediary" but not considered as outcome.</td>
+                                    <td>Integer or empty</td>
+                                    <td>Unique integer or empty</td>
+                                    <td>1</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_ID</strong></td>
+                                    <td>Sequential driver identifier</td>
+                                    <td>Sequential integer</td>
+                                    <td>Positive integer sequential starting at 1</td>
+                                    <td>1</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Formula_Last</strong></td>
+                                    <td>Specifies which period value to use</td>
+                                    <td>Text</td>
+                                    <td>AVG: average of a period, END: final value of a period, START: initial value of a period</td>
+                                    <td>AVG</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Type</strong></td>
+                                    <td>Driver type classification</td>
+                                    <td>Text</td>
+                                    <td>Uncertainty: RDM experiment uncertainty, Metric of interest: output metrics of interest, Intermediary: Driver on which metric of interest depends</td>
+                                    <td>Intermediary</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver</strong></td>
+                                    <td>Driver name with suffix indicating analysis type. If "Driver_Type" has value "Intermediary", name must exactly match names generated in "Outcomes" sheet and for "Uncertainty" value with RDM experiment uncertainty names</td>
+                                    <td>Descriptive text</td>
+                                    <td>N/A</td>
+                                    <td>Benefit AFOLU</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Actor</strong></td>
+                                    <td>Actor or entity associated with driver (only write the word "Country")</td>
+                                    <td>Text</td>
+                                    <td>Country</td>
+                                    <td>Country</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Source</strong></td>
+                                    <td>Driver data source</td>
+                                    <td>Text</td>
+                                    <!-- <td>OSeMOSYS-ModelName inputs, OSeMOSYS-ModelName outputs, TEM output, Experiment data</td>-->
+                                    <td>OSeMOSYS-ModelName inputs, OSeMOSYS-ModelName outputs</td>
+                                    <td>OSeMOSYS-ModelName outputs</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Formula_Numerator</strong></td>
+                                    <td>Numerator formula</td>
+                                    <td>Text</td>
+                                    <td>Review "Formula Numerator" table</td>
+                                    <td>sum_across</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Formula_Denominator</strong></td>
+                                    <td>Denominator formula</td>
+                                    <td>Text</td>
+                                    <!-- <td>none, Den_GDP: denominator with GDP value, tracost_at2019: transport cost at 2019, totcost_at2019: total cost at 2019</td>-->
+                                    <td>none</td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Involved_Sets</strong></td>
+                                    <td>Technologies or fuels involved according to "Driver_Exact_Parameters_Involved" column value</td>
+                                    <td>List with format: space ; space</td>
+                                    <td>List of technologies/fuels</td>
+                                    <td>TRAUTDSL ; TRAUTGSL ; TRAUTELE</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Supporting_Sets</strong></td>
+                                    <td>Additional supporting sets, when parameter depends on another set besides TECHNOLOGY OR FUEL, usually if it depends on EMISSION</td>
+                                    <td>Text or list with format: space ; space</td>
+                                    <td>none or separated list</td>
+                                    <td>CO2e</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Exact_Parameters_Involved</strong></td>
+                                    <td>Specific OSeMOSYS and MOMF model parameters. Review available parameters in RDM experiment outputs</td>
+                                    <td>List with format: space ; space</td>
+                                    <td>Standard OSeMOSYS variables and MOMF specific like Capex2025, VarOpex2025, FixedOpex2025, Externalities2025</td>
+                                    <td>Capex2025 ; VarOpex2025</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Tech_or_Fuel_or_Actor</strong></td>
+                                    <td>Type of modeled element</td>
+                                    <td>Text</td>
+                                    <td>Tech, Fuel</td>
+                                    <td>Tech</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Column_Management</strong></td>
+                                    <td>Resulting column management method</td>
+                                    <td>Text</td>
+                                    <td>none</td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Numerator_Sum_Sets</strong></td>
+                                    <td>Sets to sum in numerator</td>
+                                    <td>If "Outcome_Variable_Management" column value is "wrt_BAU_excess", value in this column should be "none"; but if value is "Direct" value in this column should be "all"</td>
+                                    <td><strong>all, none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Numerator_Sub_Sets</strong></td>
+                                    <td>Sets to subtract in numerator</td>
+                                    <td>If "Outcome_Variable_Management" column value is "wrt_BAU_excess", value in this column should be "all"; but if value is "Direct" value in this column should be "none"</td>
+                                    <td><strong>all, none</strong></td>
+                                    <td>all</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Denominator_Sum_Sets</strong></td>
+                                    <td>Sets to sum in denominator</td>
+                                    <td>Text</td>
+                                    <td><strong>none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Denominator_Sub_Sets</strong></td>
+                                    <td>Sets to subtract in denominator</td>
+                                    <td>Text</td>
+                                    <td><strong>none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Numerator_Sum_Params</strong></td>
+                                    <td>Parameters to sum in numerator</td>
+                                    <td>If "Outcome_Variable_Management" column value is "wrt_BAU_excess", value in this column should be "none"; but if value is "Direct" value in this column should be "all"</td>
+                                    <td><strong>all, none</strong></td>
+                                    <td>all</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Numerator_Sub_Params</strong></td>
+                                    <td>Parameters to subtract in numerator</td>
+                                    <td>If "Outcome_Variable_Management" column value is "wrt_BAU_excess", value in this column should be "all"; but if value is "Direct" value in this column should be "none"</td>
+                                    <td><strong>all, none</strong></td>
+                                    <td>all</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Denominator_Sum_Params</strong></td>
+                                    <td>Parameters to sum in denominator</td>
+                                    <td>Text</td>
+                                    <td><strong>none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Denominator_Sub_Params</strong></td>
+                                    <td>Parameters to subtract in denominator</td>
+                                    <td>Text</td>
+                                    <td><strong>none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Involved_Scenarios</strong></td>
+                                    <td>Scenarios where driver applies</td>
+                                    <td>List with format: space ; space</td>
+                                    <td>LTS ; BAU or other defined</td>
+                                    <td>LTS ; BAU</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Driver_Variable_Management</strong></td>
+                                    <td>Management type</td>
+                                    <td>Text</td>
+                                    <td>Direct: when put only one scenario in "Outcome_Involved_Scenarios" column, wrt_BAU_excess: with respect SCENARIO</td>
+                                    <td>wrt_BAU_excess</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h4>Outcome Columns</h4>
+                    <p>Note that in this "Sequences" sheet several aspects:</p>
+                    <ol>
+                        <li>The "Outcome_Threshold" column and from "Outcome_Source" column onwards should only be placed in the first row of a new table, so each time "Table_ID" column value repeats, no value should be placed in mentioned columns. While for columns: "Outcome_ID", "Outcome_Formula_Last", "Outcome_Type", "Outcome" and "Outcome_Actor" the value from the first row of the column should be repeated.</li>
+                        <li>Values from these Outcome columns should come from "Outcomes" sheet</li>
+                    </ol>
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Column Name</th>
+                                    <th>Explanation</th>
+                                    <th>Fill Format</th>
+                                    <th>Predefined Values</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Outcome_ID</strong></td>
+                                    <td>Unique outcome identifier</td>
+                                    <td>Unique integer</td>
+                                    <td>Value must match value from "Outcome" sheet</td>
+                                    <td>1</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Formula_Last</strong></td>
+                                    <td>Specifies which period value to use</td>
+                                    <td>Text</td>
+                                    <td>AVG: average of a period, END: final value of a period</td>
+                                    <td>AVG</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Threshold</strong></td>
+                                    <td>Thresholds for PRIM analysis</td>
+                                    <td>List with format: space ; space</td>
+                                    <td>High: find predictors of values greater than 75th percentile ; Low: find predictors of values lower than 25th percentile ; Mid: find predictors of values greater than 50th percentile ; Zero: find predictors of values lower than 0 ; Dep: depends on other outcome threshold (High, Low), Intermediary</td>
+                                    <td>High ; Low</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Type</strong></td>
+                                    <td>Outcome type classification</td>
+                                    <td>First use "Metric of interest" which will be the metric of interest for "Outcome" column value, and in following rows use "Intermediary" for variables on which metric of interest depends.</td>
+                                    <td>Metric of interest, Intermediary</td>
+                                    <td>Metric of interest</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome</strong></td>
+                                    <td>Driver name with suffix indicating analysis type. Must exactly match names generated in "Outcomes" sheet</td>
+                                    <td>Descriptive text</td>
+                                    <td>N/A</td>
+                                    <td>Emissions Waste</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Actor</strong></td>
+                                    <td>Associated actor or entity (only write the word "Country")</td>
+                                    <td>Text</td>
+                                    <td>Country</td>
+                                    <td>Country</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Source</strong></td>
+                                    <td>Data source</td>
+                                    <td>Text</td>
+                                    <!-- <td>OSeMOSYS-ModelName inputs, OSeMOSYS-ModelName outputs, TEM output, Experiment data</td>-->
+                                    <td>OSeMOSYS-ModelName inputs, OSeMOSYS-ModelName outputs</td>
+                                    <td>OSeMOSYS-ModelName outputs</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Formula_Numerator</strong></td>
+                                    <td>Numerator formula</td>
+                                    <td>Text</td>
+                                    <td>Review "Formula Numerator" table</td>
+                                    <td>sum_across</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Formula_Denominator</strong></td>
+                                    <td>Denominator formula</td>
+                                    <td>Text</td>
+                                    <!-- <td>none, Den_GDP: denominator with GDP value, tracost_at2019: transport cost at 2019, totcost_at2019: total cost at 2019</td>-->
+                                    <td>none</td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Involved_Sets</strong></td>
+                                    <td>Technologies or fuels involved according to "Outcome_Exact_Parameters_Involved" column value</td>
+                                    <td>List with format: space ; space</td>
+                                    <td>List of technologies/fuels</td>
+                                    <td>TRAUTDSL ; TRAUTGSL ; TRAUTELE</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Supporting_Sets</strong></td>
+                                    <td>Additional supporting sets, when parameter depends on another set besides TECHNOLOGY OR FUEL, usually if it depends on EMISSION</td>
+                                    <td>Text or list with format: space ; space</td>
+                                    <td>none or separated list</td>
+                                    <td>CO2e</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Exact_Parameters_Involved</strong></td>
+                                    <td>Specific OSeMOSYS and MOMF model parameters. Review available parameters in RDM experiment outputs</td>
+                                    <td>List with format: space ; space</td>
+                                    <td>Variables like Capex2025 ; VarOpex2025 ; FixedOpex2025 ; Externalities2025</td>
+                                    <td>Capex2025 ; VarOpex2025</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Tech_or_Fuel_or_Actor</strong></td>
+                                    <td>Type of modeled element</td>
+                                    <td>Text</td>
+                                    <td>Tech, Fuel</td>
+                                    <td>Tech</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Column_Management</strong></td>
+                                    <td>Resulting column management</td>
+                                    <td>Text</td>
+                                    <td><strong>none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Numerator_Sum_Sets</strong></td>
+                                    <td>Sets to sum in numerator</td>
+                                    <td>If "Outcome_Variable_Management" column value is "wrt_BAU_excess", value in this column should be "none"; but if value is "Direct" value in this column should be "all"</td>
+                                    <td><strong>all, none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Numerator_Sub_Sets</strong></td>
+                                    <td>Sets to subtract in numerator</td>
+                                    <td>If "Outcome_Variable_Management" column value is "wrt_BAU_excess", value in this column should be "all"; but if value is "Direct" value in this column should be "none"</td>
+                                    <td><strong>all, none</strong></td>
+                                    <td>all</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Denominator_Sum_Sets</strong></td>
+                                    <td>Sets to sum in denominator</td>
+                                    <td>Text</td>
+                                    <td><strong>none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Denominator_Sub_Sets</strong></td>
+                                    <td>Sets to subtract in denominator</td>
+                                    <td>Text</td>
+                                    <td><strong>none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Numerator_Sum_Params</strong></td>
+                                    <td>Parameters to sum in numerator</td>
+                                    <td>If "Outcome_Variable_Management" column value is "wrt_BAU_excess", value in this column should be "none"; but if value is "Direct" value in this column should be "all"</td>
+                                    <td><strong>all, none</strong></td>
+                                    <td>all</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Numerator_Sub_Params</strong></td>
+                                    <td>Parameters to subtract in numerator</td>
+                                    <td>If "Outcome_Variable_Management" column value is "wrt_BAU_excess", value in this column should be "all"; but if value is "Direct" value in this column should be "none"</td>
+                                    <td><strong>all, none</strong></td>
+                                    <td>all</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Denominator_Sum_Params</strong></td>
+                                    <td>Parameters to sum in denominator</td>
+                                    <td>Text</td>
+                                    <td><strong>none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Denominator_Sub_Params</strong></td>
+                                    <td>Parameters to subtract in denominator</td>
+                                    <td>Text</td>
+                                    <td><strong>none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Involved_Scenarios</strong></td>
+                                    <td>Application scenarios</td>
+                                    <td>List with format: space ; space</td>
+                                    <td>LTS ; BAU or others</td>
+                                    <td>LTS ; BAU</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Variable_Management</strong></td>
+                                    <td>Management type</td>
+                                    <td>Text</td>
+                                    <td>Direct: when put only one scenario in "Outcome_Involved_Scenarios" column, wrt_BAU: with respect BAU</td>
+                                    <td>wrt_BAU</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h4>Sheet: Outcomes</h4>
+                    <p>Contains only unique outcomes (without repetition per driver). This sheet is a subset of information in Sequences.</p>
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Column Name</th>
+                                    <th>Explanation</th>
+                                    <th>Fill Format</th>
+                                    <th>Predefined Values</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Outcome_ID</strong></td>
+                                    <td>Unique outcome identifier</td>
+                                    <td>Unique integer</td>
+                                    <td>Value must match value from "Outcome" sheet</td>
+                                    <td>1</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Formula_Last</strong></td>
+                                    <td>Specifies which period value to use</td>
+                                    <td>Text</td>
+                                    <td>AVG: average of a period, END: final value of a period</td>
+                                    <td>AVG</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Threshold</strong></td>
+                                    <td>Thresholds for PRIM analysis</td>
+                                    <td>List with format: space ; space</td>
+                                    <td>High: find predictors of values greater than 75th percentile ; Low: find predictors of values lower than 25th percentile ; Mid: find predictors of values greater than 50th percentile ; Zero: find predictors of values lower than 0 ; Dep: depends on other outcome threshold (High, Low), Intermediary</td>
+                                    <td>High ; Low</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Type</strong></td>
+                                    <td>Outcome type classification</td>
+                                    <td>First use "Metric of interest" which will be the metric of interest for "Outcome" column value, and in following rows use "Intermediary" for variables on which metric of interest depends.</td>
+                                    <td>Metric of interest, Intermediary</td>
+                                    <td>Metric of interest</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome</strong></td>
+                                    <td>Driver name with suffix indicating analysis type. Must exactly match names generated in "Sequences" sheet</td>
+                                    <td>Descriptive text</td>
+                                    <td>N/A</td>
+                                    <td>Emissions Waste</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Actor</strong></td>
+                                    <td>Associated actor or entity (only write the word "Country")</td>
+                                    <td>Text</td>
+                                    <td>Country</td>
+                                    <td>Country</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Source</strong></td>
+                                    <td>Data source</td>
+                                    <td>Text</td>
+                                    <!-- <td>OSeMOSYS-ModelName inputs, OSeMOSYS-ModelName outputs, TEM output, Experiment data</td>-->
+                                    <td>OSeMOSYS-ModelName inputs, OSeMOSYS-ModelName outputs</td>
+                                    <td>OSeMOSYS-ModelName outputs</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Formula_Numerator</strong></td>
+                                    <td>Numerator formula</td>
+                                    <td>Text</td>
+                                    <td>Review "Formula Numerator" table</td>
+                                    <td>sum_across</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Formula_Denominator</strong></td>
+                                    <td>Denominator formula</td>
+                                    <td>Text</td>
+                                    <!-- <td>none, Den_GDP: denominator with GDP value, tracost_at2019: transport cost at 2019, totcost_at2019: total cost at 2019</td>-->
+                                    <td>none</td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Involved_Sets</strong></td>
+                                    <td>Technologies or fuels involved according to "Outcome_Exact_Parameters_Involved" column value</td>
+                                    <td>List with format: space ; space</td>
+                                    <td>List of technologies/fuels</td>
+                                    <td>TRAUTDSL ; TRAUTGSL ; TRAUTELE</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Supporting_Sets</strong></td>
+                                    <td>Additional supporting sets, when parameter depends on another set besides TECHNOLOGY OR FUEL, usually if it depends on EMISSION</td>
+                                    <td>Text or list with format: space ; space</td>
+                                    <td>none or separated list</td>
+                                    <td>CO2e</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Exact_Parameters_Involved</strong></td>
+                                    <td>Specific OSeMOSYS and MOMF model parameters. Review available parameters in RDM experiment outputs</td>
+                                    <td>List with format: space ; space</td>
+                                    <td>Variables like Capex2025 ; VarOpex2025 ; FixedOpex2025 ; Externalities2025</td>
+                                    <td>Capex2025 ; VarOpex2025</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Tech_or_Fuel_or_Actor</strong></td>
+                                    <td>Type of modeled element</td>
+                                    <td>Text</td>
+                                    <td>Tech, Fuel</td>
+                                    <td>Tech</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Column_Management</strong></td>
+                                    <td>Resulting column management</td>
+                                    <td>Text</td>
+                                    <td><strong>none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Numerator_Sum_Sets</strong></td>
+                                    <td>Sets to sum in numerator</td>
+                                    <td>If "Outcome_Variable_Management" column value is "wrt_BAU_excess", value in this column should be "none"; but if value is "Direct" value in this column should be "all"</td>
+                                    <td><strong>all, none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Numerator_Sub_Sets</strong></td>
+                                    <td>Sets to subtract in numerator</td>
+                                    <td>If "Outcome_Variable_Management" column value is "wrt_BAU_excess", value in this column should be "all"; but if value is "Direct" value in this column should be "none"</td>
+                                    <td><strong>all, none</strong></td>
+                                    <td>all</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Denominator_Sum_Sets</strong></td>
+                                    <td>Sets to sum in denominator</td>
+                                    <td>Text</td>
+                                    <td><strong>none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Denominator_Sub_Sets</strong></td>
+                                    <td>Sets to subtract in denominator</td>
+                                    <td>Text</td>
+                                    <td><strong>none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Numerator_Sum_Params</strong></td>
+                                    <td>Parameters to sum in numerator</td>
+                                    <td>If "Outcome_Variable_Management" column value is "wrt_BAU_excess", value in this column should be "none"; but if value is "Direct" value in this column should be "all"</td>
+                                    <td><strong>all, none</strong></td>
+                                    <td>all</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Numerator_Sub_Params</strong></td>
+                                    <td>Parameters to subtract in numerator</td>
+                                    <td>If "Outcome_Variable_Management" column value is "wrt_BAU_excess", value in this column should be "all"; but if value is "Direct" value in this column should be "none"</td>
+                                    <td><strong>all, none</strong></td>
+                                    <td>all</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Denominator_Sum_Params</strong></td>
+                                    <td>Parameters to sum in denominator</td>
+                                    <td>Text</td>
+                                    <td><strong>none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Denominator_Sub_Params</strong></td>
+                                    <td>Parameters to subtract in denominator</td>
+                                    <td>Text</td>
+                                    <td><strong>none</strong></td>
+                                    <td>none</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Involved_Scenarios</strong></td>
+                                    <td>Application scenarios</td>
+                                    <td>List with format: space ; space</td>
+                                    <td>LTS ; BAU or others</td>
+                                    <td>LTS ; BAU</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Outcome_Variable_Management</strong></td>
+                                    <td>Management type</td>
+                                    <td>Text</td>
+                                    <td>Direct: when put only one scenario in "Outcome_Involved_Scenarios" column, wrt_BAU: with respect BAU</td>
+                                    <td>wrt_BAU</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h4>Formula Numerator</h4>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>sum_across</strong></td>
+                                    <td>Sum all values across specified sets and parameters</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>average_across_rel2023</strong></td>
+                                    <td>Average of all values across specified sets and parameters relative to year 2023. Year value changes according to model base year, the user could change the year</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>direct</strong></td>
+                                    <td>Direct value without aggregation, typically the last value of period</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>cumulative</strong></td>
+                                    <td>Cumulative sum across time period</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>GDP_growth</strong></td>
+                                    <td>GDP growth rate</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>share_H2_of_total</strong></td>
+                                    <td>Hydrogen share of total</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>share_electric_of_total</strong></td>
+                                    <td>Electricity share of total</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>share_renewable_gen</strong></td>
+                                    <td>Non-conventional renewable generation share</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>special_elasticity</strong></td>
+                                    <td>Demand elasticity with respect to GDP</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>special_FiscalCost</strong></td>
+                                    <td>Net fiscal cost (with and without exemptions)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </section>
+
+                <section id="population">
+                    <h3>2. Population.xlsx</h3>
+                    <p><strong>Objective:</strong> Load historical/projected population of study country.</p>
+
+                    <h4>Sheet: Sheet1</h4>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Column Name</th>
+                                    <th>Explanation</th>
+                                    <th>Fill Format</th>
+                                    <th>Predefined Values</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Year</strong></td>
+                                    <td>Population record year</td>
+                                    <td>Four-digit integer (YYYY)</td>
+                                    <td>2021-2050</td>
+                                    <td>2025</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Inhabitants</strong></td>
+                                    <td>Total number of inhabitants for specified year</td>
+                                    <td>Absolute integer without separators or decimals</td>
+                                    <td>N/A</td>
+                                    <td>2837077</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="note">
+                        <strong>Notes:</strong>
+                        <ul>
+                            <li>Include all years of analysis period</li>
+                            <li>Values should be consistent with official projections</li>
+                        </ul>
+                    </div>
+
+                </section>
+
+                <section id="control-file">
+                    <h3>3. prim_files_creator_cntrl.xlsx</h3>
+
+                    <h4>Sheet: match_exp_ana</h4>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Column Name</th>
+                                    <th>Explanation</th>
+                                    <th>Fill Format</th>
+                                    <th>Predefined Values</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>exps</strong></td>
+                                    <td>Unique experiment identifier, from experiments available in "experiment_data" folder</td>
+                                    <td>For "1_Experiment" experiment value is "1_Experiment"</td>
+                                    <td>N/A</td>
+                                    <td>1_Experiment</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>exp_desc</strong></td>
+                                    <td>Detailed experiment description</td>
+                                    <td>Descriptive text</td>
+                                    <td>N/A</td>
+                                    <td>Appends all the elements from multiple models</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>include_exp</strong></td>
+                                    <td>Indicator to include experiment in analysis</td>
+                                    <td>Text</td>
+                                    <td>YES/NO</td>
+                                    <td>YES</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>analyses</strong></td>
+                                    <td>Numerical analysis identifier</td>
+                                    <td>Integer</td>
+                                    <td>1, 2, 3...</td>
+                                    <td>1</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>analysis_desc</strong></td>
+                                    <td>Brief analysis description</td>
+                                    <td>Brief text</td>
+                                    <td>N/A</td>
+                                    <td>X and L</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>include_ana</strong></td>
+                                    <td>Indicator to include analysis</td>
+                                    <td>Text</td>
+                                    <td>YES/NO</td>
+                                    <td>YES</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h4>Sheet: periods</h4>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Column Name</th>
+                                    <th>Explanation</th>
+                                    <th>Fill Format</th>
+                                    <th>Predefined Values</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>period_list</strong></td>
+                                    <td>Period identifying label. Last two digits of year are used (e.g.: 25 for 2025, 30 for 2030)</td>
+                                    <td>Text: initial_year-final_year</td>
+                                    <td>User defined</td>
+                                    <td>25-30</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>year_initial</strong></td>
+                                    <td>Period start year</td>
+                                    <td>Integer (YYYY)</td>
+                                    <td>All available model years</td>
+                                    <td>2025</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>year_final</strong></td>
+                                    <td>Period end year</td>
+                                    <td>Integer (YYYY)</td>
+                                    <td>All available model years</td>
+                                    <td>2030</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="note">
+                        <strong>Note:</strong> Always include an "all" period covering entire time horizon, as the last value
+                    </div>
+
+                    <h4>Sheet: dtype</h4>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Column Name</th>
+                                    <th>Explanation</th>
+                                    <th>Fill Format</th>
+                                    <th>Predefined Values</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>File</strong></td>
+                                    <td>Data source file type</td>
+                                    <td>Text</td>
+                                    <!-- <td>OSeMOSYS-ModelName inputs, OSeMOSYS-ModelName outputs, TEM output, Experiment data</td>-->
+                                    <td>OSeMOSYS-ModelName inputs, OSeMOSYS-ModelName outputs</td>
+                                    <td>OSeMOSYS-ModelName inputs</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Column</strong></td>
+                                    <td>Exact column name in source file</td>
+                                    <td>Exact text as appears in file</td>
+                                    <td>N/A</td>
+                                    <td>Technology</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Type</strong></td>
+                                    <td>Python data type for column</td>
+                                    <td>Text</td>
+                                    <td>str, int, float</td>
+                                    <td>str</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </section>
+
+                <section id="units">
+                    <h3>4. Units.xlsx</h3>
+                    <p><strong>Objective:</strong> Document and complete units associated with each driver.</p>
+
+                    <h4>Sheet: Units</h4>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Column Name</th>
+                                    <th>Explanation</th>
+                                    <th>Fill Format</th>
+                                    <th>Predefined Values</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>driver_col</strong></td>
+                                    <td>Driver name with suffix indicating analysis type. Must exactly match names generated in prim_structure.</td>
+                                    <td>Text: Driver_Outcome_Variable_Management where "Driver" is value from "Driver" column in "Sequences" sheet of "prim_structure" file and "Outcome_Variable_Management" is value from "Outcome_Variable_Management" column</td>
+                                    <td>Must exactly match names in prim_structure</td>
+                                    <td>Benefit EneTra_Direct</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Units</strong></td>
+                                    <td>Measurement unit associated with specified driver</td>
+                                    <td>Text: unit abbreviation</td>
+                                    <td>MUSD, PJ, GgCO2e, %, GWh, etc.</td>
+                                    <td>MUSD</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="note">
+                        <strong>Notes:</strong>
+                        <ul>
+                            <li>The values for driver_col must come from prim_structure.xlsx. For their names, use the value from the “Driver” column + “_” + “Driver_Variable_Management” or “Outcome” + ‘_’ + “Outcome_Variable_Management.”. For example: “Outcome”= “Benefit EneTra”, “Outcome_Variable_Management”= “Direct”, so “driver_col”= “Benefit EneTra_Direct”</li>
+                            <li>Values must not be repeated.</li>
+                            <li>Use standard nomenclature for units</li>
+                        </ul>
+                    </div>
+
+                </section>
+
+                <section id="yaml-config">
+                    <h3>5. PRIM_t3f2.yaml</h3>
+                    <p><strong>Objective:</strong> Configuration file with model parameters.</p>
+
+                    <h4>Main structure:</h4>
+                    <!--<pre><code># Directories
+dir_exps: './t3a_experiments'
+dir_sdisc: './t3b_sdiscovery'-->
+
+                    <pre><code># Control files
+Prim_files_crea_cntrl: 'prim_files_creator_cntrl.xlsx'
+
+# Excel sheets
+Periods: 'periods'
+Mat_exp_ana: 'match_exp_ana'
+dType: 'dtype'
+
+# Variables and conditions
+BAU: 'Scenario1' # Write the name of the base scenario
+max_per_batch: 1
+
+ose_inputs: 'OSeMOSYS-Region inputs' # Write the model name with the value of the column "Region" in the sheet "Setup" from the file "Interface_RDM"
+ose_oupts: 'OSeMOSYS-Region outputs' # Write the model name with the value of the column "Region" in the sheet "Setup" from the file "Interface_RDM"</code></pre>
+<!--tem_out: 'TEM output'
+tem_out_fis: 'TEM output fiscal'
+tem_reg: 'TEM region'</code></pre>-->
+
+                </section>
+            <div class="note">
+                <strong>Note:</strong> Only change the variables that have the comment beginning with “Write the.”
+            </div>
+            </section>
+
+            <section id="final-reminders">
+                <h2>Final Reminders</h2>
+
+                <h3>Important Validations:</h3>
+                <ol>
+                    <li><strong>Name consistency:</strong> Driver names in Units.xlsx must exactly match those generated by prim_structure.xlsx</li>
+                    <li><strong>List format:</strong> Always use space + semicolon + space to separate elements (example: "value1 ; value2 ; value3")</li>
+                    <li><strong>Complete periods:</strong> Ensure Population.xlsx covers all years defined in periods</li>
+                    <li><strong>Valid scenarios:</strong> Scenarios in Driver_Involved_Scenarios must exist in experiments</li>
+                    <li><strong>Data types:</strong> Verify types in dtype correspond with actual data</li>
+                </ol>
+
+                <h3>Generated Files:</h3>
+                <ul>
+                    <li><code>prim_files_creator.pickle</code> - Processed structure (Intermediate)</li>
+                    <li><code>comp_pfd_*.pickle</code> - Compiled data per analysis (Intermediate)</li>
+                    <li><code>sd_ana_*_exp_*.csv</code> - PRIM analysis results (Intermediate)</li>
+                    <li><code>t3f4_predominant_ranges_*.xlsx</code> - Mapped predominant ranges (Results)</li>
+                </ul>
+
+                <h3>Verification Order:</h3>
+                <ol>
+                    <li>Verify all Excel files are complete</li>
+                    <li>Confirm correct list format (space ; space)</li>
+                    <li>Execute t3f1 and verify pickle is generated correctly</li>
+                    <li>Review t3f2 logs to confirm experiment processing</li>
+                    <li>Validate t3f3 results in CSV file</li>
+                    <li>Confirm range mapping in t3f4</li>
+                </ol>
+
+            </section>
+
+            <section id="results-interpretation">
+                <h2>Results Interpretation</h2>
+                <p>After executing the PRIM pipeline, the predominant ranges and key drivers are mapped in the output file located at:</p>
+                <p><code>src\workflow\4_PRIM\t3b_sdiscovery\t3f4_predominant_ranges_a1_e1_Experiment.xlsx</code></p>
+                
+                <p>This file contains the identified uncertainty ranges and their relationship with outcomes. Below is the interpretation guide for each column in the results file:</p>
+
+                <h3>Results Columns Interpretation</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Column</th>
+                                <th>Interpretation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Outcome_Type</strong></td>
+                                <td>Classification of the result type being analyzed: "Desirable" for desirable outcomes (costs and emissions to minimize) or "Risk" for risk zones to monitor.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Metric</strong></td>
+                                <td>Type of metric used to evaluate the outcome: "Costs" (costs), "Emissions" (emissions), or "All" (multiple combined metrics).</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Period</strong></td>
+                                <td>Temporal range of the analysis expressed in years (e.g., "41-50", "21-30", "31-40"). Defines the evaluation horizon within the project lifecycle.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Driver</strong></td>
+                                <td>Specific uncertainty factor being analyzed by PRIM (e.g., "Capital Costs ICE Transport", "Variable Costs Crops", "Fuel Demand"). Represents the parameter whose variability is being studied.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Driver_Type</strong></td>
+                                <td>Classification of the driver type. Currently only "uncertainty" is available, indicating inherent variability of the parameter.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Min_Norm</strong></td>
+                                <td>Minimum normalized value (between 0 and 1) of the uncertainty range identified by PRIM. Lower bound of the region where notable behavior is obtained.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Max_Norm</strong></td>
+                                <td>Maximum normalized value (between 0 and 1) of the uncertainty range identified by PRIM. Upper bound of the region. Together with Min_Norm, they define the PRIM "box".</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Case</strong></td>
+                                <td>Identifier of the scenario or case being analyzed. Groups multiple drivers simultaneously, indicating critical combinations of uncertainties that generate interesting results.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Condition</strong></td>
+                                <td>Robustness status of the result: "definitive" indicates that the result is conclusive and robust within the identified region.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Tiebreaker</strong></td>
+                                <td>Additional criterion for resolving trade-offs: "none" (no special criterion) or "high/low average" (when there are conflicts between objectives, specifying whether to maximize or minimize).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="note">
+                    <strong>Understanding the Results:</strong>
+                    <ul>
+                        <li><strong>PRIM Boxes:</strong> The Min_Norm and Max_Norm values define "boxes" or regions in the uncertainty space where specific outcomes are most likely to occur.</li>
+                        <li><strong>Cases:</strong> Multiple drivers with the same Case number indicate that these uncertainties interact together to produce the observed outcome.</li>
+                        <li><strong>Normalized Values:</strong> All values are normalized between 0 and 1, making it easy to compare different uncertainty ranges regardless of their original units.</li>
+                    </ul>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Highlight active section in sidebar
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.sidebar a');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (window.pageYOffset >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.style.background = '';
+                link.style.color = '';
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.style.background = 'var(--lvg-teal-light)';
+                    link.style.color = 'var(--lvg-teal)';
+                    link.style.paddingLeft = '1rem';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

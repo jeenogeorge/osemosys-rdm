@@ -24,7 +24,7 @@ AFR_RDM is a Python-based framework that streamlines the entire workflow for wor
 
 ### System Requirements
 
-- **Python**: Version 3.11 or higher
+- **Python**: Version 3.10 or higher
 - **Solvers** (at least one required, install separately):
   - [GLPK](https://www.gnu.org/software/glpk/) (GNU Linear Programming Kit)
   - [CBC](https://github.com/coin-or/Cbc) (COIN-OR Branch and Cut)
@@ -82,12 +82,62 @@ AFR_RDM/
 │   │   │   └── Experimental_Platform/
 │   │   │       └── Futures/       # RDM experiment futures
 │   │   ├── 2_Miscellaneous/       # Reference files
-│   │   └── 3_Postprocessing/      # Output processing tools
+│   │   ├── 3_Postprocessing/      # Output processing tools
+│   │   │   ├── create_csv_concatenate.py
+│   │   │   ├── config_concatenate.yaml
+│   │   │   └── otoole_config/     # OSeMOSYS conversion templates
+│   │   └── 4_PRIM/                # PRIM scenario discovery module
+│   │       ├── t3f2_prim_files_creator.py
+│   │       ├── PRIM_t3f2.yaml
+│   │       ├── prim_files_creator_cntrl.xlsx
+│   │       ├── Population.xlsx
+│   │       └── t3b_sdiscovery/    # Scenario discovery analysis
+│   │           ├── Analysis_1/
+│   │           │   ├── prim_structure.xlsx
+│   │           │   ├── comp_pfd_1.pickle
+│   │           │   └── prim_files_creator.pickle
+│   │           ├── experiment_data/
+│   │           ├── Units.xlsx
+│   │           ├── t3f1_prim_structure.py
+│   │           ├── t3f3_prim_manager.py
+│   │           ├── t3f4_range_finder_mapping.py
+│   │           ├── t3f4_predominant_ranges_a1_e1_Experiment.xlsx
+│   │           ├── sd_ana_1_exp_1_Experiment.csv
+│   │           ├── sd_ana_1_exp_1_Experiment.txt
+│   │           ├── sd_manager.txt
+│   │           └── subtbl_ana_1_exp_1_Experiment.pickle
+│   ├── Guides/                     # User documentation
+│   │   ├── Guide AFR_RDM.html
+│   │   └── Guide PRIM Module Configuration.html
+│   ├── z_auxiliar_code.py         # Core library functions
 │   ├── Interface_RDM.xlsx         # Main configuration interface
 │   └── RUN_RDM.py                 # Main execution script
 ├── LICENSE
 └── README.md
 ```
+
+## Core Components
+
+### Main Scripts
+
+- **RUN_RDM.py**: Primary execution script that orchestrates the entire workflow
+- **z_auxiliar_code.py**: Core library containing utility functions for:
+  - Time series interpolation (linear, non-linear, logistic)
+  - OSeMOSYS file parsing and structure extraction
+  - Dataset creation and manipulation
+  - Solver execution (GLPK, CBC, CPLEX)
+  - Output processing and data transformation
+
+### Visualization
+
+- **Dashboard.twbx**: Tableau dashboard for results visualization and analysis
+  - **Note**: Due to file size constraints, this dashboard is not included in the repository. It can be generated or obtained separately.
+
+### Documentation
+
+Comprehensive HTML guides are available in `src/Guides/`:
+- **Guide AFR_RDM.html**: Complete usage guide for the AFR_RDM framework
+- **Guide PRIM Module Configuration.html**: Detailed instructions for PRIM module setup and configuration
 
 ## Usage
 
@@ -138,11 +188,14 @@ Output location: `src/workflow/1_Experiment/Executables/`
 
 #### RDM Experiment Mode (`Run_RDM: Yes`)
 
-Generates and analyzes multiple futures:
-1. Creates uncertainty ranges for specified parameters
-2. Uses Latin Hypercube Sampling to generate futures
-3. Executes each future scenario
-4. Aggregates results for comparative analysis
+Generates and analyzes multiple futures under uncertainty:
+1. **Future 0**: Baseline scenario (executed first)
+2. **Additional Futures**: Generated using Latin Hypercube Sampling based on user-defined uncertainty ranges
+3. Creates uncertainty ranges for specified parameters
+4. Executes each future scenario in parallel
+5. Aggregates results for comparative analysis
+
+The number of futures generated depends on the configuration specified by the user in the experiment settings.
 
 Output location: `src/workflow/1_Experiment/Experimental_Platform/Futures/`
 
@@ -170,8 +223,11 @@ The tool executes the following automated steps:
 - `output_dataset_f.parquet`: Aggregated output dataset
 
 ### Final Results
-- `src/Results/OSEMOSYS_SL_Energy_Input.csv`
-- `src/Results/OSEMOSYS_SL_Energy_Output.csv`
+The aggregated results are stored in `src/Results/` with filenames that include the region identifier:
+- `src/Results/OSEMOSYS_{Region}_Energy_Input.csv`
+- `src/Results/OSEMOSYS_{Region}_Energy_Output.csv`
+
+Where `{Region}` corresponds to the value specified in the "Region" column of the "Setup" sheet in [Interface_RDM.xlsx](Interface_RDM.xlsx).
 
 ## Advanced Configuration
 
@@ -182,6 +238,80 @@ Edit `Interface_RDM.xlsx` to define:
 - Number of futures to generate
 - Sampling strategy parameters
 - Output parameter selection
+
+### PRIM Module (Scenario Discovery)
+
+The PRIM (Patient Rule Induction Method) module enables scenario discovery by identifying which combinations of uncertain input parameters lead to specific outcomes of interest.
+
+#### Purpose
+
+PRIM analyzes the results from RDM experiments to find "boxes" or regions in the uncertainty space where:
+- Desirable outcomes occur (e.g., low costs, low emissions)
+- Undesirable outcomes or risks occur (e.g., high costs, high emissions)
+
+#### Key Features
+
+- **Driver Analysis**: Identifies which uncertain parameters (drivers) most influence outcomes
+- **Threshold Detection**: Finds parameter ranges that lead to outcomes above/below critical thresholds:
+  - **High**: Values greater than 75th percentile
+  - **Low**: Values lower than 25th percentile
+  - **Mid**: Values greater than 50th percentile
+  - **Zero**: Values lower than zero
+- **Multi-metric Support**: Analyzes costs, emissions, and other metrics simultaneously
+- **Temporal Analysis**: Evaluates outcomes across different time periods
+
+#### Configuration Files
+
+The PRIM module requires several configuration files located in `src/workflow/4_PRIM/`:
+
+1. **prim_structure.xlsx**: Defines the analysis structure
+   - **Sequences sheet**: Maps drivers to outcomes with detailed formulas
+   - **Outcomes sheet**: Lists unique outcomes without repetition
+
+2. **Population.xlsx**: Historical and projected population data for normalization
+
+3. **prim_files_creator_cntrl.xlsx**: Execution control parameters
+   - **match_exp_ana sheet**: Links experiments to analyses
+   - **periods sheet**: Defines temporal analysis periods
+   - **dtype sheet**: Specifies data types for processing
+
+4. **Units.xlsx**: Measurement units for each driver (MUSD, PJ, GgCO2e, etc.)
+
+5. **PRIM_t3f2.yaml**: Main configuration file
+   ```yaml
+   # Base scenario name
+   BAU: 'Scenario1'
+
+   # Model names (must match Region from Interface_RDM.xlsx)
+   ose_inputs: 'OSeMOSYS-{Region} inputs'
+   ose_oupts: 'OSeMOSYS-{Region} outputs'
+   ```
+
+#### Execution Scripts
+
+Located in `src/workflow/4_PRIM/`:
+- `t3f2_prim_files_creator.py`: Generates PRIM analysis files
+- `t3b_sdiscovery/t3f1_prim_structure.py`: Defines PRIM structure
+- `t3b_sdiscovery/t3f3_prim_manager.py`: Executes PRIM analysis
+- `t3b_sdiscovery/t3f4_range_finder_mapping.py`: Maps predominant parameter ranges
+
+#### Output Files
+
+Results are stored in `src/workflow/4_PRIM/t3b_sdiscovery/`:
+- **t3f4_predominant_ranges_*.xlsx**: Contains identified parameter ranges with columns:
+  - `Driver`: Uncertain parameter being analyzed
+  - `Min_Norm` / `Max_Norm`: Normalized range boundaries (0-1)
+  - `Outcome_Type`: "Desirable" or "Risk"
+  - `Metric`: "Costs", "Emissions", or "All"
+  - `Period`: Temporal range of analysis
+  - `Case`: Scenario identifier grouping related drivers
+
+#### Usage Guide
+
+Detailed configuration instructions are available in:
+- `src/Guides/Guide PRIM Module Configuration.html`
+
+For more information on PRIM methodology, see the included documentation.
 
 ### Solver-Specific Notes
 

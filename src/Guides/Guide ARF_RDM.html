@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RDM Model - User Guide</title>
+    <style>
+        :root {
+            --lvg-dark: #1A2B4A;           /* Azul oscuro profundo (reemplaza el verde oscuro) */
+            --lvg-teal: #4A90E2;           /* Azul medio vibrante (reemplaza el teal) */
+            --lvg-light: #E8EEF5;          /* Azul muy claro/grisáceo (reemplaza el gris claro) */
+            --lvg-teal-light: #4A90E220;   /* Azul medio con 12% opacidad */
+            --lvg-teal-medium: #4A90E260;  /* Azul medio con 38% opacidad */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--lvg-dark) 0%, var(--lvg-teal) 100%);
+            color: white;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-text h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header-text p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .logo {
+            height: 80px;
+            width: auto;
+        }
+
+        /* Layout Container */
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 120px auto 0;
+            min-height: calc(100vh - 120px);
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 300px;
+            background: white;
+            padding: 2rem 1rem;
+            border-right: 1px solid var(--lvg-light);
+            position: fixed;
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+        }
+
+        .sidebar h3 {
+            color: var(--lvg-dark);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--lvg-teal);
+        }
+
+        .nav-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-section h4 {
+            color: var(--lvg-teal);
+            margin: 1rem 0 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: #555;
+            text-decoration: none;
+            border-left: 3px solid transparent;
+            transition: all 0.3s ease;
+            margin: 2px 0;
+        }
+
+        .nav-item:hover {
+            background: var(--lvg-teal-light);
+            border-left-color: var(--lvg-teal);
+            color: var(--lvg-dark);
+        }
+
+        .nav-item.active {
+            background: var(--lvg-teal-light);
+            border-left-color: var(--lvg-teal);
+            color: var(--lvg-dark);
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 320px;
+            padding: 2rem 3rem;
+            background: white;
+            min-height: 100%;
+        }
+
+        /* Content Sections */
+        .section {
+            margin-bottom: 3rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section h2 {
+            color: var(--lvg-dark);
+            border-bottom: 2px solid var(--lvg-teal);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-number {
+            background: var(--lvg-teal);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        /* Step Cards */
+        .step {
+            background: #f9f9f9;
+            border-left: 4px solid var(--lvg-teal);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .step:hover {
+            box-shadow: 0 5px 15px rgba(35, 151, 142, 0.1);
+            transform: translateX(5px);
+        }
+
+        .step-number {
+            position: absolute;
+            left: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--lvg-teal);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .step h3 {
+            color: var(--lvg-dark);
+            margin-bottom: 0.75rem;
+            padding-left: 20px;
+        }
+
+        .step p {
+            color: #555;
+            line-height: 1.8;
+            padding-left: 20px;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: 'Terminal';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: var(--lvg-teal);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .file-path {
+            background: var(--lvg-teal-light);
+            color: var(--lvg-dark);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+            display: inline-block;
+            margin: 0.25rem 0;
+        }
+
+        /* Warning and Info Boxes */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+
+        .alert-info {
+            background: var(--lvg-teal-light);
+            border-left: 4px solid var(--lvg-teal);
+            color: var(--lvg-dark);
+        }
+
+        .alert-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            overflow-x: auto;
+            display: block;
+        }
+
+        th {
+            background: var(--lvg-dark);
+            color: white;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--lvg-light);
+            vertical-align: top;
+        }
+
+        tr:hover {
+            background: var(--lvg-teal-light);
+        }
+
+        /* Progress Indicator */
+        .progress-bar {
+            position: fixed;
+            top: 120px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--lvg-light);
+            z-index: 999;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--lvg-teal);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+
+            .header-text h1 {
+                font-size: 1.5rem;
+            }
+
+            .logo {
+                height: 60px;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th, td {
+                padding: 0.5rem;
+            }
+        }
+
+        /* Breadcrumbs */
+        .breadcrumbs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .breadcrumbs a {
+            color: var(--lvg-teal);
+            text-decoration: none;
+        }
+
+        .breadcrumbs a:hover {
+            text-decoration: underline;
+        }
+
+        .breadcrumbs span {
+            color: #999;
+        }
+
+        /* Special formatting for column letters */
+        .column-letter {
+            background: var(--lvg-dark);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressBar"></div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <div class="header-text">
+                <h1>AFR_RDM Model - User Guide</h1>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar" id="sidebar">
+            <h3>📚 Contents</h3>
+            
+            <div class="nav-section">
+                <h4>Introduction</h4>
+                <a href="#overview" class="nav-item">Overview</a>
+                <a href="#requirements" class="nav-item">Prerequisites</a>
+            </div>
+
+            <div class="nav-section">
+                <h4>Initial Setup</h4>
+                <a href="#step1" class="nav-item">1. Folder Structure</a>
+                <a href="#step2" class="nav-item">2. Workflow Folder</a>
+                <a href="#step3" class="nav-item">3. Scenarios Folder</a>
+                <a href="#step4" class="nav-item">4. Return to Main</a>
+            </div>
+
+            <div class="nav-section">
+                <h4>Interface RDM</h4>
+                <a href="#step5" class="nav-item">5. Open Interface_RDM</a>
+                <a href="#step6" class="nav-item">6. Uncertainty_Table Sheet</a>
+                <a href="#config-columns" class="nav-item">Column Configuration</a>
+            </div>
+
+            <div class="nav-section">
+                <h4>Setup Configuration</h4>
+                <a href="#step7" class="nav-item">7. Setup Sheet</a>
+                <a href="#setup-params" class="nav-item">Configuration Parameters</a>
+                <a href="#step8" class="nav-item">8. Save and Close</a>
+            </div>
+
+            <div class="nav-section">
+                <h4>Execution</h4>
+                <a href="#step9" class="nav-item">9. Open Spyder</a>
+                <a href="#step10" class="nav-item">10. Open Project</a>
+                <a href="#step11" class="nav-item">11. Load RUN_RDM</a>
+                <a href="#step12" class="nav-item">12. Configure Execution</a>
+                <a href="#step13" class="nav-item">13. Run Process</a>
+                <a href="#verification" class="nav-item">Result Verification</a>
+            </div>
+
+            <div class="nav-section">
+                <h4>PRIM Module</h4>
+                <a href="#prim-config" class="nav-item">PRIM Configuration</a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Overview Section -->
+            <section id="overview" class="section">
+                <h2>
+                    <span class="section-number">📋</span>
+                    Overview
+                </h2>
+                <p>
+                    The AFR_RDM (Africa Robust Decision Making) model is an essential tool 
+                    that allows for the evaluation of multiple scenarios and uncertainties in energy optimization models.
+                    This guide provides step by step instructions for setting up and running RDM analyses.
+                </p>
+            </section>
+
+            <!-- Requirements Section -->
+            <section id="requirements" class="section">
+                <h2>
+                    <span class="section-number">✅</span>
+                    Prerequisites
+                </h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Required Version</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Python</td>
+                            <td>3.8 or higher</td>
+                            <td>✓ Required</td>
+                        </tr>
+                        <tr>
+                            <td>Anaconda/Spyder</td>
+                            <td>Latest version</td>
+                            <td>✓ Required</td>
+                        </tr>
+                        <tr>
+                            <td>MOMF Framework</td>
+                            <td>v2.0+</td>
+                            <td>✓ Required</td>
+                        </tr>
+                        <tr>
+                            <td>Microsoft Excel</td>
+                            <td>2016 or higher</td>
+                            <td>✓ Required</td>
+                        </tr>
+                        <tr>
+                            <td>GLPK</td>
+                            <td>v4.65</td>
+                            <td>✓ Required</td>
+                        </tr>
+                        <tr>
+                            <td>CBC</td>
+                            <td>2.7.5 (ideal)</td>
+                            <td>✓ Required</td>
+                        </tr>
+                        <tr>
+                            <td>CPLEX</td>
+                            <td>Any version</td>
+                            <td>⚬ Optional</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Step 1 -->
+            <section id="step1" class="section">
+                <h2>
+                    <span class="section-number">1</span>
+                    Folder Structure
+                </h2>
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Navigate to main folder</h3>
+                    <p>
+                        Go to the main project folder. In this case, the folder is named 
+                        <span class="file-path">src</span>. This folder contains all the necessary structure 
+                        to run the RDM model.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Step 2 -->
+            <section id="step2" class="section">
+                <h2>
+                    <span class="section-number">2</span>
+                    Workflow Folder
+                </h2>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Access workflow</h3>
+                    <p>
+                        Double-click on the <span class="file-path">workflow</span> folder. 
+                        This folder contains the model configuration files and scenarios.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Step 3 -->
+            <section id="step3" class="section">
+                <h2>
+                    <span class="section-number">3</span>
+                    Scenarios Folder
+                </h2>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Open 0_Scenarios</h3>
+                    <p>
+                        Double-click on <span class="file-path">0_Scenarios</span>. 
+                        This is where you will place all scenarios you want to analyze in the experiment.
+                    </p>
+                    <div class="alert alert-warning">
+                        <div class="alert-title">⚠️ Important</div>
+                        Ensure all scenario files are properly formatted and contain the necessary parameters before continuing.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 4 -->
+            <section id="step4" class="section">
+                <h2>
+                    <span class="section-number">4</span>
+                    Return to Main Folder
+                </h2>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Go back to src</h3>
+                    <p>
+                        Navigate back to the main <span class="file-path">src</span> folder to access the Interface_RDM file.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Step 5 -->
+            <section id="step5" class="section">
+                <h2>
+                    <span class="section-number">5</span>
+                    Open Interface_RDM
+                </h2>
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <h3>Open Interface_RDM file</h3>
+                    <p>
+                        Double-click on <span class="file-path">src\Interface_RDM.xlsx</span> 
+                        to open the experiment configuration. This Excel file contains all 
+                        necessary settings to run the RDM analysis.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Step 6 -->
+            <section id="step6" class="section">
+                <h2>
+                    <span class="section-number">6</span>
+                    Uncertainty_Table Sheet
+                </h2>
+                <div class="step">
+                    <div class="step-number">6</div>
+                    <h3>Configure uncertainties</h3>
+                    <p>
+                        In the first sheet named <strong>Uncertainty_Table</strong>, you will define all uncertainties 
+                        you want to evaluate in the experiment. Follow the column structure detailed in the next section.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Column Configuration -->
+            <section id="config-columns" class="section">
+                <h2>
+                    <span class="section-number">📊</span>
+                    Column Configuration - Uncertainty_Table
+                </h2>
+                
+                <div class="step">
+                    <h3>Uncertainty table structure</h3>
+                    <p>
+                        The <strong>Uncertainty_Table</strong> sheet must be configured with the following columns (A through N):
+                    </p>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Column</th>
+                                <th>Field Name</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="column-letter">A</span></td>
+                                <td><strong>X_Num</strong></td>
+                                <td>Uncertainty number (ascending order)</td>
+                                <td>1, 2, 3...</td>
+                            </tr>
+                            <tr>
+                                <td><span class="column-letter">B</span></td>
+                                <td><strong>X_Category</strong></td>
+                                <td>Uncertainty category</td>
+                                <td>Fuel Costs, Capital Cost</td>
+                            </tr>
+                            <tr>
+                                <td><span class="column-letter">C</span></td>
+                                <td><strong>X_Plain_English_Description</strong></td>
+                                <td>Brief description of the uncertainty</td>
+                                <td>Changes in imported energy carriers</td>
+                            </tr>
+                            <tr>
+                                <td><span class="column-letter">D</span></td>
+                                <td><strong>Involved_Scenarios</strong></td>
+                                <td>Involved scenarios (separated by " ; ")</td>
+                                <td>Scenario1 ; Scenario2</td>
+                            </tr>
+                            <tr>
+                                <td><span class="column-letter">E</span></td>
+                                <td><strong>X_Mathematical_Type</strong></td>
+                                <td>Mathematical type of the series:<br>
+                                • <strong>Time_Series</strong>: Replicates original curve behavior<br>
+                                • <strong>Constant</strong>: Constant curve<br>
+                                • <strong>Logistic</strong>: Logistic curve<br>
+                                • <strong>Linear</strong>: Linear curve</td>
+                                <td>Time_Series</td>
+                            </tr>
+                            <tr>
+                                <td><span class="column-letter">F</span></td>
+                                <td><strong>Explored_Parameter_of_X</strong></td>
+                                <td>Parameter to explore</td>
+                                <td>Final_Value</td>
+                            </tr>
+                            <tr>
+                                <td><span class="column-letter">G</span></td>
+                                <td><strong>Initial_Year_of_Uncertainty</strong></td>
+                                <td>Starting year for uncertainty variations</td>
+                                <td>2025</td>
+                            </tr>
+                            <tr>
+                                <td><span class="column-letter">H</span></td>
+                                <td><strong>Min_Value</strong></td>
+                                <td>Minimum variation value</td>
+                                <td>0.5</td>
+                            </tr>
+                            <tr>
+                                <td><span class="column-letter">I</span></td>
+                                <td><strong>Max_Value</strong></td>
+                                <td>Maximum variation value</td>
+                                <td>1.5</td>
+                            </tr>
+                            <tr>
+                                <td><span class="column-letter">J</span></td>
+                                <td><strong>Exact_Parameters_Involved_in_Osemosys</strong></td>
+                                <td>Exact OSeMOSYS parameters (separated by " ; ")</td>
+                                <td>VariableCost ; CapitalCost</td>
+                            </tr>
+                            <tr>
+                                <td><span class="column-letter">K</span></td>
+                                <td><strong>Involved_First_Sets_in_Osemosys</strong></td>
+                                <td>Values of the first set used by the parameter (technologies or fuels)</td>
+                                <td>MIMBIO ; MINCOA</td>
+                            </tr>
+                            <tr>
+                                <td><span class="column-letter">L</span></td>
+                                <td><strong>Involved_Second_Sets_in_Osemosys</strong></td>
+                                <td>Values of the second set (if applicable per Params_Sets_Vari sheet)</td>
+                                <td>BIO ; COA</td>
+                            </tr>
+                            <tr>
+                                <td><span class="column-letter">M</span></td>
+                                <td><strong>Involved_Third_Sets_in_Osemosys</strong></td>
+                                <td>Values of the third set (if applicable per Params_Sets_Vari sheet)</td>
+                                <td>TS01 ; TS02</td>
+                            </tr>
+                            <tr>
+                                <td><span class="column-letter">N</span></td>
+                                <td><strong>Manipulation_of_Parameter</strong></td>
+                                <td>Description of data manipulation according to X_Mathematical_Type</td>
+                                <td>Multiply final value by explored parameter and interpolate</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="alert alert-info">
+                        <div class="alert-title">💡 Important Notes about Sets</div>
+                        <ul style="margin-left: 1rem;">
+                            <li>To determine which sets apply to a parameter, check the <strong>Params_Sets_Vari</strong> sheet</li>
+                            <li>Each OSeMOSYS parameter column shows its required sets (excluding Region)</li>
+                            <li>Parameters highlighted in brown do not apply for this functionality</li>
+                            <li>If a parameter uses 2 sets: place first in column K, second in column L</li>
+                            <li>If a parameter uses 3 sets: place first in column K, second in column L, third in column M</li>
+                            <li>Always use exact format with spaces: <code>Value1 ; Value2 ; Value3</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 7 -->
+            <section id="step7" class="section">
+                <h2>
+                    <span class="section-number">7</span>
+                    Setup Sheet
+                </h2>
+                <div class="step">
+                    <div class="step-number">7</div>
+                    <h3>Navigate to Setup sheet</h3>
+                    <p>
+                        Go to the <strong>Setup</strong> sheet. In this sheet, you should only modify the cells highlighted in green.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Setup Parameters -->
+            <section id="setup-params" class="section">
+                <h2>
+                    <span class="section-number">⚙️</span>
+                    Configuration Parameters - Setup Sheet
+                </h2>
+                
+                <div class="step">
+                    <h3>Editable green cells</h3>
+                    <p>In the Setup sheet, only modify the cells highlighted in green:</p>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cell</th>
+                                <th>Parameter</th>
+                                <th>Description</th>
+                                <th>Example Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>A2</strong></td>
+                                <td>Number_of_Runs</td>
+                                <td>Number of futures to generate</td>
+                                <td>2</td>
+                            </tr>
+                            <tr style="background: #fff3cd;">
+                                <td><strong>B2</strong></td>
+                                <td>Scenario_to_Reproduce</td>
+                                <td><strong>⚠️ DO NOT MODIFY - Fixed value</strong></td>
+                                <td><strong>Experiment</strong></td>
+                            </tr>
+                            <tr style="background: #fff3cd;">
+                                <td><strong>C2</strong></td>
+                                <td>Experiment_ID</td>
+                                <td><strong>⚠️ DO NOT MODIFY - Fixed value</strong></td>
+                                <td><strong>1</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>D2</strong></td>
+                                <td>Parallel_Use</td>
+                                <td>Number of parallel processes</td>
+                                <td>2</td>
+                            </tr>
+                            <tr>
+                                <td><strong>E2</strong></td>
+                                <td>Timeslices_model</td>
+                                <td>Number of timeslices in the model</td>
+                                <td>48</td>
+                            </tr>
+                            <tr>
+                                <td><strong>F2</strong></td>
+                                <td>Run_Base_Future</td>
+                                <td>Execute base scenario</td>
+                                <td>Yes/No</td>
+                            </tr>
+                            <tr>
+                                <td><strong>G2</strong></td>
+                                <td>Run_RDM</td>
+                                <td>Execute RDM process</td>
+                                <td>Yes/No</td>
+                            </tr>
+                            <tr>
+                                <td><strong>H2</strong></td>
+                                <td>Solver</td>
+                                <td>Solver for solving the RDM process</td>
+                                <td>cbc/cplex/glpk</td>
+                            </tr>
+                            <tr>
+                                <td><strong>I2</strong></td>
+                                <td>OSeMOSYS_Model_Name</td>
+                                <td>OSeMOSYS model name</td>
+                                <td>model.v.5.3.txt</td>
+                            </tr>
+                            <tr>
+                                <td><strong>J2</strong></td>
+                                <td>Region</td>
+                                <td>Region name (use ISO-3 country code)</td>
+                                <td>UGA/KEN</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="alert alert-warning">
+                        <div class="alert-title">⚠️ Critical Notes</div>
+                        <ul style="margin-left: 1rem;">
+                            <li><strong>DO NOT MODIFY</strong> cells B2 (Scenario_to_Reproduce) and C2 (Experiment_ID)</li>
+                            <li>If your PC shuts down during the process, reduce Parallel_Use to 1</li>
+                            <li>For PCs with better specifications, you can experiment with higher parallel values</li>
+                            <li>Set Run_Base_Future to "Yes" when running for the first time or after model changes</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 8 -->
+            <section id="step8" class="section">
+                <h2>
+                    <span class="section-number">8</span>
+                    Save and Close
+                </h2>
+                <div class="step">
+                    <div class="step-number">8</div>
+                    <h3>Save the Interface_RDM file</h3>
+                    <p>
+                        Click <strong>Save</strong> to save all changes made to the Interface_RDM.xlsx file, 
+                        then <strong>Close</strong> Excel.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Step 9 -->
+            <section id="step9" class="section">
+                <h2>
+                    <span class="section-number">9</span>
+                    Open Spyder
+                </h2>
+                <div class="step">
+                    <div class="step-number">9</div>
+                    <h3>Launch Spyder application</h3>
+                    <p>
+                        Open Spyder from your applications or Anaconda Navigator. 
+                        If any pop-up windows appear, click "No" to dismiss them.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Step 10 -->
+            <section id="step10" class="section">
+                <h2>
+                    <span class="section-number">10</span>
+                    Open Project Folder
+                </h2>
+                <div class="step">
+                    <div class="step-number">10</div>
+                    <h3>Navigate to src folder</h3>
+                    <p>
+                        In Spyder, click <strong>File → Open</strong> and navigate to your <span class="file-path">src</span> folder.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Step 11 -->
+            <section id="step11" class="section">
+                <h2>
+                    <span class="section-number">11</span>
+                    Load RUN_RDM Script
+                </h2>
+                <div class="step">
+                    <div class="step-number">11</div>
+                    <h3>Open src\RUN_RDM.py</h3>
+                    <p>
+                        Select the file <span class="file-path">RUN_RDM.py</span> and click <strong>Open</strong> to load it in Spyder.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Step 12 -->
+            <section id="step12" class="section">
+                <h2>
+                    <span class="section-number">12</span>
+                    Configure Execution
+                </h2>
+                <div class="step">
+                    <div class="step-number">12</div>
+                    <h3>Set up Spyder configuration</h3>
+                    <p>
+                        Configure the execution environment:
+                    </p>
+                    <ol style="margin-left: 2rem; margin-top: 1rem;">
+                        <li>Go to <strong>Run → Configuration per file</strong></li>
+                        <li>Select <strong>"Run file with custom configuration"</strong></li>
+                        <li>Select <strong>"Execute in an external system terminal"</strong></li>
+                        <li>Click <strong>"Interact with the Python console after execution"</strong></li>
+                        <li>Click <strong>OK</strong></li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- Step 13 -->
+            <section id="step13" class="section">
+                <h2>
+                    <span class="section-number">13</span>
+                    Run the RDM Process
+                </h2>
+                <div class="step">
+                    <div class="step-number">13</div>
+                    <h3>Execute the script</h3>
+                    <p>
+                        Click <strong>Run</strong> to start the RDM process. A terminal window will appear showing the execution progress.
+                    </p>
+                    <div class="code-block">
+Step 1 finished<br>
+Step 2 finished<br>
+Step 3 finished<br>
+Step 4 finished<br>
+Step 5 finished<br>
+Step 6 finished<br>
+Step 7 finished<br>
+Step 8 finished<br>
+GLPSOL: GLPK LP/MIP Solver, v4.65<br>
+...<br>
+Reading model section from ./workflow/osemosys_code_cloud.txt<br>
+...<br>
+OPTIMAL LP SOLUTION FOUND<br>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Verification Section -->
+            <section id="verification" class="section">
+                <h2>
+                    <span class="section-number">✔️</span>
+                    Result Verification
+                </h2>
+                
+                <div class="step">
+                    <h3>Process completed successfully</h3>
+                    <p>
+                        The process has finished correctly when you see the message:
+                    </p>
+                    <div class="code-block">
+Processing completed successfully<br>
+#####################################<br>
+The total time of the workflow has been: XXXX.XX seconds<br>
+>>><br>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <h3>Verify solutions</h3>
+                    <p>
+                        It's important to verify that the message <strong>"OPTIMAL LP SOLUTION FOUND"</strong> 
+                        appears for each future executed. The number of these messages should match the number 
+                        of futures configured in the setup.
+                    </p>
+                    
+                    <div class="alert alert-info">
+                        <div class="alert-title">✅ Final verification checklist</div>
+                        <ul style="margin-left: 1rem;">
+                            <li>Check that all futures have optimal solutions</li>
+                            <li>Verify output files in the Results folder</li>
+                            <li>Ensure there are no error messages in the console</li>
+                            <li>Confirm the total execution time is displayed</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PRIM Module Section -->
+            <section id="prim-config" class="section">
+                <h2>
+                    <span class="section-number">🔧</span>
+                    PRIM Module Configuration
+                </h2>
+                
+                <div class="step">
+                    <h3>Objective</h3>
+                    <p>
+                        Establish the steps and artifacts necessary to reproduce PRIM execution (Excel inputs, Python scripts, and YAML files).
+                    </p>
+                </div>
+
+                <div class="step">
+                    <h3>Pipeline/Workflow Flow</h3>
+                    <p><strong>Execution Order to Replicate PRIM:</strong></p>
+                    
+                    <div style="margin-left: 2rem; margin-top: 1rem;">
+                        <h4 style="color: var(--lvg-teal); margin-bottom: 1rem;">1. Input Data Preparation</h4>
+                        <ul style="margin-left: 1rem; list-style-type: disc;">
+                            <li>Complete <span class="file-path">src\workflow\4_PRIM\t3b_sdiscovery\Analysis_1\prim_structure.xlsx</span> (Sequences and Outcomes sheets)</li>
+                            <li>Fill <span class="file-path">src\workflow\4_PRIM\Population.xlsx</span> file with demographic data</li>
+                            <li>Configure <span class="file-path">src\workflow\4_PRIM\prim_files_creator_cntrl.xlsx</span> with control parameters</li>
+                            <li>Configure <span class="file-path">src\workflow\4_PRIM\t3b_sdiscovery\Units.xlsx</span> with measurement units for drivers</li>
+                        </ul>
+
+                        <h4 style="color: var(--lvg-teal); margin: 1.5rem 0 1rem;">2. YAML Configuration</h4>
+                        <ul style="margin-left: 1rem; list-style-type: disc;">
+                            <li>Verify and adjust <span class="file-path">src\workflow\4_PRIM\PRIM_t3f2.yaml</span> according to project needs</li>
+                        </ul>
+
+                        <h4 style="color: var(--lvg-teal); margin: 1.5rem 0 1rem;">3. Python Script Execution (in order)</h4>
+                        <ul style="margin-left: 1rem; list-style-type: disc;">
+                            <li><span class="file-path">src\workflow\4_PRIM\t3b_sdiscovery\t3f1_prim_structure.py</span> - Processes PRIM structure and generates <span class="file-path">prim_files_creator.pickle</span></li>
+                            <li><span class="file-path">src\workflow\4_PRIM\t3f2_prim_files_creator.py</span> - Creates PRIM files using experiment data</li>
+                            <li><span class="file-path">src\workflow\4_PRIM\t3b_sdiscovery\t3f3_prim_manager.py</span> - Executes PRIM analysis and generates results</li>
+                            <li><span class="file-path">src\workflow\4_PRIM\t3b_sdiscovery\t3f4_range_finder_mapping.py</span> - Maps predominant driver ranges</li>
+                        </ul>
+
+                        <h4 style="color: var(--lvg-teal); margin: 1.5rem 0 1rem;">4. Results Interpretation</h4>
+                        <ul style="margin-left: 1rem; list-style-type: disc;">
+                            <li> Check the results in the file <span class="file-path">src\workflow\4_PRIM\t3b_sdiscovery\t3f4_predominant_ranges_a1_e1_Experiment.xlsx</span>.</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-info" style="margin-top: 1.5rem;">
+                        <div class="alert-title">📝 Important Note</div>
+                        To complete the "Input Data Preparation", "YAML Configuration" and "Results Interpretation" steps, follow the "Guide PRIM Module Configuration".
+                    </div>
+                </div>
+            </section>
+
+            <!-- Final Message -->
+            <section class="section">
+                <h2>
+                    <span class="section-number">🎉</span>
+                    Process Complete
+                </h2>
+                <p>
+                    Congratulations! You have successfully configured and executed the RDM model. 
+                    The results are now available in the output folder for further analysis.
+                </p>
+                
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Scroll progress indicator
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        });
+
+        // Active navigation highlighting
+        const sections = document.querySelectorAll('section[id]');
+        const navItems = document.querySelectorAll('.nav-item');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (scrollY >= (sectionTop - 200)) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('href') === '#' + current) {
+                    item.classList.add('active');
+                }
+            });
+        });
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
