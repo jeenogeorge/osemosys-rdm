@@ -113,6 +113,7 @@ AFR_RDM/
 │   ├── Interface_RDM.xlsx         # Main configuration interface
 │   └── RUN_RDM.py                 # Main execution script
 ├── LICENSE
+├── requirements.txt
 └── README.md
 ```
 
