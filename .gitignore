@@ -7,6 +7,9 @@ Dashboard_RDM.twbx
 Review_Outputs.twbx
 Review_Outputs_New.twbx
 
+# Generated PDF guides (excluded due to file size)
+src/Guides/*.pdf
+
 # From 1_Experiment
 src/workflow/1_Experiment/Results
 src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
