@@ -83,16 +83,21 @@ def main_executer(n1, Executed_Scenario, time_vector, scenario_list,solver,osemo
             
             if solver == 'cbc':
                 str_solve = 'cbc ' + str( output_file ) + '.lp solve -solu ' + str( output_file ) + '.sol'
-        
+
             elif solver == 'cplex':
                 if os.path.exists(output_file + '.sol'):
                     shutil.os.remove(output_file + '.sol')
                 str_solve = 'cplex -c "read ' + str( output_file ) + '.lp" "set threads 2" "optimize" "write ' + str( output_file ) + '.sol"'
+
+            elif solver == 'gurobi':
+                if os.path.exists(output_file + '.sol'):
+                    shutil.os.remove(output_file + '.sol')
+                str_solve = 'gurobi_cl ResultFile=' + str( output_file ) + '.sol ' + str( output_file ) + '.lp'
         os.system( str_start and str_solve )
         time.sleep(1)
         #
-        
-        if solver == 'cbc' or solver == 'cplex':
+
+        if solver == 'cbc' or solver == 'cplex' or solver == 'gurobi':
             AUX.data_processor_new(output_file + '.sol',
                                    './workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx',
                                    str_scen,

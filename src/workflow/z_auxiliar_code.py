@@ -3609,14 +3609,19 @@ def run_osemosys( solver, scenario_dir, data_file, model_file, output_file ):
     else:
         str_matrix = 'glpsol -m ' + str( model_file ) + ' -d ' + str( data_file ) + ' --wlp ' + str( output_file ) + '.lp --check'
         os.system( str_start and str_matrix )
-        
+
         if solver == 'cbc':
             str_solve = 'cbc ' + str( output_file ) + '.lp solve -solu ' + str( output_file ) + '.sol'
-    
+
         elif solver == 'cplex':
             if os.path.exists(output_file + '.sol'):
                 shutil.os.remove(output_file + '.sol')
             str_solve = 'cplex -c "read ' + str( output_file ) + '.lp" "optimize" "write ' + str( output_file ) + '.sol"'
+
+        elif solver == 'gurobi':
+            if os.path.exists(output_file + '.sol'):
+                shutil.os.remove(output_file + '.sol')
+            str_solve = 'gurobi_cl ResultFile=' + str( output_file ) + '.sol ' + str( output_file ) + '.lp'
     os.system( str_start and str_solve )
     
     time.sleep(1)
@@ -3775,6 +3780,45 @@ def parse_cplex_sol_file(file_path, parameters_to_print):
                     # Append to data
                     if variable_name in interest_vars:
                         data.append((variable_name, details, value))
+
+    # Create DataFrame
+    df = pd.DataFrame(data, columns=["Variable", "Details", "Value"])
+    return df
+
+def parse_gurobi_sol_file(file_path, parameters_to_print):
+    """
+    Parses a .sol file output from Gurobi to extract variable data.
+
+    Parameters:
+        file_path (str): Path to the .sol file.
+        parameters_to_print (DataFrame): DataFrame with data to print.
+
+    Returns:
+        pd.DataFrame: DataFrame containing columns ['Variable', 'Details', 'Value'].
+    """
+    data = []
+
+    # Get the variables of interest
+    interest_vars = get_selected_parameters(parameters_to_print)
+
+    with open(file_path, 'r') as file:
+        for line in file:
+            line = line.strip()
+
+            # Skip comment lines
+            if line.startswith("#") or not line:
+                continue
+
+            # Match the variable lines: VariableName(param1,param2,...) value
+            match = re.match(r'([^(]+)\(([^)]+)\)\s+([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)', line)
+            if match:
+                variable_name = match.group(1).strip()  # Variable name (before parenthesis)
+                details = match.group(2).strip()  # Details (inside parenthesis)
+                value = float(match.group(3))  # Value (after parenthesis)
+
+                # Append to data if variable is in interest_vars
+                if variable_name in interest_vars:
+                    data.append((variable_name, details, value))
 
     # Create DataFrame
     df = pd.DataFrame(data, columns=["Variable", "Details", "Value"])
@@ -3999,6 +4043,8 @@ def data_processor_new(output_file, model_structure, strategy, fut_id, solver, p
         df = parse_cbc_sol_file(output_file, parameters_to_print)
     elif solver == 'cplex':
         df = parse_cplex_sol_file(output_file, parameters_to_print)
+    elif solver == 'gurobi':
+        df = parse_gurobi_sol_file(output_file, parameters_to_print)
     elif solver == 'glpk':
         df = parse_glpk_sol_file(output_file, parameters_to_print)
     
@@ -4010,7 +4056,7 @@ def data_processor_new(output_file, model_structure, strategy, fut_id, solver, p
 
     if output_file_type == 'csv':
         # Change the output name for the CSV
-        if solver == 'cplex' or solver == 'cbc':
+        if solver == 'cplex' or solver == 'cbc' or solver == 'gurobi':
             output_csv_file = output_file.replace('sol', 'csv')
         elif solver == 'glpk':
             output_csv_file = output_file.replace('txt', 'csv')
@@ -4030,17 +4076,17 @@ def data_processor_new(output_file, model_structure, strategy, fut_id, solver, p
                     df_output_sol[col] = df_output_sol[col].astype(str)
         
         # Change the output name for the Parquet file
-        if solver == 'cplex' or solver == 'cbc':
+        if solver == 'cplex' or solver == 'cbc' or solver == 'gurobi':
             case_out_path = output_file.replace('sol', 'parquet')
         elif solver == 'glpk':
             case_out_path = output_file.replace('txt', 'parquet')
         # Save as Parquet file
         df_output_sol.to_parquet(case_out_path, engine='pyarrow', index=False)
-        
 
-    
+
+
     # Optionally delete the solver solution file
-    if solver == 'cplex' or solver == 'cbc':
+    if solver == 'cplex' or solver == 'cbc' or solver == 'gurobi':
         shutil.os.remove(output_file)
         shutil.os.remove(output_file.replace('sol', 'lp'))
     elif solver == 'glpk':

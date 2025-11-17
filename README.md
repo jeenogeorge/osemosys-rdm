@@ -12,7 +12,7 @@ AFR_RDM is a Python-based framework that streamlines the entire workflow for wor
   - **Base Future Mode**: Execute single baseline scenarios (Future 0)
   - **RDM Experiment Mode**: Generate and analyze multiple futures with uncertainty ranges
   
-- **Multi-Solver Support**: Compatible with GLPK, CBC, and CPLEX solvers
+- **Multi-Solver Support**: Compatible with GLPK, CBC, CPLEX, and Gurobi solvers
 
 - **Automated Workflow**: Complete preprocessing and postprocessing pipeline for OSeMOSYS models
 
@@ -29,6 +29,7 @@ AFR_RDM is a Python-based framework that streamlines the entire workflow for wor
   - [GLPK](https://www.gnu.org/software/glpk/) (GNU Linear Programming Kit)
   - [CBC](https://github.com/coin-or/Cbc) (COIN-OR Branch and Cut)
   - [CPLEX](https://www.ibm.com/products/ilog-cplex-optimization-studio) (IBM ILOG CPLEX Optimization Studio)
+  - [Gurobi](https://www.gurobi.com/) (Gurobi Optimizer)
 
 ### Python Dependencies
 
@@ -66,7 +67,7 @@ cd AFR_RDM
 pip install -r requirements.txt
 ```
 
-3. Ensure your chosen solver (GLPK, CBC, or CPLEX) is properly installed and accessible from the command line.
+3. Ensure your chosen solver (GLPK, CBC, CPLEX, or Gurobi) is properly installed and accessible from the command line.
 
 ## Project Structure
 
@@ -126,7 +127,7 @@ AFR_RDM/
   - Time series interpolation (linear, non-linear, logistic)
   - OSeMOSYS file parsing and structure extraction
   - Dataset creation and manipulation
-  - Solver execution (GLPK, CBC, CPLEX)
+  - Solver execution (GLPK, CBC, CPLEX, Gurobi)
   - Output processing and data transformation
 
 ### Visualization
@@ -161,7 +162,7 @@ Open `Interface_RDM.xlsx` and configure:
   - `Timeslices_model`: Number of time slices in your model
   - `Run_Base_Future`: "Yes" to run base scenario, "No" to skip
   - `Run_RDM`: "Yes" to run RDM experiment, "No" to skip
-  - `Solver`: Choose "glpk", "cbc", or "cplex"
+  - `Solver`: Choose "glpk", "cbc", "cplex", or "gurobi"
   - `OSeMOSYS_Model_Name`: Name of your OSeMOSYS model file
 
 - **To_Print Sheet**: Specify which output parameters to export
@@ -319,13 +320,14 @@ For more information on PRIM methodology, see the included documentation.
 - **GLPK**: Free, open-source, suitable for medium-scale models
 - **CBC**: Free, open-source, better performance for larger models
 - **CPLEX**: Commercial, optimal for very large models (requires license)
+- **Gurobi**: Commercial, high-performance solver for large-scale optimization (requires license)
 
 ## Troubleshooting
 
 ### Common Issues
 
 1. **Solver not found**: Ensure the solver executable is in your system PATH
-2. **Memory errors**: Large models may require more RAM; consider using CPLEX for better memory management
+2. **Memory errors**: Large models may require more RAM; consider using CPLEX or Gurobi for better memory management
 3. **Import errors**: Verify all Python dependencies are installed
 4. **File format errors**: Ensure scenario files are in valid GNU MathProg format
 
