@@ -184,10 +184,10 @@ if run_base_future == 'Yes':
         #     time_range_vector=list()
         #     for j in range(2015,2071):
         #         time_range_vector.append(j)
-            
-            
+
+
         #    AUX.create_output_dataset_future_0(0, time_range_vector, first_list,'./workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx')
-        if solver == 'cbc' or solver == 'cplex':
+        if solver == 'cbc' or solver == 'cplex' or solver == 'gurobi':
             AUX.data_processor_new('./workflow/1_Experiment/Executables/'+list_scenarios[i].replace('.txt','_0/')+list_scenarios[i].replace('.txt','_0_Output.sol'),
                                     './workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx',
                                     list_scenarios[i].replace('.txt',''),
