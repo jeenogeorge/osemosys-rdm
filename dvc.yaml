@@ -1,20 +1,11 @@
 stages:
-  preprocess:
-    cmd: python src/workflow/z_auxiliar_code.py --stage preprocess
-    deps:
-      - Interface_RDM.xlsx
-      - src/workflow/0_Scenarios/
-    outs:
-      - src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx:
-          cache: true
-    desc: Extract model structure and prepare data preprocessing
-
   base_future:
-    cmd: python src/RUN_RDM.py --mode base
+    cmd: python scripts/run_base_future.py
     deps:
       - Interface_RDM.xlsx
-      - src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
       - src/workflow/0_Scenarios/
+      - src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
+      - scripts/run_base_future.py
     params:
       - Interface_RDM.xlsx:
           Setup:
@@ -29,15 +20,16 @@ stages:
     metrics:
       - src/workflow/1_Experiment/Executables/metrics.json:
           cache: false
-    desc: Execute base future scenario (Future 0)
+    desc: Execute base future scenario (Future 0) with selected solver
 
   rdm_experiment:
-    cmd: python src/RUN_RDM.py --mode rdm
+    cmd: python scripts/run_rdm_experiment.py
     deps:
       - Interface_RDM.xlsx
       - src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
       - src/workflow/0_Scenarios/
       - src/workflow/2_Miscellaneous/shape_of_demand.csv
+      - scripts/run_rdm_experiment.py
     params:
       - Interface_RDM.xlsx:
           Setup:
@@ -54,27 +46,34 @@ stages:
     metrics:
       - src/workflow/1_Experiment/Experimental_Platform/rdm_metrics.json:
           cache: false
-    desc: Execute RDM experiment with uncertainty analysis
+    desc: Execute RDM experiment with Latin Hypercube Sampling uncertainty analysis
 
   postprocess:
-    cmd: python src/workflow/3_Postprocessing/create_csv_concatenate.py
+    cmd: python scripts/run_postprocess.py
     deps:
       - src/workflow/1_Experiment/Experimental_Platform/
       - src/workflow/3_Postprocessing/config_concatenate.yaml
+      - src/workflow/3_Postprocessing/create_csv_concatenate.py
+      - scripts/run_postprocess.py
     outs:
       - src/Results/:
           cache: true
-    desc: Aggregate and postprocess results from all futures
+    metrics:
+      - src/Results/postprocess_metrics.json:
+          cache: false
+    desc: Aggregate and concatenate results from all RDM futures into final CSVs
 
   prim_analysis:
-    cmd: python src/workflow/4_PRIM/PRIM_new.py
+    cmd: python scripts/run_prim.py
     deps:
       - src/Results/
       - src/workflow/4_PRIM/PRIM_config.xlsx
+      - src/workflow/4_PRIM/PRIM_new.py
+      - scripts/run_prim.py
     outs:
       - src/workflow/4_PRIM/Output/:
           cache: true
     plots:
       - src/workflow/4_PRIM/Output/prim_plots.json:
           cache: false
-    desc: Perform PRIM scenario discovery analysis
+    desc: Perform PRIM (Patient Rule Induction Method) scenario discovery analysis

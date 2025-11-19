@@ -15,10 +15,11 @@ The DVC integration provides:
 
 ### Prerequisites
 
-- **Conda/Miniconda/Anaconda**: Required for environment management
+- **Conda/Miniconda/Anaconda**: Required for DVC automation (optional for manual execution)
+- **Python 3.10+**: Required for all execution modes
 - **Solvers**: At least one solver (GLPK, CBC, CPLEX, or Gurobi) installed and in PATH
 
-### First Time Setup
+### First Time Setup (DVC Automation)
 
 1. Open a terminal (Anaconda Prompt on Windows)
 2. Navigate to the AFR_RDM directory
@@ -33,6 +34,35 @@ This will automatically:
 - Install all dependencies (pandas, numpy, DVC, etc.)
 - Initialize DVC if needed
 - Execute the complete pipeline
+
+### Manual Execution (Without DVC)
+
+You can also execute each stage manually without DVC automation:
+
+**Option 1: Run complete workflow (original method)**
+```bash
+cd src
+python RUN_RDM.py
+```
+
+**Option 2: Run individual stages**
+```bash
+# Execute base future only
+python scripts/run_base_future.py
+
+# Execute RDM experiment only
+python scripts/run_rdm_experiment.py
+
+# Execute postprocessing
+python scripts/run_postprocess.py
+
+# Execute PRIM analysis
+python scripts/run_prim.py
+```
+
+**Note**: Manual execution requires:
+- Dependencies installed: `pip install -r requirements.txt`
+- Proper configuration in `Interface_RDM.xlsx`
 
 ### Running the Pipeline
 
@@ -237,9 +267,156 @@ dvc push
 git push
 ```
 
+## Manual Execution Guide
+
+### When to Use Manual Execution
+
+Manual execution is useful when you need to:
+- **Debug individual stages**: Run and test specific parts of the pipeline
+- **Develop new features**: Work on modifications without full pipeline overhead
+- **No DVC/Conda available**: Execute on systems without these tools
+- **Custom workflows**: Run stages in non-standard order or configuration
+
+### Wrapper Scripts
+
+The `scripts/` directory contains wrapper scripts that can be executed independently:
+
+#### 1. Base Future (`scripts/run_base_future.py`)
+Executes only the base future (Future 0) scenario.
+
+```bash
+python scripts/run_base_future.py
+```
+
+**What it does:**
+- Temporarily sets `Run_Base_Future=Yes` and `Run_RDM=No` in Interface_RDM.xlsx
+- Calls `src/RUN_RDM.py` to execute base scenario
+- Generates metrics in `src/workflow/1_Experiment/Executables/metrics.json`
+- Restores original configuration automatically
+
+**Output:**
+- Base future results in `src/workflow/1_Experiment/Executables/Scenario*_0/`
+- CSV files with model outputs
+
+#### 2. RDM Experiment (`scripts/run_rdm_experiment.py`)
+Executes the RDM experiment with uncertainty analysis.
+
+```bash
+python scripts/run_rdm_experiment.py
+```
+
+**What it does:**
+- Temporarily sets `Run_Base_Future=No` and `Run_RDM=Yes`
+- Generates multiple futures using Latin Hypercube Sampling
+- Calls `src/RUN_RDM.py` for RDM execution
+- Generates metrics in `src/workflow/1_Experiment/Experimental_Platform/rdm_metrics.json`
+- Restores original configuration
+
+**Output:**
+- Multiple futures in `src/workflow/1_Experiment/Experimental_Platform/Futures/`
+- Parquet files for each future scenario
+
+#### 3. Postprocessing (`scripts/run_postprocess.py`)
+Aggregates results from all RDM futures.
+
+```bash
+python scripts/run_postprocess.py
+```
+
+**What it does:**
+- Executes `src/workflow/3_Postprocessing/create_csv_concatenate.py`
+- Concatenates results from all futures
+- Generates aggregated CSV files
+- Creates metrics in `src/Results/postprocess_metrics.json`
+
+**Output:**
+- Aggregated CSV files in `src/Results/`
+
+#### 4. PRIM Analysis (`scripts/run_prim.py`)
+Performs scenario discovery analysis.
+
+```bash
+python scripts/run_prim.py
+```
+
+**What it does:**
+- Executes `src/workflow/4_PRIM/PRIM_new.py`
+- Analyzes aggregated results using PRIM methodology
+- Generates rules and visualizations
+- Creates metrics in `src/workflow/4_PRIM/Output/prim_plots.json`
+
+**Output:**
+- PRIM analysis results in `src/workflow/4_PRIM/Output/`
+- Excel files with discovered rules
+- Visualization plots
+
+### Debugging Individual Stages
+
+**View generated metrics:**
+```bash
+# Base future metrics
+cat src/workflow/1_Experiment/Executables/metrics.json
+
+# RDM experiment metrics
+cat src/workflow/1_Experiment/Experimental_Platform/rdm_metrics.json
+
+# Postprocessing metrics
+cat src/Results/postprocess_metrics.json
+
+# PRIM metrics
+cat src/workflow/4_PRIM/Output/prim_plots.json
+```
+
+**Clean outputs before re-running:**
+```bash
+# Clean base future outputs
+rm -rf src/workflow/1_Experiment/Executables/Scenario*_0/
+
+# Clean RDM experiment outputs
+rm -rf src/workflow/1_Experiment/Experimental_Platform/Futures/
+
+# Clean postprocessing outputs
+rm -rf src/Results/*.csv
+
+# Clean PRIM outputs
+rm -rf src/workflow/4_PRIM/Output/*
+```
+
+### Comparison: Manual vs DVC Execution
+
+| Feature | Manual Execution | DVC Automation |
+|---------|-----------------|----------------|
+| Setup | Install dependencies only | Creates full Conda environment |
+| Execution | Run individual scripts | Automated pipeline execution |
+| Caching | No caching | Intelligent stage caching |
+| Dependencies | Manual tracking | Automatic dependency tracking |
+| Reproducibility | Requires documentation | Built-in via dvc.lock |
+| Debugging | Easy per-stage debugging | Full pipeline or single stage |
+| Best for | Development, debugging | Production runs, CI/CD |
+
+### Hybrid Approach
+
+You can mix both approaches:
+
+1. **Develop with manual execution:**
+   ```bash
+   python scripts/run_base_future.py  # Test changes
+   ```
+
+2. **Validate with DVC:**
+   ```bash
+   python run.py  # Full pipeline validation
+   ```
+
+3. **Debug specific stage:**
+   ```bash
+   dvc repro base_future  # Re-run only one stage
+   ```
+
 ## Support
 
 For issues or questions:
 1. Check this documentation
 2. Review DVC official docs: https://dvc.org/doc
 3. Check the main README.md for AFR_RDM-specific questions
+4. For manual execution issues, verify dependencies: `pip list`
