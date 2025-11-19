@@ -1,0 +1,80 @@
+stages:
+  preprocess:
+    cmd: python src/workflow/z_auxiliar_code.py --stage preprocess
+    deps:
+      - Interface_RDM.xlsx
+      - src/workflow/0_Scenarios/
+    outs:
+      - src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx:
+          cache: true
+    desc: Extract model structure and prepare data preprocessing
+
+  base_future:
+    cmd: python src/RUN_RDM.py --mode base
+    deps:
+      - Interface_RDM.xlsx
+      - src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
+      - src/workflow/0_Scenarios/
+    params:
+      - Interface_RDM.xlsx:
+          Setup:
+            - Run_Base_Future
+            - Solver
+            - OSeMOSYS_Model_Name
+            - Region
+    outs:
+      - src/workflow/1_Experiment/Executables/:
+          cache: true
+          persist: false
+    metrics:
+      - src/workflow/1_Experiment/Executables/metrics.json:
+          cache: false
+    desc: Execute base future scenario (Future 0)
+
+  rdm_experiment:
+    cmd: python src/RUN_RDM.py --mode rdm
+    deps:
+      - Interface_RDM.xlsx
+      - src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
+      - src/workflow/0_Scenarios/
+      - src/workflow/2_Miscellaneous/shape_of_demand.csv
+    params:
+      - Interface_RDM.xlsx:
+          Setup:
+            - Run_RDM
+            - Solver
+            - OSeMOSYS_Model_Name
+            - Region
+            - Timeslices_model
+          Uncertainty_Table
+    outs:
+      - src/workflow/1_Experiment/Experimental_Platform/:
+          cache: true
+          persist: false
+    metrics:
+      - src/workflow/1_Experiment/Experimental_Platform/rdm_metrics.json:
+          cache: false
+    desc: Execute RDM experiment with uncertainty analysis
+
+  postprocess:
+    cmd: python src/workflow/3_Postprocessing/create_csv_concatenate.py
+    deps:
+      - src/workflow/1_Experiment/Experimental_Platform/
+      - src/workflow/3_Postprocessing/config_concatenate.yaml
+    outs:
+      - src/Results/:
+          cache: true
+    desc: Aggregate and postprocess results from all futures
+
+  prim_analysis:
+    cmd: python src/workflow/4_PRIM/PRIM_new.py
+    deps:
+      - src/Results/
+      - src/workflow/4_PRIM/PRIM_config.xlsx
+    outs:
+      - src/workflow/4_PRIM/Output/:
+          cache: true
+    plots:
+      - src/workflow/4_PRIM/Output/prim_plots.json:
+          cache: false
+    desc: Perform PRIM scenario discovery analysis

@@ -1,0 +1,55 @@
+# Add patterns of files DVC should ignore, which could be
+# large files that are not versioned or temporary files
+
+# Temporary solver files
+*.lp
+*.log
+*.sol
+*.txt.tmp
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+AFR-RDM-env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# DVC internals
+.dvc/tmp
+.dvc/cache
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# OS files
+Thumbs.db
+desktop.ini
+
+# Solver temporary files (keep output but ignore temp)
+*_temp.sol
+*_temp.lp
+
+# Large dashboard files (already in gitignore)
+*.twbx
+
+# Claude code assistant
+.claude/

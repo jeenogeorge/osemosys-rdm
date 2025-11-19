@@ -1,0 +1,31 @@
+name: AFR-RDM-env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # Python version
+  - python=3.11
+
+  # Core scientific computing
+  - pandas
+  - numpy
+  - scipy
+
+  # Excel file handling
+  - openpyxl
+  - xlsxwriter
+
+  # Additional data processing
+  - pyarrow  # For parquet files
+
+  # Configuration files
+  - pyyaml
+
+  # Statistical analysis for RDM
+  - scikit-learn
+
+  # Pip dependencies
+  - pip
+  - pip:
+      - dvc>=3.0.0
+      - pyDOE>=0.3.8
