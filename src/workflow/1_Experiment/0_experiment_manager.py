@@ -171,7 +171,7 @@ def function_C_mathprog_parallel( fut_index, scen, inherited_scenarios, unpackag
         current_script_path = os.path.dirname(os.path.abspath(__file__))
         # Construct the full path to the Excel file, relative to the script's directory
         scen_file_dir = os.path.join(current_script_path, print_adress, str( scenario_list[scen] ), str( scenario_list[scen] ) + '_' + str( fut ))
-        os.mkdir( scen_file_dir )
+        os.makedirs( scen_file_dir, exist_ok=True )
     except OSError as exc:
         if exc.errno != errno.EEXIST:
             raise
@@ -927,6 +927,10 @@ if __name__ == '__main__':
 
             #
             #######################################################################
+            # print(1,p)
+            # print(2,p)
+            # print(3,p)
+            # sys.exit(3)
             X_Num.append( int( uncertainty_table.loc[ p ,'X_Num'] ) )
             X_Cat.append( str( uncertainty_table.loc[ p ,'X_Category'] ) )
             # Exact_Param_Num.append( int( uncertainty_table.loc[ p ,'Explored_Parameter_Number'] ) )

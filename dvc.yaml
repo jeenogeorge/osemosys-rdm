@@ -2,49 +2,47 @@ stages:
   base_future:
     cmd: python scripts/run_base_future.py
     deps:
-      - Interface_RDM.xlsx
       - src/workflow/0_Scenarios/
+      - src/Interface_RDM.xlsx
       - src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
       - scripts/run_base_future.py
-    params:
-      - Interface_RDM.xlsx:
-          Setup:
-            - Run_Base_Future
-            - Solver
-            - OSeMOSYS_Model_Name
-            - Region
+    # params:
+    #   - Interface_RDM.xlsx:
+    #       - Setup.Run_Base_Future
+    #       - Setup.Solver
+    #       - Setup.OSeMOSYS_Model_Name
+    #       - Setup.Region
     outs:
       - src/workflow/1_Experiment/Executables/:
           cache: true
           persist: false
     metrics:
-      - src/workflow/1_Experiment/Executables/metrics.json:
+      - src/workflow/1_Experiment/base_future_metrics.json:
           cache: false
     desc: Execute base future scenario (Future 0) with selected solver
 
   rdm_experiment:
     cmd: python scripts/run_rdm_experiment.py
     deps:
-      - Interface_RDM.xlsx
       - src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
       - src/workflow/0_Scenarios/
+      - src/Interface_RDM.xlsx
       - src/workflow/2_Miscellaneous/shape_of_demand.csv
       - scripts/run_rdm_experiment.py
-    params:
-      - Interface_RDM.xlsx:
-          Setup:
-            - Run_RDM
-            - Solver
-            - OSeMOSYS_Model_Name
-            - Region
-            - Timeslices_model
-          Uncertainty_Table
+    # params:
+    #   - Interface_RDM.xlsx:
+    #       - Setup.Run_RDM
+    #       - Setup.Solver
+    #       - Setup.OSeMOSYS_Model_Name
+    #       - Setup.Region
+    #       - Setup.Timeslices_model
+    #       - Uncertainty_Table
     outs:
       - src/workflow/1_Experiment/Experimental_Platform/:
           cache: true
           persist: false
     metrics:
-      - src/workflow/1_Experiment/Experimental_Platform/rdm_metrics.json:
+      - src/workflow/1_Experiment/rdm_experiment_metrics.json:
           cache: false
     desc: Execute RDM experiment with Latin Hypercube Sampling uncertainty analysis
 
@@ -52,28 +50,67 @@ stages:
     cmd: python scripts/run_postprocess.py
     deps:
       - src/workflow/1_Experiment/Experimental_Platform/
-      - src/workflow/3_Postprocessing/config_concatenate.yaml
-      - src/workflow/3_Postprocessing/create_csv_concatenate.py
+      - src/workflow/1_Experiment/Executables/
+      - src/workflow/1_Experiment/1_output_dataset_creator.py
+      - src/workflow/1_Experiment/local_dataset_creator_0.py
+      - src/workflow/1_Experiment/local_dataset_creator_f.py
       - scripts/run_postprocess.py
     outs:
       - src/Results/:
           cache: true
     metrics:
-      - src/Results/postprocess_metrics.json:
+      - src/workflow/3_Postprocessing/postprocess_metrics.json:
           cache: false
     desc: Aggregate and concatenate results from all RDM futures into final CSVs
 
-  prim_analysis:
-    cmd: python scripts/run_prim.py
+  # ============================================================================
+  # PRIM (Patient Rule Induction Method) Stages
+  # ============================================================================
+  # These stages execute scenario discovery analysis on RDM experiment results.
+  # Run with: python run.py prim
+  # Or run all: python run.py all
+
+  prim_files_creator:
+    cmd: python scripts/run_prim_files_creator.py
     deps:
+      # RDM results (required input)
       - src/Results/
-      - src/workflow/4_PRIM/PRIM_config.xlsx
-      - src/workflow/4_PRIM/PRIM_new.py
-      - scripts/run_prim.py
+      # PRIM configuration files
+      - src/workflow/4_PRIM/Population.xlsx
+      - src/workflow/4_PRIM/prim_files_creator_cntrl.xlsx
+      - src/workflow/4_PRIM/PRIM_t3f2.yaml
+      - src/workflow/4_PRIM/t3f2_prim_files_creator.py
+      # Wrapper script
+      - scripts/run_prim_files_creator.py
     outs:
-      - src/workflow/4_PRIM/Output/:
+      - src/workflow/4_PRIM/t3b_sdiscovery/experiment_data/:
           cache: true
-    plots:
-      - src/workflow/4_PRIM/Output/prim_plots.json:
+          persist: false
+    metrics:
+      - src/workflow/4_PRIM/prim_files_creator_metrics.json:
           cache: false
-    desc: Perform PRIM (Patient Rule Induction Method) scenario discovery analysis
+    desc: Create PRIM input files from RDM experiment results
+
+  prim_analysis:
+    cmd: python scripts/run_prim_analysis.py
+    deps:
+      # Output from prim_files_creator
+      - src/workflow/4_PRIM/t3b_sdiscovery/experiment_data/
+      # PRIM structure and configuration
+      - src/workflow/4_PRIM/t3b_sdiscovery/Analysis_1/prim_structure.xlsx
+      - src/workflow/4_PRIM/t3b_sdiscovery/Units.xlsx
+      # PRIM scripts
+      - src/workflow/4_PRIM/t3b_sdiscovery/t3f1_prim_structure.py
+      - src/workflow/4_PRIM/t3b_sdiscovery/t3f3_prim_manager.py
+      - src/workflow/4_PRIM/t3b_sdiscovery/t3f4_range_finder_mapping.py
+      # Wrapper script
+      - scripts/run_prim_analysis.py
+    outs:
+      - src/workflow/4_PRIM/t3b_sdiscovery/sd_ana_1_exp_1_Experiment.csv:
+          cache: true
+      - src/workflow/4_PRIM/t3b_sdiscovery/t3f4_predominant_ranges_a1_e1_Experiment.xlsx:
+          cache: true
+    metrics:
+      - src/workflow/4_PRIM/prim_analysis_metrics.json:
+          cache: false
+    desc: Execute PRIM scenario discovery analysis and identify predominant parameter ranges

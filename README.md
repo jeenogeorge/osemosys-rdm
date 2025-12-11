@@ -16,7 +16,11 @@ AFR_RDM is a Python-based framework that streamlines the entire workflow for wor
 
 - **Automated Workflow**: Complete preprocessing and postprocessing pipeline for OSeMOSYS models
 
+- **DVC Pipeline Automation**: Reproducible pipeline execution with automatic dependency tracking and caching
+
 - **Uncertainty Analysis**: Latin Hypercube Sampling (LHS) for generating futures with configurable tolerance ranges
+
+- **PRIM Scenario Discovery**: Integrated Patient Rule Induction Method for identifying key parameter ranges
 
 - **Structured Output**: Organized CSV outputs ready for analysis and visualization
 
@@ -25,36 +29,35 @@ AFR_RDM is a Python-based framework that streamlines the entire workflow for wor
 ### System Requirements
 
 - **Python**: Version 3.10 or higher
+- **Conda/Miniconda**: Required for environment management
 - **Solvers** (at least one required, install separately):
   - [GLPK](https://www.gnu.org/software/glpk/) (GNU Linear Programming Kit)
   - [CBC](https://github.com/coin-or/Cbc) (COIN-OR Branch and Cut)
   - [CPLEX](https://www.ibm.com/products/ilog-cplex-optimization-studio) (IBM ILOG CPLEX Optimization Studio)
   - [Gurobi](https://www.gurobi.com/) (Gurobi Optimizer)
+- **Git** (optional): For version control integration. The tool works without Git installed.
 
 ### Python Dependencies
 
-Install the required Python packages:
-
-```bash
-pip install pandas numpy scipy xlsxwriter pyDOE pyarrow openpyxl
-```
-
-Or using a requirements file:
-
-```bash
-pip install -r requirements.txt
-```
-
-**Core Dependencies:**
-- pandas
-- numpy
-- scipy
-- xlsxwriter
-- pyDOE (for Latin Hypercube Sampling)
-- pyarrow (for Parquet file support)
-- openpyxl (for Excel file handling)
+Dependencies are automatically managed through the Conda environment. Core packages include:
+- pandas, numpy, scipy
+- xlsxwriter, openpyxl
+- pyDOE (Latin Hypercube Sampling)
+- pyarrow (Parquet support)
+- DVC (Data Version Control)
+- prim (PRIM analysis)
 
 ## Installation
+
+### Option 1: Automated Setup (Recommended)
+
+Simply run the automation script - it will create the environment and install all dependencies automatically:
+
+```bash
+python run.py rdm
+```
+
+### Option 2: Manual Setup
 
 1. Clone the repository:
 ```bash
@@ -62,9 +65,10 @@ git clone https://github.com/clg-admin/AFR_RDM.git
 cd AFR_RDM
 ```
 
-2. Install Python dependencies:
+2. Create and activate the Conda environment:
 ```bash
-pip install -r requirements.txt
+conda env create -f environment.yaml
+conda activate AFR-RDM-env
 ```
 
 3. Ensure your chosen solver (GLPK, CBC, CPLEX, or Gurobi) is properly installed and accessible from the command line.
@@ -73,6 +77,15 @@ pip install -r requirements.txt
 
 ```
 AFR_RDM/
+├── run.py                          # Main automation script (DVC pipeline runner)
+├── dvc.yaml                        # DVC pipeline definition
+├── environment.yaml                # Conda environment specification
+├── scripts/                        # DVC wrapper scripts
+│   ├── run_base_future.py          # Base future execution wrapper
+│   ├── run_rdm_experiment.py       # RDM experiment wrapper
+│   ├── run_postprocess.py          # Postprocessing wrapper
+│   ├── run_prim_files_creator.py   # PRIM files creator wrapper
+│   └── run_prim_analysis.py        # PRIM analysis wrapper
 ├── src/
 │   ├── Results/                    # Output CSV files
 │   ├── workflow/
@@ -94,25 +107,18 @@ AFR_RDM/
 │   │       ├── Population.xlsx
 │   │       └── t3b_sdiscovery/    # Scenario discovery analysis
 │   │           ├── Analysis_1/
-│   │           │   ├── prim_structure.xlsx
-│   │           │   ├── comp_pfd_1.pickle
-│   │           │   └── prim_files_creator.pickle
+│   │           │   └── prim_structure.xlsx
 │   │           ├── experiment_data/
 │   │           ├── Units.xlsx
 │   │           ├── t3f1_prim_structure.py
 │   │           ├── t3f3_prim_manager.py
-│   │           ├── t3f4_range_finder_mapping.py
-│   │           ├── t3f4_predominant_ranges_a1_e1_Experiment.xlsx
-│   │           ├── sd_ana_1_exp_1_Experiment.csv
-│   │           ├── sd_ana_1_exp_1_Experiment.txt
-│   │           ├── sd_manager.txt
-│   │           └── subtbl_ana_1_exp_1_Experiment.pickle
+│   │           └── t3f4_range_finder_mapping.py
 │   ├── Guides/                     # User documentation
 │   │   ├── Guide AFR_RDM.html
 │   │   └── Guide PRIM Module Configuration.html
 │   ├── z_auxiliar_code.py         # Core library functions
 │   ├── Interface_RDM.xlsx         # Main configuration interface
-│   └── RUN_RDM.py                 # Main execution script
+│   └── RUN_RDM.py                 # Legacy execution script
 ├── LICENSE
 ├── requirements.txt
 └── README.md
@@ -122,7 +128,8 @@ AFR_RDM/
 
 ### Main Scripts
 
-- **RUN_RDM.py**: Primary execution script that orchestrates the entire workflow
+- **run.py**: Main automation script with DVC pipeline management
+- **RUN_RDM.py**: Core execution script for RDM workflow (called by automation)
 - **z_auxiliar_code.py**: Core library containing utility functions for:
   - Time series interpolation (linear, non-linear, logistic)
   - OSeMOSYS file parsing and structure extraction
@@ -142,6 +149,58 @@ Comprehensive HTML guides are available in `src/Guides/`:
 - **Guide PRIM Module Configuration.html**: Detailed instructions for PRIM module setup and configuration
 
 ## Usage
+
+### Quick Start (Automated Pipeline)
+
+The recommended way to run AFR_RDM is using the automated pipeline runner:
+
+```bash
+# Execute RDM pipeline (base future + RDM experiment + postprocessing)
+python run.py rdm
+
+# Execute PRIM analysis (requires RDM results)
+python run.py prim
+
+# Execute both RDM and PRIM sequentially
+python run.py all
+```
+
+#### Command Options
+
+```bash
+python run.py <module> [options]
+
+Modules:
+  rdm           Execute RDM pipeline only
+  prim          Execute PRIM analysis only (requires RDM results)
+  all           Execute both RDM and PRIM sequentially
+
+Options:
+  --force       Force re-execution of all stages (ignore cache)
+  --skip-pull   Skip 'dvc pull' even if remote is configured
+  --env-name    Specify Conda environment name
+  --env-file    Path to environment.yaml file
+```
+
+#### Examples
+
+```bash
+# First run - creates environment, installs dependencies, executes pipeline
+python run.py rdm
+
+# Force re-run all stages (ignore cached results)
+python run.py rdm --force
+
+# Run complete workflow (RDM + PRIM)
+python run.py all
+
+# Run PRIM analysis only (after RDM has completed)
+python run.py prim
+```
+
+### Manual Execution (Legacy)
+
+For manual execution without DVC automation:
 
 ### 1. Prepare Input Scenarios
 
@@ -167,9 +226,9 @@ Open `Interface_RDM.xlsx` and configure:
 
 - **To_Print Sheet**: Specify which output parameters to export
 
-### 3. Run the Workflow
+### 3. Run the Workflow (Legacy Method)
 
-Execute the main script:
+Execute directly from the src folder:
 
 ```bash
 cd src
@@ -231,6 +290,84 @@ The aggregated results are stored in `src/Results/` with filenames that include 
 
 Where `{Region}` corresponds to the value specified in the "Region" column of the "Setup" sheet in [Interface_RDM.xlsx](Interface_RDM.xlsx).
 
+## DVC Pipeline Automation
+
+The project uses [DVC (Data Version Control)](https://dvc.org/) to manage the execution pipeline, providing:
+
+- **Automatic dependency tracking**: Only re-runs stages when inputs change
+- **Caching**: Stores intermediate results to avoid redundant computations
+- **Reproducibility**: Ensures consistent results across different machines
+
+### Pipeline Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              RDM PIPELINE                                    │
+│                           python run.py rdm                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────┐     ┌──────────────────┐     ┌─────────────────┐         │
+│  │ base_future  │ ──► │  rdm_experiment  │ ──► │   postprocess   │         │
+│  └──────────────┘     └──────────────────┘     └─────────────────┘         │
+│        │                      │                        │                    │
+│        ▼                      ▼                        ▼                    │
+│   Executables/          Futures/                  src/Results/              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                             PRIM PIPELINE                                    │
+│                          python run.py prim                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌────────────────────┐              ┌─────────────────┐                   │
+│  │ prim_files_creator │ ──────────►  │  prim_analysis  │                   │
+│  └────────────────────┘              └─────────────────┘                   │
+│           │                                   │                             │
+│           ▼                                   ▼                             │
+│   1. t3f1_prim_structure.py          3. t3f3_prim_manager.py               │
+│   2. t3f2_prim_files_creator.py      4. t3f4_range_finder_mapping.py       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Automatic Environment Setup
+
+When you run `python run.py`, the script automatically:
+
+1. **Checks/Creates Conda environment** from `environment.yaml`
+2. **Verifies/Installs dependencies** (pandas, numpy, DVC, prim, etc.)
+3. **Initializes Git repository** if needed (or runs without Git using `--no-scm`)
+4. **Initializes DVC repository** for pipeline management
+5. **Executes the pipeline** with automatic caching
+
+### Running Without Git
+
+The automation works on machines **without Git installed**. When Git is not available:
+- DVC initializes in standalone mode (`--no-scm`)
+- All pipeline features work normally
+- Only version control features are disabled
+
+This is useful for end users who download the repository as a ZIP file.
+
+### Cache Behavior
+
+DVC tracks changes using MD5 hashes of:
+- Input files (scenarios, configuration)
+- Script files
+- Output files
+
+When you re-run the pipeline:
+- **Unchanged stages**: Skipped (uses cached results)
+- **Changed stages**: Re-executed automatically
+- **Downstream stages**: Re-executed if upstream changed
+
+To force re-execution of all stages:
+```bash
+python run.py rdm --force
+```
+
 ## Advanced Configuration
 
 ### Customizing RDM Parameters
@@ -291,11 +428,16 @@ The PRIM module requires several configuration files located in `src/workflow/4_
 
 #### Execution Scripts
 
-Located in `src/workflow/4_PRIM/`:
-- `t3f2_prim_files_creator.py`: Generates PRIM analysis files
-- `t3b_sdiscovery/t3f1_prim_structure.py`: Defines PRIM structure
-- `t3b_sdiscovery/t3f3_prim_manager.py`: Executes PRIM analysis
-- `t3b_sdiscovery/t3f4_range_finder_mapping.py`: Maps predominant parameter ranges
+The PRIM scripts execute in the following order:
+
+| Order | Script | Location | Function |
+|-------|--------|----------|----------|
+| 1 | `t3f1_prim_structure.py` | `t3b_sdiscovery/` | Defines PRIM structure from configuration |
+| 2 | `t3f2_prim_files_creator.py` | `4_PRIM/` | Creates input files from RDM results |
+| 3 | `t3f3_prim_manager.py` | `t3b_sdiscovery/` | Executes PRIM analysis |
+| 4 | `t3f4_range_finder_mapping.py` | `t3b_sdiscovery/` | Maps predominant parameter ranges |
+
+When using the automated pipeline (`python run.py prim`), these scripts are executed automatically in the correct order.
 
 #### Output Files
 

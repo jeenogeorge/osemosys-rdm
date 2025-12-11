@@ -13,22 +13,22 @@ import sys
 import shutil
 import numpy as np
 
-def get_config_main_path(full_path, base_folder='3_Postprocessing'):
+def get_config_main_path(full_path, base_folder='workflow/3_Postprocessing'):
     # Split the path into parts
     parts = full_path.split(os.sep)
-    
+
     # Find the index of the target directory 'src'
     target_index = parts.index('src') if 'src' in parts else None
-    
+
     # If the directory is found, reconstruct the path up to that point
     if target_index is not None:
         base_path = os.sep.join(parts[:target_index + 1])
     else:
         base_path = full_path  # If not found, return the original path
-    
+
     # Append the specified directory to the base path
     appended_path = os.path.join(base_path, base_folder) + os.sep
-    
+
     return appended_path
 
 def load_and_process_yaml(path):

@@ -5,6 +5,9 @@ Postprocessing Wrapper for DVC Pipeline
 This script executes the postprocessing stage that aggregates and concatenates
 results from all RDM futures into final CSV files.
 
+This script calls 1_output_dataset_creator.py which consolidates parquet outputs
+from the experiment stage into final CSV files in src/Results/.
+
 Usage:
     python scripts/run_postprocess.py
 
@@ -69,41 +72,52 @@ def main():
 
     # Paths
     project_root = Path(__file__).parent.parent
-    postprocess_dir = project_root / 'src' / 'workflow' / '3_Postprocessing'
-    postprocess_script = postprocess_dir / 'create_csv_concatenate.py'
+    experiment_dir = project_root / 'src' / 'workflow' / '1_Experiment'
+    postprocess_script = experiment_dir / '1_output_dataset_creator.py'
     results_dir = project_root / 'src' / 'Results'
-    metrics_file = results_dir / 'postprocess_metrics.json'
+    metrics_file = project_root / 'src' / 'workflow' / '3_Postprocessing' / 'postprocess_metrics.json'
+    interface_path = project_root / 'src' / 'Interface_RDM.xlsx'
 
     # Verify postprocessing script exists
     if not postprocess_script.exists():
         print(f"❌ Error: {postprocess_script} not found")
         sys.exit(1)
 
+    # Read parameters from Interface_RDM.xlsx
+    import pandas as pd
+    setup_df = pd.read_excel(interface_path, sheet_name='Setup')
+    region = str(setup_df.at[0, 'Region'])
+
     start_time = time.time()
 
     try:
-        print(f"📂 Postprocessing directory: {postprocess_dir}")
+        print(f"📂 Experiment directory: {experiment_dir}")
         print(f"📄 Script: {postprocess_script.name}")
+        print(f"🔧 Region: {region}")
         print()
 
-        # Change to postprocessing directory
+        # Change to src directory (script expects to be run from there)
         original_dir = os.getcwd()
-        os.chdir(postprocess_dir)
+        os.chdir(project_root / 'src')
 
-        print("🚀 Executing create_csv_concatenate.py...")
+        print("🚀 Executing 1_output_dataset_creator.py...")
         print("-" * 70)
 
-        # Execute the postprocessing script
-        # This preserves the original script logic
-        with open(postprocess_script, 'r', encoding='utf-8') as f:
-            script_code = f.read()
-
-        exec(compile(script_code, str(postprocess_script), 'exec'))
+        # Execute the postprocessing script as subprocess with region parameter
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, str(postprocess_script), region],
+            check=True,
+            capture_output=False
+        )
 
         print("-" * 70)
 
         # Change back to original directory
         os.chdir(original_dir)
+
+        # Ensure Results directory exists (even if empty) for DVC
+        results_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate metrics
         elapsed_time = time.time() - start_time

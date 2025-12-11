@@ -83,30 +83,36 @@ if run_base_future == 'Yes':
     print('Step 3 finished')
     
     ' Step 4: Clean ./workflow/1_Experiment/Executables folder except .py file'
-    
+
     # Clean folders
     dir = './workflow/1_Experiment/Executables/'
-    for files in os.listdir(dir):
-        path = os.path.join(dir, files)
-        if '.py' not in files:
-            try:
-                shutil.rmtree(path)
-            except OSError:
-                os.remove(path)
+    if os.path.exists(dir):
+        for files in os.listdir(dir):
+            path = os.path.join(dir, files)
+            if '.py' not in files:
+                try:
+                    shutil.rmtree(path)
+                except OSError:
+                    os.remove(path)
+    else:
+        os.makedirs(dir, exist_ok=True)
     
     print('Step 4 finished')
     
     ' Step 5: Clean ./workflow/1_Experiment/Experimental_Platform/Futures folder except .py file'
-    
+
     # Clean folders
     dir = './workflow/1_Experiment/Experimental_Platform/Futures'
-    for files in os.listdir(dir):
-        path = os.path.join(dir, files)
-        if '.py' not in files:
-            try:
-                shutil.rmtree(path)
-            except OSError:
-                os.remove(path)
+    if os.path.exists(dir):
+        for files in os.listdir(dir):
+            path = os.path.join(dir, files)
+            if '.py' not in files:
+                try:
+                    shutil.rmtree(path)
+                except OSError:
+                    os.remove(path)
+    else:
+        os.makedirs(dir, exist_ok=True)
                 
     print('Step 5 finished')
     

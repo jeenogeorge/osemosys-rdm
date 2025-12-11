@@ -14,12 +14,12 @@ import pyarrow
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 dir_executables = os.path.join(current_script_path, 'Executables')
 
-sys.path.insert(0, dir_executables)
+# Import local dataset creators from parent directory
+sys.path.insert(0, current_script_path)
 import local_dataset_creator_0
+import local_dataset_creator_f
 
 dir_futures = os.path.join(current_script_path, 'Experimental_Platform', 'Futures')
-sys.path.insert(0, dir_futures)
-import local_dataset_creator_f
 
 'Define control parameters:'
 if __name__ == '__main__':

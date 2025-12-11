@@ -17,7 +17,7 @@ excel_data_file_dir:  '..\\workflow\\1_Experiment\\Experimental_Platform\\Future
 del_files: True
 execute_scenarios: ['All']
 scens: ['Scenario1']
-execute_futures: [2,4]
+execute_futures: [1,2]
 model: 'MOMF'
 round_#: 4 # Number to round
 disc_rate: 0.0504

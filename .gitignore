@@ -1,5 +1,6 @@
-# Results folder
+# Results folder (DVC manages this directory)
 src/Results/*
+!src/Results/.gitkeep
 
 # Dashboard test (excluded due to large file sizes)
 Dashboard.twbx
@@ -16,15 +17,34 @@ src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
 src/workflow/1_Experiment/OSEMOSYS_UGA_Energy_Input.csv
 src/workflow/1_Experiment/OSEMOSYS_UGA_Energy_Output.csv
 
-# From Executables
-src/workflow/1_Experiment/Executables/input_dataset_0.csv
-src/workflow/1_Experiment/Executables/output_dataset_0.csv
-src/workflow/1_Experiment/Executables/Scenario1_0
+# From Executables (DVC manages this directory)
+src/workflow/1_Experiment/Executables/*
+!src/workflow/1_Experiment/Executables/.gitkeep
 
-# From Experimental_Platform
-src/workflow/1_Experiment/Experimental_Platform/Futures/input_dataset_f.parquet
-src/workflow/1_Experiment/Experimental_Platform/Futures/output_dataset_f.parquet
-src/workflow/1_Experiment/Experimental_Platform/Futures/Scenario1
+# From Experimental_Platform (DVC manages this directory)
+src/workflow/1_Experiment/Experimental_Platform/*
+!src/workflow/1_Experiment/Experimental_Platform/.gitkeep
+
+# From PRIM Output (DVC manages this directory)
+src/workflow/4_PRIM/Output/*
+!src/workflow/4_PRIM/Output/.gitkeep
+
+# PRIM experiment_data (DVC manages this directory)
+src/workflow/4_PRIM/t3b_sdiscovery/experiment_data/*
+!src/workflow/4_PRIM/t3b_sdiscovery/experiment_data/.gitkeep
+
+# PRIM generated outputs (DVC manages these)
+src/workflow/4_PRIM/t3b_sdiscovery/sd_ana_*.csv
+src/workflow/4_PRIM/t3b_sdiscovery/sd_ana_*.txt
+src/workflow/4_PRIM/t3b_sdiscovery/t3f4_predominant_ranges_*.xlsx
+src/workflow/4_PRIM/t3b_sdiscovery/subtbl_*.pickle
+
+# DVC metrics files
+src/workflow/1_Experiment/base_future_metrics.json
+src/workflow/1_Experiment/rdm_experiment_metrics.json
+src/workflow/3_Postprocessing/postprocess_metrics.json
+src/workflow/4_PRIM/prim_files_creator_metrics.json
+src/workflow/4_PRIM/prim_analysis_metrics.json
 
 # From otoole templates
 src/workflow/3_Postprocessing/otoole_config/templates/*

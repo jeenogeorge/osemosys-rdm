@@ -24,6 +24,7 @@ import time
 import shutil
 from pathlib import Path
 import pandas as pd
+from openpyxl import load_workbook
 
 # Add src to path to import RUN_RDM
 sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
@@ -44,23 +45,49 @@ def configure_for_rdm_only(interface_path):
     """
     Modify Interface_RDM.xlsx to run only RDM experiment.
     Sets Run_Base_Future=No and Run_RDM=Yes
+    Also caches formula values in Uncertainty_Table to avoid NaN issues.
     """
     print("📝 Configuring Interface_RDM.xlsx for RDM experiment only...")
 
-    # Read the Excel file
-    with pd.ExcelFile(interface_path) as xls:
-        setup_df = pd.read_excel(xls, sheet_name='Setup', header=None)
+    # Load with data_only=True to get calculated values from formulas
+    wb_data = load_workbook(interface_path, data_only=True)
 
-    # Find and modify the configuration rows
-    for idx, row in setup_df.iterrows():
-        if row[0] == 'Run_Base_Future':
-            setup_df.at[idx, 1] = 'No'
-        elif row[0] == 'Run_RDM':
-            setup_df.at[idx, 1] = 'Yes'
+    # Extract calculated values from Uncertainty_Table
+    ws_unc_data = wb_data['Uncertainty_Table']
+    cached_values = {}
+    for row_idx in range(1, ws_unc_data.max_row + 1):
+        for col_idx in range(1, ws_unc_data.max_column + 1):
+            cell_value = ws_unc_data.cell(row=row_idx, column=col_idx).value
+            if cell_value is not None:
+                cached_values[(row_idx, col_idx)] = cell_value
+    wb_data.close()
 
-    # Write back to Excel
-    with pd.ExcelWriter(interface_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        setup_df.to_excel(writer, sheet_name='Setup', index=False, header=False)
+    # Load normally to modify
+    wb = load_workbook(interface_path)
+
+    # Modify Setup sheet
+    ws_setup = wb['Setup']
+    headers = {}
+    for col_idx, cell in enumerate(ws_setup[1], start=1):
+        if cell.value:
+            headers[cell.value] = col_idx
+
+    if 'Run_Base_Future' in headers:
+        ws_setup.cell(row=2, column=headers['Run_Base_Future'], value='No')
+    if 'Run_RDM' in headers:
+        ws_setup.cell(row=2, column=headers['Run_RDM'], value='Yes')
+
+    # Write cached values back to Uncertainty_Table to preserve formula results
+    ws_unc = wb['Uncertainty_Table']
+    for (row_idx, col_idx), value in cached_values.items():
+        cell = ws_unc.cell(row=row_idx, column=col_idx)
+        # Only replace formula cells with their calculated values
+        if str(cell.value).startswith('=') if cell.value else False:
+            cell.value = value
+
+    # Save the workbook
+    wb.save(interface_path)
+    wb.close()
 
     print("✓ Configuration updated: Run_Base_Future=No, Run_RDM=Yes")
 
@@ -117,9 +144,9 @@ def main():
 
     # Paths
     project_root = Path(__file__).parent.parent
-    interface_path = project_root / 'Interface_RDM.xlsx'
+    interface_path = project_root / 'src' / 'Interface_RDM.xlsx'
     platform_dir = project_root / 'src' / 'workflow' / '1_Experiment' / 'Experimental_Platform'
-    metrics_file = platform_dir / 'rdm_metrics.json'
+    metrics_file = project_root / 'src' / 'workflow' / '1_Experiment' / 'rdm_experiment_metrics.json'
 
     # Verify Interface_RDM.xlsx exists
     if not interface_path.exists():

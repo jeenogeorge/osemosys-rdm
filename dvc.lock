@@ -1,0 +1,189 @@
+schema: '2.0'
+stages:
+  base_future:
+    cmd: python scripts/run_base_future.py
+    deps:
+    - path: scripts/run_base_future.py
+      hash: md5
+      md5: e9bd853a8f709e672eba7392fa9af9f3
+      size: 6257
+    - path: src/Interface_RDM.xlsx
+      hash: md5
+      md5: 0b1b34692ccd178946420e941782389f
+      size: 30436
+    - path: src/workflow/0_Scenarios/
+      hash: md5
+      md5: 235ce08b6b09fa9bc337f4863a3b656e.dir
+      size: 771692
+      nfiles: 1
+    - path: src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
+      hash: md5
+      md5: 945513be94eb9a4423ac481db0a187b3
+      size: 16944
+    outs:
+    - path: src/workflow/1_Experiment/Executables/
+      hash: md5
+      md5: f3064203b41fc19bcde70c161515d026.dir
+      size: 17887476
+      nfiles: 3
+    - path: src/workflow/1_Experiment/base_future_metrics.json
+      hash: md5
+      md5: e835560f1af6b87736ceaf0af38da6c3
+      size: 119
+  rdm_experiment:
+    cmd: python scripts/run_rdm_experiment.py
+    deps:
+    - path: scripts/run_rdm_experiment.py
+      hash: md5
+      md5: 39e660d9f3ecf44afc906bee94496c68
+      size: 6974
+    - path: src/Interface_RDM.xlsx
+      hash: md5
+      md5: 0b1b34692ccd178946420e941782389f
+      size: 30436
+    - path: src/workflow/0_Scenarios/
+      hash: md5
+      md5: 235ce08b6b09fa9bc337f4863a3b656e.dir
+      size: 771692
+      nfiles: 1
+    - path: src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
+      hash: md5
+      md5: 945513be94eb9a4423ac481db0a187b3
+      size: 16944
+    - path: src/workflow/2_Miscellaneous/shape_of_demand.csv
+      hash: md5
+      md5: 5cfd4909193033e968a8e3441b3bf7ae
+      size: 2421
+    outs:
+    - path: src/workflow/1_Experiment/Experimental_Platform/
+      hash: md5
+      md5: f3a5055a8509fef2a6d98a7b0dcc9418.dir
+      size: 26624310
+      nfiles: 10
+    - path: src/workflow/1_Experiment/rdm_experiment_metrics.json
+      hash: md5
+      md5: 0eb4a12c389a762be118711283e79369
+      size: 157
+  postprocess:
+    cmd: python scripts/run_postprocess.py
+    deps:
+    - path: scripts/run_postprocess.py
+      hash: md5
+      md5: 5ec7af655696cf470f8cc47c4fc3d8fe
+      size: 4374
+    - path: src/workflow/1_Experiment/1_output_dataset_creator.py
+      hash: md5
+      md5: a9ab03dd88000a0e573eb50c40d34dec
+      size: 6264
+    - path: src/workflow/1_Experiment/Executables/
+      hash: md5
+      md5: 7f603d8de64f06d91d551c6f5ef0db72.dir
+      size: 35308337
+      nfiles: 5
+    - path: src/workflow/1_Experiment/Experimental_Platform/
+      hash: md5
+      md5: f3a5055a8509fef2a6d98a7b0dcc9418.dir
+      size: 26624310
+      nfiles: 10
+    - path: src/workflow/1_Experiment/local_dataset_creator_0.py
+      hash: md5
+      md5: f0e1ad42c333787454426d19d9d0b8d1
+      size: 5455
+    - path: src/workflow/1_Experiment/local_dataset_creator_f.py
+      hash: md5
+      md5: 0b2c8ef5e818ed43b52bbb354db5d4ef
+      size: 8451
+    outs:
+    - path: src/Results/
+      hash: md5
+      md5: e2b1ca0f1255af648c3928b22cf1a1f7.dir
+      size: 68148258
+      nfiles: 2
+    - path: src/workflow/3_Postprocessing/postprocess_metrics.json
+      hash: md5
+      md5: 3d20438aa781602c3d495f7be27da7dc
+      size: 325
+  prim_files_creator:
+    cmd: python scripts/run_prim_files_creator.py
+    deps:
+    - path: scripts/run_prim_files_creator.py
+      hash: md5
+      md5: 1a9b84f59f2911dd8f29359a9b0fb688
+      size: 5108
+    - path: src/Results/
+      hash: md5
+      md5: e2b1ca0f1255af648c3928b22cf1a1f7.dir
+      size: 68148258
+      nfiles: 2
+    - path: src/workflow/4_PRIM/PRIM_t3f2.yaml
+      hash: md5
+      md5: 83423a6606278dd953884f0e9f168742
+      size: 5859
+    - path: src/workflow/4_PRIM/Population.xlsx
+      hash: md5
+      md5: 7aa4615abc740b6ec20fc0c631a31bbb
+      size: 16168
+    - path: src/workflow/4_PRIM/prim_files_creator_cntrl.xlsx
+      hash: md5
+      md5: 9c1d6e18210ae33198403b6d1eb0c584
+      size: 23584
+    - path: src/workflow/4_PRIM/t3f2_prim_files_creator.py
+      hash: md5
+      md5: 47fcf44743bbe1e76b372d46add4d528
+      size: 86739
+    outs:
+    - path: src/workflow/4_PRIM/prim_files_creator_metrics.json
+      hash: md5
+      md5: dbb14da0d82b61a8e0f89dc3a0aea16b
+      size: 129
+    - path: src/workflow/4_PRIM/t3b_sdiscovery/experiment_data/
+      hash: md5
+      md5: d751713988987e9331980363e24189ce.dir
+      size: 0
+      nfiles: 0
+  prim_analysis:
+    cmd: python scripts/run_prim_analysis.py
+    deps:
+    - path: scripts/run_prim_analysis.py
+      hash: md5
+      md5: 2591286a54fc2e1a0c55642d28c5b393
+      size: 4668
+    - path: src/workflow/4_PRIM/t3b_sdiscovery/Analysis_1/prim_structure.xlsx
+      hash: md5
+      md5: dc1eb75bf6f7c2d326613d35229031e5
+      size: 45289
+    - path: src/workflow/4_PRIM/t3b_sdiscovery/Units.xlsx
+      hash: md5
+      md5: 31a290f553cc2a3834636839181ec1d1
+      size: 16722
+    - path: src/workflow/4_PRIM/t3b_sdiscovery/experiment_data/
+      hash: md5
+      md5: d751713988987e9331980363e24189ce.dir
+      size: 0
+      nfiles: 0
+    - path: src/workflow/4_PRIM/t3b_sdiscovery/t3f1_prim_structure.py
+      hash: md5
+      md5: 1fbf7abee4b5692e714c792a824570bf
+      size: 52747
+    - path: src/workflow/4_PRIM/t3b_sdiscovery/t3f3_prim_manager.py
+      hash: md5
+      md5: aa774f1d522743baab504372bac59ddc
+      size: 121384
+    - path: src/workflow/4_PRIM/t3b_sdiscovery/t3f4_range_finder_mapping.py
+      hash: md5
+      md5: 341e665ffd6e5e8f17e3f70a8c52cf32
+      size: 39864
+    outs:
+    - path: src/workflow/4_PRIM/prim_analysis_metrics.json
+      hash: md5
+      md5: ef0f81e9063e0848c4a45e2e136ef2fa
+      size: 149
+    - path: src/workflow/4_PRIM/t3b_sdiscovery/sd_ana_1_exp_1_Experiment.csv
+      hash: md5
+      md5: 2ce624980683c893073b95bb53154589
+      size: 217
+    - path: 
+        src/workflow/4_PRIM/t3b_sdiscovery/t3f4_predominant_ranges_a1_e1_Experiment.xlsx
+      hash: md5
+      md5: fe3e59c54061c4da29dc69f21f4270ac
+      size: 5507
