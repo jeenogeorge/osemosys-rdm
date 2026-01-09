@@ -93,7 +93,14 @@ Defines the parameters for RDM uncertainty analysis.
 | `Constant` | Maintain constant trajectory from uncertainty year | Fixed parameters |
 | `Linear` | Linear interpolation to final value | Simple projections |
 | `Logistic` | S-curve trajectory | Technology adoption |
-| `Timeslices_Curve` | Modify time slice profiles | Demand shapes |
+| `Timeslices_Curve` | Switch between predefined demand curves | Demand shapes |
+
+```{important}
+For `Timeslices_Curve` type:
+- Curves must be predefined in the file `shape_of_demand.xlsx`
+- The parameter `Explored_Parameter_of_X` must be set to `Change_Curve`
+- This type enables switching between different curve profiles during uncertainty exploration
+```
 
 ### Example Uncertainty Definition
 
@@ -136,6 +143,10 @@ stages:
       - src/Interface_RDM.xlsx
     outs:
       - src/workflow/1_Experiment/Executables/
+```
+
+```{warning}
+It is **not recommended** to modify the DVC configuration (`dvc.yaml`) unless you have a specific advanced use case and fully understand the pipeline structure.
 ```
 
 ### Remote Storage

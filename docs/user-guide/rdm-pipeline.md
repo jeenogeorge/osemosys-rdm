@@ -141,10 +141,17 @@ Slow adoption at start, accelerating in middle, saturating at end
 
 #### Timeslices_Curve
 
-Modifies time slice profiles (e.g., demand shape):
+Switches between predefined demand curves:
 
 ```
-Original demand profile → Modified based on shape_of_demand.csv
+Selects a different curve from shape_of_demand.xlsx based on uncertainty sampling
+```
+
+```{important}
+For `Timeslices_Curve` type:
+- Curves must be predefined in the file `shape_of_demand.xlsx`
+- The parameter `Explored_Parameter_of_X` must be set to `Change_Curve`
+- This allows exploring different demand profile shapes across futures
 ```
 
 ### Example: Fuel Cost Uncertainty
@@ -174,7 +181,7 @@ Explored_Parameter_of_X: "Final_Value"
 Min_Value: 0.5
 Max_Value: 2.0
 Involved_Scenarios: "Scenario1"
-Involved_First_Sets_in_Osemosys: "PWRSOL001; PWRSOL002"
+Involved_First_Sets_in_Osemosys: "PWRSOL001 ; PWRSOL002"
 Exact_Parameters_Involved_in_Osemosys: "TotalAnnualMaxCapacity"
 Initial_Year_of_Uncertainty: 2025
 ```

@@ -61,14 +61,15 @@ Quick Links
    user-guide/interface-configuration
    user-guide/dvc-integration
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Tutorials
-   :hidden:
-
-   tutorials/basic-run
-   tutorials/uncertainty-analysis
-   tutorials/scenario-discovery
+.. Tutorials section temporarily disabled for manual verification
+.. .. toctree::
+..    :maxdepth: 2
+..    :caption: Tutorials
+..    :hidden:
+..
+..    tutorials/basic-run
+..    tutorials/uncertainty-analysis
+..    tutorials/scenario-discovery
 
 .. toctree::
    :maxdepth: 2
@@ -77,23 +78,25 @@ Quick Links
 
    results/index
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Developer Guide
-   :hidden:
+.. Developer Guide section temporarily disabled for manual verification
+.. .. toctree::
+..    :maxdepth: 2
+..    :caption: Developer Guide
+..    :hidden:
+..
+..    developer-guide/architecture
+..    developer-guide/extending
+..    developer-guide/contributing
 
-   developer-guide/architecture
-   developer-guide/extending
-   developer-guide/contributing
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Reference
-   :hidden:
-
-   api/index
-   changelog
-   license
+.. Reference section temporarily disabled for manual verification
+.. .. toctree::
+..    :maxdepth: 1
+..    :caption: Reference
+..    :hidden:
+..
+..    api/index
+..    changelog
+..    license
 
 Indices and tables
 ==================

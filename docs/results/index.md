@@ -1,10 +1,55 @@
 # Results & Examples
 
-This section showcases results from OSeMOSYS-RDM analyses and provides examples for reference.
+This guide shows you how to run OSeMOSYS-RDM step-by-step using Anaconda.
+
+## Step-by-Step Execution Guide
+
+### Step 1: Open Anaconda Prompt
+
+First, open the Anaconda Prompt terminal.
+
+![Open Anaconda Prompt](../_static/images/1_open_anacondaprompt.png)
+
+*Opening the Anaconda Prompt terminal*
+
+### Step 2: Navigate to Repository
+
+Change to the repository directory using the `cd` command.
+
+![Navigate to Repository](../_static/images/2_repository_path.png)
+
+*Accessing the repository directory path*
+
+### Step 3: Run the Model
+
+Execute the model using the appropriate command. This example shows the general RDM pipeline, but you can also use `prim` or `all` for different pipelines.
+
+```bash
+python run.py rdm
+```
+
+![Run Model](../_static/images/3_run_model.png)
+
+*Command to execute the process*
+
+### Step 4: Process Starts
+
+The process will begin executing the pipeline stages.
+
+![Process Start](../_static/images/4_start_procces.png)
+
+*Beginning of the execution process*
+
+### Step 5: Process Completes
+
+The process will finish when all stages are complete.
+
+![Process Finish](../_static/images/5_finish_procces.png)
+
+*End of the execution process*
 
 ```{note}
-This section will be populated with example results, visualizations, and case studies.
-Screenshots of the DVC pipeline and outputs will be added here.
+In this example, the process completes very quickly because the last model executed is cached in memory. DVC detects that re-running would produce the same results, so it skips unnecessary computations.
 ```
 
 ## Coming Soon
@@ -21,41 +66,6 @@ Screenshots of the DVC pipeline and outputs will be added here.
 - Technology pathway comparisons
 - Emission trajectories
 - PRIM discovery visualizations
-
-### DVC Pipeline Demonstrations
-
-- Pipeline execution screenshots
-- Output file structure
-- Metrics visualization
-
-## Placeholder for Screenshots
-
-### Pipeline Execution
-
-<!-- 
-Add screenshot here:
-![Pipeline Execution](../images/pipeline-execution.png)
--->
-
-*Pipeline execution screenshot will be added here*
-
-### Results Dashboard
-
-<!-- 
-Add screenshot here:
-![Results Dashboard](../images/dashboard.png)
--->
-
-*Results dashboard screenshot will be added here*
-
-### PRIM Output
-
-<!-- 
-Add screenshot here:
-![PRIM Analysis](../images/prim-output.png)
--->
-
-*PRIM analysis output screenshot will be added here*
 
 ## How to Add Results
 

@@ -75,7 +75,11 @@ Controls which OSeMOSYS output variables are exported.
 | Column | Description |
 |--------|-------------|
 | Parameter | OSeMOSYS variable name |
-| Print | Yes/No to include in output |
+| Print | Mark with an **X** to include in output (not Yes/No) |
+
+```{note}
+To enable an output parameter for printing, place an **X** in the Print column. Do not use "Yes" or "No".
+```
 
 ### Common Output Variables
 
@@ -138,6 +142,14 @@ Defines all uncertain parameters for RDM analysis.
 | Involved_Second_Sets_in_Osemosys | String | Secondary set elements |
 | Involved_Third_Sets_in_Osemosys | String | Tertiary set elements |
 | Exact_Parameters_Involved_in_Osemosys | String | OSeMOSYS parameter names |
+
+```{important}
+**Multiple Values in Columns:**
+- When specifying multiple values in the columns mentioned above (sets, scenarios, parameters), separate them with ` ; ` (space-semicolon-space)
+- The spaces before and after the semicolon are **required**
+- Example: `PWRSOL001 ; PWRSOL002` (correct) vs `PWRSOL001;PWRSOL002` (incorrect)
+- **Note:** The option "All" is not valid. You must specify each value individually.
+```
 
 #### Temporal Settings
 
@@ -221,7 +233,7 @@ X_Mathematical_Type: Time_Series
 Explored_Parameter_of_X: Final_Value
 Min_Value: 0.7
 Max_Value: 1.5
-Involved_Scenarios: Scenario1; Scenario2
+Involved_Scenarios: Scenario1 ; Scenario2
 Involved_First_Sets_in_Osemosys: IMPNATGAS
 Exact_Parameters_Involved_in_Osemosys: VariableCost
 Initial_Year_of_Uncertainty: 2025
@@ -238,7 +250,7 @@ Explored_Parameter_of_X: Final_Value
 Min_Value: 0.5
 Max_Value: 2.0
 Involved_Scenarios: Scenario1
-Involved_First_Sets_in_Osemosys: PWRSOL001; PWRSOL002
+Involved_First_Sets_in_Osemosys: PWRSOL001 ; PWRSOL002
 Exact_Parameters_Involved_in_Osemosys: TotalAnnualMaxCapacity
 Initial_Year_of_Uncertainty: 2025
 ```

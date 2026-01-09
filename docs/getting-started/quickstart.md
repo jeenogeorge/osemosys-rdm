@@ -147,7 +147,6 @@ src/Results/
 
 The results can be visualized using tools like:
 
-- **Tableau**: Open the provided `.twbx` dashboard files
 - **Python**: Load parquet files with pandas
 - **Excel**: Import CSV files directly
 

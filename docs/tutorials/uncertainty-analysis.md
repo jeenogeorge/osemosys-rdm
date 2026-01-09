@@ -75,7 +75,7 @@ Fill in a new row:
 | Min_Value | 0.5 |
 | Max_Value | 1.2 |
 | Involved_Scenarios | Scenario1 |
-| Involved_First_Sets_in_Osemosys | PWRSOL001; PWRSOL002 |
+| Involved_First_Sets_in_Osemosys | PWRSOL001 ; PWRSOL002 |
 | Exact_Parameters_Involved_in_Osemosys | CapitalCost |
 | Initial_Year_of_Uncertainty | 2025 |
 

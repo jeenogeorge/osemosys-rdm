@@ -21,6 +21,16 @@ After running an RDM experiment with hundreds of futures, you need to understand
 
 ## Running PRIM Analysis
 
+### Configuration Guide
+
+For detailed instructions on configuring the PRIM module, refer to:
+
+```
+src/Guides/Guide PRIM Module Configuration.html
+```
+
+This comprehensive guide explains how to properly configure all PRIM Excel files for your analysis.
+
 ### Quick Start
 
 ```bash
@@ -34,7 +44,7 @@ Before running PRIM:
 
 1. ✅ RDM pipeline completed successfully
 2. ✅ Results available in `src/Results/`
-3. ✅ PRIM configuration files set up
+3. ✅ PRIM configuration files set up (see configuration guide above)
 
 ### What Happens
 

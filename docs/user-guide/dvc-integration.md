@@ -12,6 +12,28 @@ DVC provides:
 - **Data versioning**: Track large files without Git bloat
 - **Remote storage**: Share data across teams
 
+## Main Pipelines
+
+OSeMOSYS-RDM provides three main pipeline commands for easy execution:
+
+### `python run.py rdm`
+Executes the complete RDM (Robust Decision Making) pipeline:
+- Base future generation (Future 0)
+- RDM experiment with uncertainty sampling
+- Postprocessing and result consolidation
+
+### `python run.py prim`
+Executes only the PRIM (Patient Rule Induction Method) analysis:
+- Requires RDM results to be available
+- Performs scenario discovery
+- Generates predominant parameter ranges
+
+### `python run.py all`
+Executes both pipelines sequentially:
+- First runs the complete RDM pipeline
+- Then runs the PRIM analysis
+- Provides end-to-end results from modeling to scenario discovery
+
 ## Pipeline Structure
 
 The pipeline is defined in `dvc.yaml`:

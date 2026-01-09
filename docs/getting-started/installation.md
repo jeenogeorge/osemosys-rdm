@@ -62,61 +62,37 @@ pip install -r requirements.txt
 
 ## Solver Installation
 
+```{important}
+This workflow is designed and tested for **Windows only**. Linux and macOS support has not been verified and is not recommended at this time.
+```
+
 ### GLPK (Required)
 
-GLPK is required for preprocessing. Install it based on your operating system:
+GLPK is required for preprocessing.
 
-::::{tab-set}
-
-:::{tab-item} Ubuntu/Debian
-```bash
-sudo apt-get install glpk-utils
-```
-:::
-
-:::{tab-item} macOS
-```bash
-brew install glpk
-```
-:::
-
-:::{tab-item} Windows
+**Windows:**
 Download from [GLPK for Windows](https://sourceforge.net/projects/winglpk/) and add to PATH.
-:::
 
-:::{tab-item} Conda
+**Conda (Recommended):**
 ```bash
 conda install -c conda-forge glpk
 ```
-:::
-
-::::
 
 ### CBC (Free, Optional)
 
-CBC often provides better performance than GLPK for larger problems:
+CBC often provides better performance than GLPK for larger problems.
 
-::::{tab-set}
+**Windows:**
+Free versions of CBC for Windows can be downloaded from:
+- [COIN-OR CBC Downloads](https://www.coin-or.org/download/binary/Cbc/)
+- Recommended version: **Cbc-master-win64-msvc17** (2021-04-27, ~23MB)
 
-:::{tab-item} Ubuntu/Debian
-```bash
-sudo apt-get install coinor-cbc
-```
-:::
+After downloading, extract and add the executable to your system PATH.
 
-:::{tab-item} macOS
-```bash
-brew install coin-or-tools/coinor/cbc
-```
-:::
-
-:::{tab-item} Conda
+**Conda (Alternative):**
 ```bash
 conda install -c conda-forge coincbc
 ```
-:::
-
-::::
 
 ### Commercial Solvers
 
