@@ -32,20 +32,20 @@ It can also support OSeMOSYS-based models that represent additional domains (e.g
 ## Key features
 
 - **Two operation modes**
-  - **Base Future mode:** execute a single baseline scenario (“Future 0”)
+  - **Base Future mode:** execute a single baseline scenario ("Future 0")
   - **RDM Experiment mode:** generate and evaluate multiple futures using uncertainty ranges (Latin Hypercube Sampling)
 
 - **Multi-solver support**
-  - Compatible with: **GLPK**, **CBC**, **CPLEX**, **Gurobi** (install at least one separately)
+  - **GLPK** is required (used for preprocessing). Additionally supports **CBC**, **CPLEX**, and **Gurobi** for solving.
 
 - **End-to-end automation**
   - preprocessing → solve → postprocessing → consolidated datasets in `src/Results/`
 
-- **Reproducible pipelines**
-  - runs as a **DVC pipeline** with dependency tracking and caching
-
 - **Scenario discovery**
   - integrated **PRIM** workflow for identifying parameter ranges associated with success/risk outcomes
+
+- **Reproducible pipelines**
+  - runs as a **DVC pipeline** with dependency tracking and caching
 
 ---
 
