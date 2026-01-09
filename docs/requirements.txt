@@ -1,0 +1,22 @@
+# Documentation build requirements for ReadTheDocs
+# These are separate from the main project requirements
+
+# Sphinx core
+sphinx>=7.0.0
+sphinx-rtd-theme>=2.0.0
+
+# Markdown support
+myst-parser>=2.0.0
+
+# Additional Sphinx extensions
+sphinx-copybutton>=0.5.0
+sphinx-design>=0.5.0
+sphinx-autodoc-typehints>=1.25.0
+
+# For API documentation (optional, uncomment if needed)
+# autodoc dependencies - uncomment these if you want to document Python modules
+# pandas>=2.0.0
+# numpy>=1.24.0
+
+# For building diagrams (optional)
+# sphinxcontrib-mermaid>=0.9.0
