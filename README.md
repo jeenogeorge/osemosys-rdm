@@ -167,7 +167,7 @@ Options:
 
 ## Workflow overview
 
-At a high level, OSeMOSYS-RDM does:
+At a high level, OSeMOSYS-RDM does: 
 
 1. **Structure extraction** from scenario inputs (sets/parameters present, model structure)
 2. **Data preprocessing** into solver-ready inputs
