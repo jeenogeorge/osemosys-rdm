@@ -159,12 +159,16 @@ def ensure_pip_available(env_name: str) -> None:
 
 def module_present(env_name: str, module: str) -> bool:
     """Check if a Python module is available in the environment."""
-    code = (
-        "import importlib,sys;"
-        f"sys.exit(0) if importlib.util.find_spec('{module}') else sys.exit(1)"
-    )
+    # Use simple import try-except instead of importlib.util to avoid issues
+    code = f"import sys; import {module}; sys.exit(0)"
     try:
-        run(f'conda run -n {env_name} python -c "{code}"')
+        subprocess.check_call(
+            f'conda run -n {env_name} python -c "{code}"',
+            shell=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            env={**os.environ, 'PYTHONHASHSEED': '0'}
+        )
         return True
     except subprocess.CalledProcessError:
         return False
