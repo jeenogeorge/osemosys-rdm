@@ -194,19 +194,6 @@ Initial_Year_of_Uncertainty: 2025
 python run.py rdm
 ```
 
-### With Options
-
-```bash
-# Force re-execution
-python run.py rdm --force
-
-# Skip data pull from remote
-python run.py rdm --skip-pull
-
-# Custom environment
-python run.py rdm --env-name MyEnv
-```
-
 ### Monitoring Progress
 
 The pipeline provides progress updates:

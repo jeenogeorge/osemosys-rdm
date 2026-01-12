@@ -43,7 +43,7 @@ python run.py prim
 Before running PRIM:
 
 1. ✅ RDM pipeline completed successfully
-2. ✅ Results available in `src/Results/`
+2. ✅ Results available in `src/Results/` and `src/workflow/1_Experiment/`
 3. ✅ PRIM configuration files set up (see configuration guide above)
 
 ### What Happens

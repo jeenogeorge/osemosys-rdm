@@ -149,24 +149,6 @@ stages:
 It is **not recommended** to modify the DVC configuration (`dvc.yaml`) unless you have a specific advanced use case and fully understand the pipeline structure.
 ```
 
-### Remote Storage
-
-Configure DVC remote storage for sharing results:
-
-```bash
-# Local directory
-dvc remote add -d myremote /path/to/storage
-
-# Google Drive
-dvc remote add -d gdrive gdrive://folder_id
-
-# Amazon S3
-dvc remote add -d s3remote s3://mybucket/path
-
-# Azure Blob Storage
-dvc remote add -d azure azure://container/path
-```
-
 ## PRIM Configuration
 
 PRIM analysis is configured through files in `src/workflow/4_PRIM/`:
@@ -233,21 +215,6 @@ dependencies:
   - pip:
       - dvc>=3.0.0
       - pyDOE>=0.3.8
-```
-
-### Customizing the Environment
-
-To add additional packages:
-
-```bash
-# Activate the environment
-conda activate AFR-RDM-env
-
-# Install additional packages
-conda install -c conda-forge package-name
-
-# Or with pip
-pip install package-name
 ```
 
 ## File Structure Configuration

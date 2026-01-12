@@ -101,7 +101,7 @@ stages:
       nfiles: 2
     - path: src/workflow/3_Postprocessing/postprocess_metrics.json
       hash: md5
-      md5: 3d20438aa781602c3d495f7be27da7dc
+      md5: 46f243c7606e5ecd202de8aafd72e69e
       size: 325
   prim_files_creator:
     cmd: python scripts/run_prim_files_creator.py

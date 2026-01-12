@@ -230,23 +230,3 @@ The workflow has been tested with **MUIO v5.3**:
 | Time slicing | ✅ Yes |
 | Trade flows | ✅ Yes |
 | Emissions | ✅ Yes |
-
-## Reproducibility with DVC
-
-OSeMOSYS-RDM uses DVC (Data Version Control) for:
-
-1. **Dependency Tracking**: Automatic detection of input changes
-2. **Caching**: Skip unchanged stages on re-runs
-3. **Versioning**: Track data alongside code
-4. **Sharing**: Push/pull results from remote storage
-
-```bash
-# Check pipeline status
-dvc status
-
-# View dependency graph
-dvc dag
-
-# Force full re-run
-dvc repro --force
-```

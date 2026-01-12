@@ -119,91 +119,6 @@ Output:
 +---------------+
 ```
 
-## Common DVC Commands
-
-### Check Pipeline Status
-
-```bash
-conda run -n AFR-RDM-env dvc status
-```
-
-Shows which stages need to be re-run.
-
-### Execute Pipeline
-
-```bash
-# Run entire pipeline
-conda run -n AFR-RDM-env dvc repro
-
-# Run specific stage (and dependencies)
-conda run -n AFR-RDM-env dvc repro postprocess
-
-# Force re-execution
-conda run -n AFR-RDM-env dvc repro --force
-```
-
-### View Metrics
-
-```bash
-conda run -n AFR-RDM-env dvc metrics show
-```
-
-Displays metrics from `*_metrics.json` files.
-
-### Push/Pull Data
-
-```bash
-# Push data to remote
-conda run -n AFR-RDM-env dvc push
-
-# Pull data from remote
-conda run -n AFR-RDM-env dvc pull
-```
-
-## Configuring Remote Storage
-
-### Local Directory
-
-```bash
-dvc remote add -d myremote /path/to/storage
-```
-
-### Google Drive
-
-```bash
-# Add remote
-dvc remote add -d gdrive gdrive://folder_id
-
-# Configure (may require auth)
-dvc remote modify gdrive gdrive_acknowledge_abuse true
-```
-
-### Amazon S3
-
-```bash
-dvc remote add -d s3remote s3://mybucket/path
-
-# Configure credentials
-dvc remote modify s3remote access_key_id mykey
-dvc remote modify s3remote secret_access_key mysecret
-```
-
-### Azure Blob Storage
-
-```bash
-dvc remote add -d azure azure://container/path
-
-# Configure
-dvc remote modify azure connection_string "your_connection_string"
-```
-
-### OneDrive / SharePoint
-
-```bash
-dvc remote add -d onedrive \
-    https://yourtenant.sharepoint.com/sites/yoursite/_layouts/15/download.aspx?UniqueId=folder_id
-```
-
 ## The dvc.lock File
 
 `dvc.lock` records the exact state of each pipeline run:
@@ -331,43 +246,6 @@ Example metrics:
   "total_parquet_files": 200,
   "scenarios_processed": 1
 }
-```
-
-## Troubleshooting
-
-### "DVC not initialized"
-
-```bash
-conda run -n AFR-RDM-env dvc init
-```
-
-### "Remote not configured"
-
-```bash
-# Check current remotes
-dvc remote list
-
-# Add a remote
-dvc remote add -d myremote /path/to/storage
-```
-
-### "Stage is cached but output is missing"
-
-```bash
-# Force reproduction
-dvc repro --force stage_name
-
-# Or checkout from cache
-dvc checkout
-```
-
-### "Lock file is out of sync"
-
-```bash
-# Regenerate lock file
-dvc repro
-git add dvc.lock
-git commit -m "Update dvc.lock"
 ```
 
 ## Best Practices

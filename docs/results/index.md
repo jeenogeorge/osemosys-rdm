@@ -85,36 +85,6 @@ After the process completes successfully, your results will be available in the 
 
 - CSV files with consolidated outputs
 - Parquet files for efficient data storage
-- Analysis-ready datasets for visualization
-
-## Contributing Results
-
-If you have interesting results to share:
-
-1. Ensure data is anonymized if needed
-2. Provide context and interpretation
-3. Include reproduction steps if possible
-4. Submit a pull request to the documentation repository
-
-### How to Add Results
-
-To add your own results to this documentation:
-
-1. Save images to `docs/_static/images/`
-2. Reference them in markdown:
-   ```markdown
-   ![Description](../_static/images/your-image.png)
-   ```
-3. Add interpretation and context
-
-#### File Formats Supported
-
-| Format | Use Case |
-|--------|----------|
-| PNG | Screenshots, diagrams |
-| SVG | Scalable charts |
-| PDF | Embedded documents |
-| GIF | Animated demonstrations |
 
 
 ### Changes to the Environment Name

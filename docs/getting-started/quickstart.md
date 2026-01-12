@@ -66,22 +66,6 @@ python run.py prim
 python run.py all
 ```
 
-### Command Options
-
-```bash
-python run.py <module> [options]
-
-# Modules:
-#   rdm    - Execute RDM pipeline only
-#   prim   - Execute PRIM analysis only
-#   all    - Execute both sequentially
-
-# Options:
-#   --force      - Force re-execution of all stages
-#   --skip-pull  - Skip 'dvc pull' even if remote is configured
-#   --env-name   - Specify custom Conda environment name
-```
-
 ### Example: First Run
 
 ```bash
@@ -143,68 +127,8 @@ src/Results/
 | `output_dataset_f.parquet` | Efficient storage of all futures |
 | `input_dataset_f.parquet` | Efficient storage of all inputs |
 
-## Step 5: Visualize Results (Optional)
-
-The results can be visualized using tools like:
-
-- **Python**: Load parquet files with pandas
-- **Excel**: Import CSV files directly
-
-### Quick Python Analysis
-
-```python
-import pandas as pd
-
-# Load results
-outputs = pd.read_csv('src/Results/OSEMOSYS_Region_Energy_Output.csv')
-
-# View summary statistics
-print(outputs.describe())
-
-# Filter by technology
-tech_data = outputs[outputs['TECHNOLOGY'] == 'PWRSOL001']
-```
-
-## Pipeline Architecture
-
-```{mermaid}
-flowchart LR
-    A[Scenarios] --> B[Base Future]
-    B --> C[RDM Experiment]
-    C --> D[Postprocess]
-    D --> E[Results]
-    E --> F[PRIM Analysis]
-```
-
 ## What's Next?
 
 - **Customize uncertainty parameters**: Edit the `Uncertainty_Table` sheet
 - **Add more scenarios**: Place additional `.txt` files in `0_Scenarios/`
 - **Explore PRIM results**: Check `src/workflow/4_PRIM/t3b_sdiscovery/`
-- **Set up DVC remote**: Share results across machines
-
-## Troubleshooting
-
-### "Solver not found" Error
-
-```bash
-# Verify solver is installed
-glpsol --version
-cbc -version
-```
-
-### Memory Issues with Large Ensembles
-
-- Reduce `Number_of_Runs` in the Setup sheet
-- Use `Parallel_Use` setting to control batch size
-- Consider using a commercial solver for better performance
-
-### Pipeline Stuck or Failed
-
-```bash
-# Force re-execution
-python run.py rdm --force
-
-# Check DVC status
-conda run -n AFR-RDM-env dvc status
-```
