@@ -115,3 +115,8 @@ To add your own results to this documentation:
 | SVG | Scalable charts |
 | PDF | Embedded documents |
 | GIF | Animated demonstrations |
+
+
+### Changes to the Environment Name
+
+If the name of the environment changes in environment.yaml, you need to also modify the name of ENV_NAME_DEFAULT in run.py.
