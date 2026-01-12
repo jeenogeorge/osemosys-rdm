@@ -1,6 +1,6 @@
-# Results & Examples
+# Example Execution
 
-This guide shows you how to run OSeMOSYS-RDM step-by-step using Anaconda. This is a beginner-friendly guide that assumes no prior experience with command-line interfaces.
+This guide shows you how to run OSeMOSYS-RDM step-by-step using Anaconda. Specifically, we focus on the automated pipeline, using DVC, to reproduce the Uganda analysis. This is a beginner-friendly guide that assumes no prior experience with command-line interfaces.
 
 ## Step-by-Step Execution Guide
 
