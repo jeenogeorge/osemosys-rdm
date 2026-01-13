@@ -13,6 +13,9 @@ sphinx-copybutton>=0.5.0
 sphinx-design>=0.5.0
 sphinx-autodoc-typehints>=1.25.0
 
+# PDF generation
+rinohtype>=0.5.0
+
 # For API documentation (optional, uncomment if needed)
 # autodoc dependencies - uncomment these if you want to document Python modules
 # pandas>=2.0.0

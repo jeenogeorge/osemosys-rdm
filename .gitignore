@@ -124,6 +124,9 @@ instance/
 # Sphinx documentation
 docs/_build/
 
+# Generated PDF documentation
+docs/_build/rinoh/*.pdf
+
 # PyBuilder
 .pybuilder/
 target/
