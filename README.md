@@ -542,9 +542,9 @@ Including:
 
 If you use this workflow in academic work, please cite:
 
-- **OSeMOSYS-RDM MethodsX paper:** *(TODO: add DOI/link when available)*
-- **OSeMOSYS**: Howells et al. (2011), *Energy Policy*, 39(10), 5850–5870. https://doi.org/10.1016/j.enpol.2011.06.033
-
+- **OSeMOSYS-RDM MethodsX paper:** *(upcoming)*
+- **The Costa Rica case**: Victor-Gallardo, Luis Fernando (2022). Robust energy system planning for decarbonization under technological uncertainty: From transport electrification to power system investments. Repositorio Institucional Kérwá (Universidad de Costa Rica). https://www.kerwa.ucr.ac.cr/items/fa1f4673-2854-4d2b-b43f-fb8bc5d98a06
+ (Handle: https://hdl.handle.net/10669/87273
 ---
 
 ## License
