@@ -925,6 +925,21 @@ if __name__ == '__main__':
             Initial_Year_of_Uncertainty_EP = int( uncertainty_table.loc[ p ,'Initial_Year_of_Uncertainty'] )
             # Emssion_year_0 = str( uncertainty_table.loc[ p ,'Emssion_year_0'] )
 
+            # Read Dependency column (for complementary dependencies between consecutive rows)
+            try:
+                Dependency_Flag = str(uncertainty_table.loc[p, 'Dependency']).strip().upper()
+            except KeyError:
+                # Column doesn't exist in older versions - default to NO
+                Dependency_Flag = 'NO'
+
+            # Validate Dependency configuration
+            if p == 0 and Dependency_Flag in ['YES', 'SI']:
+                raise ValueError(f"Row 0 (X_Num={X_Num[-1]}) cannot have Dependency=YES (no previous row exists)")
+
+            if p == P-1 and Dependency_Flag in ['YES', 'SI'] and n == 0:
+                # Only print warning once (when n == 0)
+                print(f"WARNING: Last row (X_Num={X_Num[-1]}) has Dependency=YES but there's no next row to depend on it")
+
             #
             #######################################################################
             # print(1,p)
@@ -999,6 +1014,26 @@ if __name__ == '__main__':
                 this_loc = this_min + 0.5*(this_max - this_min)
             #
             evaluation_value = scipy.stats.uniform.ppf(evaluation_value_preliminary, this_loc, this_loc_scale)
+            #
+            #######################################################################
+            # Apply complementary dependency if previous row has Dependency = YES
+            if p > 0:  # Can't be dependent if it's the first row
+                try:
+                    prev_dependency = str(uncertainty_table.loc[p-1, 'Dependency']).strip().upper()
+                    if prev_dependency in ['YES', 'SI']:
+                        # Get the evaluation_value from previous parameter (already calculated)
+                        prev_evaluation_value = this_future_X_change[p-1]
+                        # Apply complementary formula: 2 - prev_value
+                        evaluation_value = 2.0 - prev_evaluation_value
+
+                        # Debug logging (optional - can be removed later)
+                        if n == 0 and p < 5:  # Only log first future and first few params
+                            print(f"  Dependency applied: Row {p} dependent on Row {p-1}")
+                            print(f"    Previous eval_value: {prev_evaluation_value:.4f}")
+                            print(f"    New eval_value: {evaluation_value:.4f}")
+                except KeyError:
+                    # Column 'Dependency' doesn't exist - skip dependency logic
+                    pass
             #
             #######################################################################
             if evaluation_value > 1:
