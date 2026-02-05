@@ -716,8 +716,8 @@ if __name__ == '__main__':
     
     # solver = 'cplex'
     # osemosys_model = 'model.v.5.3.txt'
-    # Interface_RDM = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\AFR_RDM\src\Interface_RDM.xlsx'
-    # shape_file = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\AFR_RDM\src\workflow\2_Miscellaneous\shape_of_demand.csv'
+    # Interface_RDM = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\osemosys-rdm\src\Interface_RDM.xlsx'
+    # shape_file = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\osemosys-rdm\src\workflow\2_Miscellaneous\shape_of_demand.csv'
 
     book=pd.ExcelFile(Interface_RDM)
     '''
@@ -1035,6 +1035,12 @@ if __name__ == '__main__':
                     # Column 'Dependency' doesn't exist - skip dependency logic
                     pass
             #
+            # DEBUG: Print first future values to verify dependency
+            if n == 0:
+                print(f"Param {p} (X_Num={X_Num[-1]}): eval_value={evaluation_value:.4f}")
+                if p > 0 and p < 10:  # Print first 10 params only
+                    print(f"  Sum with previous: {evaluation_value + this_future_X_change[p-1]:.4f}")
+            # sys.exit(8)
             #######################################################################
             if evaluation_value > 1:
                 this_future_X_change_direction.append('up')
