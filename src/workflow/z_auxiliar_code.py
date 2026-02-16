@@ -278,6 +278,32 @@ def interpolation_linear(time_list, value_list, new_relative_final_value, finyea
 
     return new_value_list
 
+def interpolation_step(time_list, value_list, absolute_value, Initial_Year_of_Uncertainty):
+    """
+    Step function: keeps baseline values before Initial_Year_of_Uncertainty,
+    then sets all values to absolute_value from that year onwards.
+
+    Unlike other interpolation functions, absolute_value is NOT a multiplier
+    but a direct target value. This allows generating non-zero values even
+    when the baseline final year value is 0.
+
+    Parameters:
+    - time_list: list of years (integers)
+    - value_list: list of float values corresponding to time_list
+    - absolute_value: the absolute target value (NOT a multiplier)
+    - Initial_Year_of_Uncertainty: year where the step occurs
+
+    Returns:
+    - new_value_list: list with step function applied
+    """
+    new_value_list = []
+    for year, value in zip(time_list, value_list):
+        if year < Initial_Year_of_Uncertainty:
+            new_value_list.append(value)
+        else:
+            new_value_list.append(absolute_value)
+    return new_value_list
+
 
 '''
 Function 3: Notes
