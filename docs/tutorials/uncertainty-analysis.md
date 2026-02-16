@@ -95,6 +95,32 @@ Fill in a new row:
 | Exact_Parameters_Involved_in_Osemosys | SpecifiedAnnualDemand |
 | Initial_Year_of_Uncertainty | 2025 |
 
+### Special Case: Zero-Baseline Parameters (Step Function)
+
+Some parameters have a baseline that drops to 0 (e.g., fuel imports phased out after 2026). Standard multiplier-based types (`Time_Series`, `Linear`, `Logistic`) cannot generate variability for these because `0 x multiplier = 0`.
+
+Use the `Step` type with **absolute values** instead of multipliers:
+
+| Column | Value |
+|--------|-------|
+| X_Num | 4 |
+| X_Category | Imports |
+| X_Plain_English_Description | Fuel imports beyond phase-out |
+| X_Mathematical_Type | Step |
+| Explored_Parameter_of_X | Final_Value |
+| Min_Value | 5 |
+| Max_Value | 50 |
+| Involved_Scenarios | Scenario1 |
+| Involved_First_Sets_in_Osemosys | IMPFUEL001 |
+| Exact_Parameters_Involved_in_Osemosys | TotalTechnologyAnnualActivityUpperLimit |
+| Initial_Year_of_Uncertainty | 2025 |
+
+Here `Min_Value: 5` and `Max_Value: 50` are absolute values (e.g., PJ), not multipliers. The LHS will sample a value in [5, 50] and apply it directly from 2025 onwards.
+
+### Special Case: Complementary Dependencies
+
+When two parameters share a constraint (e.g., their sum must stay constant), set `Dependency: YES` on the primary row. The next row will automatically be adjusted to preserve the additive relationship: `new_dep(t) = baseline_dep(t) + (new_primary(t) - baseline_primary(t))`.
+
 ## Step 3: Configure the Experiment
 
 In the `Setup` sheet, configure:

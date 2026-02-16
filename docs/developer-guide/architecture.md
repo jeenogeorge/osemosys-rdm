@@ -114,7 +114,11 @@ Contains all shared functions:
 | `generate_df_per_param()` | Create DataFrames |
 | `run_osemosys()` | Execute solver |
 | `data_processor_new()` | Process solver output |
-| `interpolation_*()` | Trajectory functions |
+| `interpolation_non_linear_final()` | Non-linear trajectory to scaled final value |
+| `interpolation_linear()` | Linear trajectory to scaled final value |
+| `interpolation_logistic_trajectory()` | S-curve trajectory to scaled final value |
+| `interpolation_constant_trajectory()` | Freeze values at uncertainty start year |
+| `interpolation_step()` | Absolute target value from uncertainty start year |
 
 ### 0_experiment_manager.py - RDM Engine
 

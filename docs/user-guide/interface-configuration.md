@@ -130,8 +130,9 @@ Defines all uncertain parameters for RDM analysis.
 |--------|------|-------------|
 | X_Mathematical_Type | String | Variation method |
 | Explored_Parameter_of_X | String | What aspect to vary |
-| Min_Value | Float | Lower bound (multiplier or value) |
-| Max_Value | Float | Upper bound (multiplier or value) |
+| Min_Value | Float | Lower bound (multiplier or absolute value) |
+| Max_Value | Float | Upper bound (multiplier or absolute value) |
+| Dependency | String | `YES` if the next row is a complementary dependent (default: `NO`) |
 
 #### OSeMOSYS Mapping
 
@@ -202,6 +203,21 @@ Slow start → Rapid middle growth → Saturation
 
 **Use for:** Technology adoption curves, market penetration
 
+#### Step
+
+Sets an absolute target value from the uncertainty start year onwards. Unlike other types, `Min_Value` and `Max_Value` represent **absolute values** (not multipliers).
+
+```
+Original: 2025: 100 → 2026: 50 → 2027: 0 → ... → 2050: 0
+Step (value=25): 2025: 25 → 2026: 25 → ... → 2050: 25
+```
+
+**Use for:** Parameters where the baseline final value is 0 and multipliers cannot generate variability (since 0 x multiplier = 0). Typical cases include imports or technologies that are phased out in the baseline but may continue in alternative futures.
+
+```{important}
+When using `Step`, the `Min_Value` and `Max_Value` columns define the **absolute range** of the target value (e.g., 5 to 50 PJ), not a multiplier range. The LHS-sampled value is applied directly from `Initial_Year_of_Uncertainty` onwards.
+```
+
 #### Timeslices_Curve
 
 Modifies time slice profiles using predefined curves.
@@ -271,6 +287,60 @@ Involved_Second_Sets_in_Osemosys: All
 Exact_Parameters_Involved_in_Osemosys: SpecifiedDemandProfile
 Initial_Year_of_Uncertainty: 2025
 ```
+
+#### Zero-Baseline Parameter (Step Function)
+
+When the baseline value drops to 0 (e.g., imports phased out after 2026), use `Step` with absolute values:
+
+```
+X_Num: 4
+X_Category: Imports
+X_Plain_English_Description: Fuel imports continuation beyond phase-out
+X_Mathematical_Type: Step
+Explored_Parameter_of_X: Final_Value
+Min_Value: 5
+Max_Value: 50
+Involved_Scenarios: Scenario1
+Involved_First_Sets_in_Osemosys: IMPFUEL001
+Exact_Parameters_Involved_in_Osemosys: TotalTechnologyAnnualActivityUpperLimit
+Initial_Year_of_Uncertainty: 2025
+```
+
+Here, `Min_Value: 5` and `Max_Value: 50` are absolute values (e.g., PJ), not multipliers.
+
+#### Complementary Dependency Between Parameters
+
+When two parameters must preserve a share constraint (e.g., `primary + dependent = constant`), set `Dependency: YES` on the primary row. The dependent row (immediately after) will automatically adjust its values to preserve the additive constraint:
+
+```
+X_Num: 5
+X_Category: Technology Share
+X_Plain_English_Description: Solar share of total capacity
+X_Mathematical_Type: Time_Series
+Explored_Parameter_of_X: Final_Value
+Min_Value: 0.7
+Max_Value: 1.3
+Dependency: YES
+Involved_Scenarios: Scenario1
+Involved_First_Sets_in_Osemosys: PWRSOL001
+Exact_Parameters_Involved_in_Osemosys: UDCMultiplierTotalCapacity
+Initial_Year_of_Uncertainty: 2025
+
+X_Num: 6
+X_Category: Technology Share
+X_Plain_English_Description: Wind share (complement of solar)
+X_Mathematical_Type: Time_Series
+Explored_Parameter_of_X: Final_Value
+Min_Value: 0.7
+Max_Value: 1.3
+Dependency: NO
+Involved_Scenarios: Scenario1
+Involved_First_Sets_in_Osemosys: PWRWND001
+Exact_Parameters_Involved_in_Osemosys: UDCMultiplierTotalCapacity
+Initial_Year_of_Uncertainty: 2025
+```
+
+Row 6 (wind) values are computed as: `new_dep(t) = baseline_dep(t) + (new_primary(t) - baseline_primary(t))`, so their sum remains constant.
 
 ## Params_Sets_Vari Sheet
 

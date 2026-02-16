@@ -14,7 +14,12 @@ OSeMOSYS-RDM supports several mathematical types for uncertainty propagation:
 | Constant | `interpolation_constant_trajectory()` | Maintain constant |
 | Linear | `interpolation_linear()` | Linear interpolation |
 | Logistic | `interpolation_logistic_trajectory()` | S-curve |
+| Step | `interpolation_step()` | Absolute value from uncertainty year (not a multiplier) |
 | Timeslices_Curve | Custom | Shape modification |
+
+```{note}
+**When to use Step vs other types:** All types except `Step` and `Constant` compute `new_final = baseline_final * multiplier`. If the baseline final year value is 0, these types cannot generate variability. Use `Step` for parameters with zero-baseline values — it applies an absolute target value directly.
+```
 
 ### Creating a New Type
 
