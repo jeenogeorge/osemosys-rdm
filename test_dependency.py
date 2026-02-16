@@ -4,9 +4,9 @@
 Script de prueba para verificar la funcionalidad de Dependency en Uncertainty_Table.
 
 Este script prueba que:
-1. La columna Dependency se lee correctamente
-2. La fórmula complementaria (2 - X) se aplica correctamente
-3. Los valores se almacenan en el orden correcto
+1. La columna Dependency se lee correctamente del Excel
+2. La formula aditiva a nivel de valores preserva la restriccion de suma
+3. La logica de dependencia funciona con datos simulados de escenarios
 
 Uso:
     python test_dependency.py
@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 
 def test_dependency_column():
-    """Verificar que la columna Dependency existe y tiene valores válidos."""
+    """Verificar que la columna Dependency existe y tiene valores validos."""
     print("="*70)
     print("TEST 1: Verificar columna Dependency en Interface_RDM.xlsx")
     print("="*70)
@@ -27,14 +27,14 @@ def test_dependency_column():
 
         # Verificar que existe la columna
         if 'Dependency' not in uncertainty_table.columns:
-            print("❌ FAIL: Columna 'Dependency' no encontrada")
+            print("FAIL: Columna 'Dependency' no encontrada")
             return False
 
-        print(f"✓ Columna 'Dependency' encontrada")
+        print(f"PASS: Columna 'Dependency' encontrada")
 
         # Verificar valores
         dep_values = uncertainty_table['Dependency'].unique()
-        print(f"✓ Valores únicos en Dependency: {dep_values}")
+        print(f"PASS: Valores unicos en Dependency: {dep_values}")
 
         # Contar YES vs NO
         yes_count = uncertainty_table['Dependency'].str.upper().isin(['YES', 'SI']).sum()
@@ -52,97 +52,127 @@ def test_dependency_column():
         return True
 
     except Exception as e:
-        print(f"❌ ERROR: {e}")
+        print(f"ERROR: {e}")
         return False
 
-def test_complementary_formula():
-    """Verificar que la fórmula 2-X funciona matemáticamente."""
+def test_value_level_constraint():
+    """Verificar que la formula aditiva preserva |primary| + |dependent| = constante."""
     print("\n" + "="*70)
-    print("TEST 2: Verificar fórmula complementaria (2 - X)")
+    print("TEST 2: Verificar formula aditiva a nivel de valores")
     print("="*70)
 
+    # Caso UDCMultiplierTotalCapacity: baseline EV=0.98, nonEV=-0.02
+    # Restriccion: |EV| + |nonEV| = 1.0
+
     test_cases = [
-        (1.8, 0.2, "80% aumento → 80% disminución"),
-        (0.7, 1.3, "30% disminución → 30% aumento"),
-        (1.0, 1.0, "Sin cambio → sin cambio"),
-        (1.5, 0.5, "50% aumento → 50% disminución"),
-        (0.9, 1.1, "10% disminución → 10% aumento"),
+        # (baseline_pri, baseline_dep, new_pri, description)
+        (0.98, -0.02, 0.97, "EV share 2% -> 3%"),
+        (0.98, -0.02, 0.95, "EV share 2% -> 5%"),
+        (0.98, -0.02, 0.50, "EV share 2% -> 50%"),
+        (0.98, -0.02, 0.99, "EV share 2% -> 1%"),
+        (0.98, -0.02, 0.80, "EV share 2% -> 20%"),
+        (0.98, -0.02, 0.98, "EV share 2% -> 2% (sin cambio)"),
     ]
 
     all_passed = True
-    for x, expected, description in test_cases:
-        result = 2.0 - x
-        passed = abs(result - expected) < 0.0001
-        status = "✓" if passed else "❌"
-        print(f"{status} X={x:.2f} → 2-X={result:.2f} (esperado {expected:.2f}) - {description}")
+    for baseline_pri, baseline_dep, new_pri, description in test_cases:
+        # Formula: new_dep = baseline_dep + (new_pri - baseline_pri)
+        delta = new_pri - baseline_pri
+        new_dep = baseline_dep + delta
+
+        # Verificar restriccion
+        original_sum = abs(baseline_pri) + abs(baseline_dep)
+        new_sum = abs(new_pri) + abs(new_dep)
+
+        passed = abs(new_sum - original_sum) < 1e-10
+        status = "PASS" if passed else "FAIL"
+
+        print(f"{status}: {description}")
+        print(f"       baseline: pri={baseline_pri}, dep={baseline_dep}, |sum|={original_sum}")
+        print(f"       new:      pri={new_pri}, dep={new_dep:.4f}, |sum|={new_sum:.4f}")
+
         if not passed:
             all_passed = False
 
     return all_passed
 
-def test_dependency_logic_simulation():
-    """Simular la lógica de dependencia con datos de prueba."""
+def test_time_series_constraint():
+    """Verificar que la restriccion se preserva para cada anio en una serie de tiempo."""
     print("\n" + "="*70)
-    print("TEST 3: Simulación de lógica de dependencia")
+    print("TEST 3: Verificar restriccion en serie de tiempo completa")
     print("="*70)
 
-    # Simular 3 parámetros con diferentes configuraciones
-    print("\nEscenario de prueba:")
-    print("  Param 0: Dependency=NO,  eval_value=1.2")
-    print("  Param 1: Dependency=YES, eval_value=0.8")
-    print("  Param 2: Dependency=NO,  eval_value=1.1")
+    # Simular una serie de tiempo donde el multiplicador crea una trayectoria
+    years = list(range(2020, 2051))
+    baseline_pri = [0.98] * len(years)  # EV UDC constante en baseline
+    baseline_dep = [-0.02] * len(years)  # nonEV UDC constante en baseline
 
-    # Valores simulados
-    params = [
-        {'p': 0, 'dependency': 'NO', 'eval_original': 1.2, 'eval_final': 1.2},
-        {'p': 1, 'dependency': 'YES', 'eval_original': 0.8, 'eval_final': 0.8},
-        {'p': 2, 'dependency': 'NO', 'eval_original': 1.1, 'eval_final': None},
-    ]
+    # Simular que la interpolacion crea una trayectoria gradual para EV
+    # (de 0.98 en 2020 a 0.90 en 2050 = de 2% a 10% EV share)
+    new_pri = [0.98 - (0.08 * max(0, (y - 2025)) / 25) for y in years]
 
-    # Aplicar lógica de dependencia
-    this_future_X_change = []
+    all_passed = True
+    for i in range(len(years)):
+        delta = new_pri[i] - baseline_pri[i]
+        new_dep = baseline_dep[i] + delta
+        total = abs(new_pri[i]) + abs(new_dep)
+        if abs(total - 1.0) > 1e-10:
+            print(f"FAIL: Year {years[i]}: |{new_pri[i]:.4f}| + |{new_dep:.4f}| = {total:.4f} != 1.0")
+            all_passed = False
 
-    for i, param in enumerate(params):
-        p = param['p']
-        eval_value = param['eval_original']
+    if all_passed:
+        print(f"PASS: Restriccion |pri| + |dep| = 1.0 se preserva para los {len(years)} anios")
+        print(f"       Year 2020: pri={new_pri[0]:.4f}, dep={baseline_dep[0] + (new_pri[0] - baseline_pri[0]):.4f}")
+        print(f"       Year 2030: pri={new_pri[10]:.4f}, dep={baseline_dep[10] + (new_pri[10] - baseline_pri[10]):.4f}")
+        print(f"       Year 2050: pri={new_pri[-1]:.4f}, dep={baseline_dep[-1] + (new_pri[-1] - baseline_pri[-1]):.4f}")
 
-        # Lógica de dependencia
-        if p > 0:
-            prev_dependency = params[p-1]['dependency']
-            if prev_dependency in ['YES', 'SI']:
-                prev_eval_value = this_future_X_change[p-1]
-                eval_value = 2.0 - prev_eval_value
-                print(f"\n✓ Param {p}: Dependencia detectada!")
-                print(f"    Prev eval_value (Param {p-1}): {prev_eval_value:.4f}")
-                print(f"    Nueva eval_value: {eval_value:.4f} (= 2 - {prev_eval_value:.4f})")
+    return all_passed
 
-        this_future_X_change.append(eval_value)
-        param['eval_final'] = eval_value
+def test_dependency_logic_simulation():
+    """Simular la logica de dependencia con datos de prueba completos."""
+    print("\n" + "="*70)
+    print("TEST 4: Simulacion de logica de dependencia end-to-end")
+    print("="*70)
 
-    # Verificar resultados
-    print("\n\nResultados finales:")
-    all_correct = True
-    for param in params:
-        p = param['p']
-        expected = param['eval_final']
-        actual = this_future_X_change[p]
+    # Simular el flujo completo:
+    # Step 1: LHS genera multiplicadores
+    # Step 3: Se aplican multiplicadores, y para filas dependientes se aplica la restriccion
 
-        if p == 2:  # Este debe ser 2 - 0.8 = 1.2
-            expected = 2.0 - params[1]['eval_final']
+    # Configuracion
+    baseline_ev = 0.98
+    baseline_nonev = -0.02
+    multiplier_ev = 0.9694  # Corresponde a ~5% EV share: 0.98 * 0.9694 = 0.95
 
-        correct = abs(actual - expected) < 0.0001
-        status = "✓" if correct else "❌"
-        print(f"{status} Param {p}: eval_value={actual:.4f} (esperado {expected:.4f})")
+    # Step 3: Aplicar multiplicador al primario (EV)
+    new_ev = baseline_ev * multiplier_ev
 
-        if not correct:
-            all_correct = False
+    # Step 3: Para el dependiente (nonEV), aplicar formula aditiva
+    delta = new_ev - baseline_ev
+    new_nonev = baseline_nonev + delta
 
-    return all_correct
+    # Verificar
+    expected_ev_share = 1.0 - new_ev
+    expected_sum = abs(new_ev) + abs(new_nonev)
+
+    print(f"  Baseline: EV={baseline_ev}, nonEV={baseline_nonev}")
+    print(f"  Multiplicador EV: {multiplier_ev}")
+    print(f"  Nuevo EV: {baseline_ev} x {multiplier_ev} = {new_ev:.4f}")
+    print(f"  Delta: {new_ev:.4f} - {baseline_ev} = {delta:.4f}")
+    print(f"  Nuevo nonEV: {baseline_nonev} + ({delta:.4f}) = {new_nonev:.4f}")
+    print(f"  Participacion EV: {expected_ev_share*100:.2f}%")
+    print(f"  |EV| + |nonEV| = {expected_sum:.6f}")
+
+    passed = abs(expected_sum - 1.0) < 1e-10
+    status = "PASS" if passed else "FAIL"
+    print(f"\n{status}: La restriccion se {'preserva' if passed else 'NO se preserva'}")
+
+    return passed
 
 def main():
     """Ejecutar todas las pruebas."""
     print("\n" + "="*70)
     print(" PRUEBAS DE FUNCIONALIDAD: DEPENDENCY EN UNCERTAINTY_TABLE")
+    print(" (Formula aditiva a nivel de valores)")
     print("="*70 + "\n")
 
     results = []
@@ -151,10 +181,13 @@ def main():
     results.append(("Columna Dependency existe", test_dependency_column()))
 
     # Test 2
-    results.append(("Fórmula complementaria", test_complementary_formula()))
+    results.append(("Formula aditiva preserva restriccion", test_value_level_constraint()))
 
     # Test 3
-    results.append(("Lógica de dependencia", test_dependency_logic_simulation()))
+    results.append(("Restriccion en serie de tiempo", test_time_series_constraint()))
+
+    # Test 4
+    results.append(("Simulacion end-to-end", test_dependency_logic_simulation()))
 
     # Resumen
     print("\n" + "="*70)
@@ -162,16 +195,16 @@ def main():
     print("="*70)
 
     for test_name, passed in results:
-        status = "✓ PASS" if passed else "❌ FAIL"
+        status = "PASS" if passed else "FAIL"
         print(f"{status}: {test_name}")
 
     all_passed = all(result[1] for result in results)
 
     print("\n" + "="*70)
     if all_passed:
-        print("✓ TODAS LAS PRUEBAS PASARON EXITOSAMENTE")
+        print("TODAS LAS PRUEBAS PASARON EXITOSAMENTE")
     else:
-        print("❌ ALGUNAS PRUEBAS FALLARON - REVISAR ARRIBA")
+        print("ALGUNAS PRUEBAS FALLARON - REVISAR ARRIBA")
     print("="*70 + "\n")
 
     return 0 if all_passed else 1

@@ -933,9 +933,7 @@ if __name__ == '__main__':
                 Dependency_Flag = 'NO'
 
             # Validate Dependency configuration
-            if p == 0 and Dependency_Flag in ['YES', 'SI']:
-                raise ValueError(f"Row 0 (X_Num={X_Num[-1]}) cannot have Dependency=YES (no previous row exists)")
-
+            # Note: Row 0 CAN have Dependency=YES (it means row 1 depends on row 0)
             if p == P-1 and Dependency_Flag in ['YES', 'SI'] and n == 0:
                 # Only print warning once (when n == 0)
                 print(f"WARNING: Last row (X_Num={X_Num[-1]}) has Dependency=YES but there's no next row to depend on it")
@@ -1016,31 +1014,10 @@ if __name__ == '__main__':
             evaluation_value = scipy.stats.uniform.ppf(evaluation_value_preliminary, this_loc, this_loc_scale)
             #
             #######################################################################
-            # Apply complementary dependency if previous row has Dependency = YES
-            if p > 0:  # Can't be dependent if it's the first row
-                try:
-                    prev_dependency = str(uncertainty_table.loc[p-1, 'Dependency']).strip().upper()
-                    if prev_dependency in ['YES', 'SI']:
-                        # Get the evaluation_value from previous parameter (already calculated)
-                        prev_evaluation_value = this_future_X_change[p-1]
-                        # Apply complementary formula: 2 - prev_value
-                        evaluation_value = 2.0 - prev_evaluation_value
-
-                        # Debug logging (optional - can be removed later)
-                        if n == 0 and p < 5:  # Only log first future and first few params
-                            print(f"  Dependency applied: Row {p} dependent on Row {p-1}")
-                            print(f"    Previous eval_value: {prev_evaluation_value:.4f}")
-                            print(f"    New eval_value: {evaluation_value:.4f}")
-                except KeyError:
-                    # Column 'Dependency' doesn't exist - skip dependency logic
-                    pass
-            #
-            # DEBUG: Print first future values to verify dependency
-            if n == 0:
-                print(f"Param {p} (X_Num={X_Num[-1]}): eval_value={evaluation_value:.4f}")
-                if p > 0 and p < 10:  # Print first 10 params only
-                    print(f"  Sum with previous: {evaluation_value + this_future_X_change[p-1]:.4f}")
-            # sys.exit(8)
+            # NOTE: Complementary dependency (Dependency=YES) is now enforced
+            # at value-level in Step 3 (application phase), not here in Step 1.
+            # The dependent row's evaluation_value from LHS is kept but will be
+            # overridden during application to preserve share constraints.
             #######################################################################
             if evaluation_value > 1:
                 this_future_X_change_direction.append('up')
@@ -1094,9 +1071,10 @@ if __name__ == '__main__':
                     
                     experiment_dictionary[ X_Num_unique[-1] ].update({ 'Initial_Year_of_Uncertainty':Initial_Year_of_Uncertainty_EP })
                     # experiment_dictionary[ X_Num_unique[-1] ].update({ 'Emssion_year_0':Emssion_year_0 })
+                    experiment_dictionary[ X_Num_unique[-1] ].update({ 'Dependency_Flag': Dependency_Flag })
                     experiment_dictionary[ X_Num_unique[-1] ].update({ 'Futures':[x for x in range( 1, N+1 ) ] })
                     #
-                    if math_type in ['Time_Series', 'Discrete_Investments', 'Mult_Adoption_Curve', 'Mult_Restriction', 'Mult_Restriction_Start', 'Mult_Restriction_End', 'Timeslices_Curve', 'Constant', 'Logistic', 'Linear']:
+                    if math_type in ['Time_Series', 'Discrete_Investments', 'Mult_Adoption_Curve', 'Mult_Restriction', 'Mult_Restriction_Start', 'Mult_Restriction_End', 'Timeslices_Curve', 'Constant', 'Logistic', 'Linear', 'Step']:
                         experiment_dictionary[ X_Num_unique[-1] ].update({ 'Explored_Parameter_of_X':Explored_Parameter_of_X } )
                         experiment_dictionary[ X_Num_unique[-1] ].update({ 'Values':[0.0 for x in range( 1, N+1 ) ] })
                         experiment_dictionary[ X_Num_unique[-1] ].update({ 'Emission_Years':[0.0 for x in range( 1, N+1 ) ] })
@@ -1124,7 +1102,7 @@ if __name__ == '__main__':
                     #
                     X_Num_unique.append( int( uncertainty_table.loc[ p ,'X_Num'] ) )
                     #
-                    if math_type in ['Time_Series', 'Discrete_Investments', 'Mult_Adoption_Curve', 'Mult_Restriction', 'Mult_Restriction_Start', 'Mult_Restriction_End', 'Timeslices_Curve', 'Constant', 'Logistic', 'Linear']:
+                    if math_type in ['Time_Series', 'Discrete_Investments', 'Mult_Adoption_Curve', 'Mult_Restriction', 'Mult_Restriction_Start', 'Mult_Restriction_End', 'Timeslices_Curve', 'Constant', 'Logistic', 'Linear', 'Step']:
                         # if str( uncertainty_table.loc[ p , 'Explored_Parameter_is_Relative_to_Baseline'] ) == 'YES':
                         #     experiment_dictionary[ int( uncertainty_table.loc[ p ,'X_Num'] ) ][ 'Values' ][n] = this_future_X_change[-1]
                         # elif str( uncertainty_table.loc[ p , 'Explored_Parameter_is_Relative_to_Baseline'] ) == 'NO':
@@ -1323,7 +1301,200 @@ if __name__ == '__main__':
             #     series_iguales.append(list(hoja_serie_especial[number]))
             
             # Ciclo para las incertidumbres
-            for u in range( 1, len(experiment_dictionary)+1 ): 
+            for u in range( 1, len(experiment_dictionary)+1 ):
+
+                #######################################################################
+                # DEPENDENCY CHECK: If previous row (u-1) has Dependency_Flag=YES,
+                # then THIS row (u) is the dependent row. We skip normal interpolation
+                # and instead compute values to preserve the additive constraint:
+                #   new_dep(t) = baseline_dep(t) + (new_primary(t) - baseline_primary(t))
+                #######################################################################
+                if u > 1:
+                    prev_dep_flag = str(experiment_dictionary[u-1].get('Dependency_Flag', 'NO')).strip().upper()
+                    if prev_dep_flag in ['YES', 'SI']:
+                        # This row (u) is DEPENDENT on row (u-1)
+                        dep_info = experiment_dictionary[u]
+                        pri_info = experiment_dictionary[u-1]
+
+                        dep_scenarios = dep_info['Involved_Scenarios']
+                        if str(scenario_list[s]) not in dep_scenarios:
+                            continue
+
+                        dep_params = dep_info['Exact_Parameters_Involved_in_Osemosys']
+                        dep_first_sets = deepcopy(dep_info['Involved_First_Sets_in_Osemosys'])
+                        dep_second_sets = dep_info.get('Involved_Second_Sets_in_Osemosys', [])
+                        dep_third_sets = dep_info.get('Involved_Third_Sets_in_Osemosys', [])
+                        pri_params = pri_info['Exact_Parameters_Involved_in_Osemosys']
+                        pri_first_sets = deepcopy(pri_info['Involved_First_Sets_in_Osemosys'])
+                        pri_second_sets = pri_info.get('Involved_Second_Sets_in_Osemosys', [])
+                        pri_third_sets = pri_info.get('Involved_Third_Sets_in_Osemosys', [])
+
+                        round_dep = 10
+
+                        for p_idx in range(len(dep_params)):
+                            dep_parameter = dep_params[p_idx]
+                            pri_parameter = pri_params[min(p_idx, len(pri_params)-1)]
+
+                            number_sets_dep = df_Params_Sets_Vari.loc['Number', dep_parameter]
+
+                            # --- 1-set case ---
+                            if number_sets_dep == 1:
+                                set1_dep = df_Params_Sets_Vari.loc['Set1', dep_parameter]
+                                tsfirst_dep = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set1_dep)]
+
+                                set1_pri = df_Params_Sets_Vari.loc['Set1', pri_parameter]
+                                tsfirst_pri = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set1_pri)]
+
+                                for f_set_dep in range(len(dep_first_sets)):
+                                    this_set_dep = dep_first_sets[f_set_dep]
+                                    dep_indices = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][dep_parameter][tsfirst_dep]) if x == str(this_set_dep)]
+                                    if not dep_indices:
+                                        continue
+                                    dep_indices.sort()
+
+                                    # Read dependent baseline from stable_scenarios
+                                    dep_baseline = [float(v) for v in stable_scenarios[scenario_list[s]][dep_parameter]['value'][dep_indices[0]:dep_indices[-1]+1]]
+
+                                    # Read primary's indices (use first primary set for delta)
+                                    pri_set = pri_first_sets[min(f_set_dep, len(pri_first_sets)-1)]
+                                    pri_indices = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][pri_parameter][tsfirst_pri]) if x == str(pri_set)]
+                                    if not pri_indices:
+                                        continue
+                                    pri_indices.sort()
+
+                                    # Primary modified values (already processed by row u-1)
+                                    pri_new = [float(v) for v in inherited_scenarios[scenario_list[s]][f][pri_parameter]['value'][pri_indices[0]:pri_indices[-1]+1]]
+                                    # Primary baseline from stable_scenarios
+                                    pri_baseline = [float(v) for v in stable_scenarios[scenario_list[s]][pri_parameter]['value'][pri_indices[0]:pri_indices[-1]+1]]
+
+                                    # Apply additive constraint: same delta as primary
+                                    n_vals = min(len(dep_baseline), len(pri_baseline))
+                                    new_dep_values = [
+                                        round(dep_baseline[i] + (pri_new[i] - pri_baseline[i]), round_dep)
+                                        for i in range(n_vals)
+                                    ]
+
+                                    inherited_scenarios[scenario_list[s]][f][dep_parameter]['value'][dep_indices[0]:dep_indices[0]+n_vals] = deepcopy(new_dep_values)
+
+                            # --- 2-set case ---
+                            elif number_sets_dep == 2:
+                                set1_dep = df_Params_Sets_Vari.loc['Set1', dep_parameter]
+                                set2_dep = df_Params_Sets_Vari.loc['Set2', dep_parameter]
+                                tsfirst_dep = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set1_dep)]
+                                tssecond_dep = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set2_dep)]
+
+                                set1_pri = df_Params_Sets_Vari.loc['Set1', pri_parameter]
+                                set2_pri = df_Params_Sets_Vari.loc['Set2', pri_parameter]
+                                tsfirst_pri = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set1_pri)]
+                                tssecond_pri = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set2_pri)]
+
+                                for f_set_dep in range(len(dep_first_sets)):
+                                    this_set_first_dep = dep_first_sets[f_set_dep]
+                                    dep_indices_first = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][dep_parameter][tsfirst_dep]) if x == str(this_set_first_dep)]
+
+                                    dep_second_sets_iter = dep_second_sets if dep_second_sets else ['']
+                                    for s_set_dep in range(len(dep_second_sets_iter)):
+                                        this_set_second_dep = dep_second_sets_iter[s_set_dep]
+                                        dep_indices_second = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][dep_parameter][tssecond_dep]) if x == str(this_set_second_dep)]
+
+                                        dep_indices = sorted(set(dep_indices_first) & set(dep_indices_second))
+                                        if not dep_indices:
+                                            continue
+
+                                        dep_baseline = [float(v) for v in stable_scenarios[scenario_list[s]][dep_parameter]['value'][dep_indices[0]:dep_indices[-1]+1]]
+
+                                        # Primary indices
+                                        pri_set_first = pri_first_sets[min(f_set_dep, len(pri_first_sets)-1)]
+                                        pri_indices_first = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][pri_parameter][tsfirst_pri]) if x == str(pri_set_first)]
+
+                                        pri_second_sets_iter = pri_second_sets if pri_second_sets else ['']
+                                        pri_set_second = pri_second_sets_iter[min(s_set_dep, len(pri_second_sets_iter)-1)]
+                                        pri_indices_second = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][pri_parameter][tssecond_pri]) if x == str(pri_set_second)]
+
+                                        pri_indices = sorted(set(pri_indices_first) & set(pri_indices_second))
+                                        if not pri_indices:
+                                            continue
+
+                                        pri_new = [float(v) for v in inherited_scenarios[scenario_list[s]][f][pri_parameter]['value'][pri_indices[0]:pri_indices[-1]+1]]
+                                        pri_baseline = [float(v) for v in stable_scenarios[scenario_list[s]][pri_parameter]['value'][pri_indices[0]:pri_indices[-1]+1]]
+
+                                        n_vals = min(len(dep_baseline), len(pri_baseline))
+                                        new_dep_values = [
+                                            round(dep_baseline[i] + (pri_new[i] - pri_baseline[i]), round_dep)
+                                            for i in range(n_vals)
+                                        ]
+
+                                        inherited_scenarios[scenario_list[s]][f][dep_parameter]['value'][dep_indices[0]:dep_indices[0]+n_vals] = deepcopy(new_dep_values)
+
+                            # --- 3-set case ---
+                            elif number_sets_dep == 3:
+                                set1_dep = df_Params_Sets_Vari.loc['Set1', dep_parameter]
+                                set2_dep = df_Params_Sets_Vari.loc['Set2', dep_parameter]
+                                set3_dep = df_Params_Sets_Vari.loc['Set3', dep_parameter]
+                                tsfirst_dep = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set1_dep)]
+                                tssecond_dep = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set2_dep)]
+                                tsthird_dep = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set3_dep)]
+
+                                set1_pri = df_Params_Sets_Vari.loc['Set1', pri_parameter]
+                                set2_pri = df_Params_Sets_Vari.loc['Set2', pri_parameter]
+                                set3_pri = df_Params_Sets_Vari.loc['Set3', pri_parameter]
+                                tsfirst_pri = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set1_pri)]
+                                tssecond_pri = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set2_pri)]
+                                tsthird_pri = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set3_pri)]
+
+                                for f_set_dep in range(len(dep_first_sets)):
+                                    this_set_first_dep = dep_first_sets[f_set_dep]
+                                    dep_indices_first = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][dep_parameter][tsfirst_dep]) if x == str(this_set_first_dep)]
+
+                                    dep_second_sets_iter = dep_second_sets if dep_second_sets else ['']
+                                    for s_set_dep in range(len(dep_second_sets_iter)):
+                                        this_set_second_dep = dep_second_sets_iter[s_set_dep]
+                                        dep_indices_second = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][dep_parameter][tssecond_dep]) if x == str(this_set_second_dep)]
+
+                                        dep_third_sets_iter = dep_third_sets if dep_third_sets else ['']
+                                        for t_set_dep in range(len(dep_third_sets_iter)):
+                                            this_set_third_dep = dep_third_sets_iter[t_set_dep]
+                                            dep_indices_third = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][dep_parameter][tsthird_dep]) if x == str(this_set_third_dep)]
+
+                                            dep_indices = sorted(set(dep_indices_first) & set(dep_indices_second) & set(dep_indices_third))
+                                            if not dep_indices:
+                                                continue
+
+                                            dep_baseline = [float(v) for v in stable_scenarios[scenario_list[s]][dep_parameter]['value'][dep_indices[0]:dep_indices[-1]+1]]
+
+                                            # Primary indices
+                                            pri_set_first = pri_first_sets[min(f_set_dep, len(pri_first_sets)-1)]
+                                            pri_indices_first = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][pri_parameter][tsfirst_pri]) if x == str(pri_set_first)]
+
+                                            pri_second_sets_iter = pri_second_sets if pri_second_sets else ['']
+                                            pri_set_second = pri_second_sets_iter[min(s_set_dep, len(pri_second_sets_iter)-1)]
+                                            pri_indices_second = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][pri_parameter][tssecond_pri]) if x == str(pri_set_second)]
+
+                                            pri_third_sets_iter = pri_third_sets if pri_third_sets else ['']
+                                            pri_set_third = pri_third_sets_iter[min(t_set_dep, len(pri_third_sets_iter)-1)]
+                                            pri_indices_third = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][pri_parameter][tsthird_pri]) if x == str(pri_set_third)]
+
+                                            pri_indices = sorted(set(pri_indices_first) & set(pri_indices_second) & set(pri_indices_third))
+                                            if not pri_indices:
+                                                continue
+
+                                            pri_new = [float(v) for v in inherited_scenarios[scenario_list[s]][f][pri_parameter]['value'][pri_indices[0]:pri_indices[-1]+1]]
+                                            pri_baseline = [float(v) for v in stable_scenarios[scenario_list[s]][pri_parameter]['value'][pri_indices[0]:pri_indices[-1]+1]]
+
+                                            n_vals = min(len(dep_baseline), len(pri_baseline))
+                                            new_dep_values = [
+                                                round(dep_baseline[i] + (pri_new[i] - pri_baseline[i]), round_dep)
+                                                for i in range(n_vals)
+                                            ]
+
+                                            inherited_scenarios[scenario_list[s]][f][dep_parameter]['value'][dep_indices[0]:dep_indices[0]+n_vals] = deepcopy(new_dep_values)
+
+                        # Debug output for first future
+                        if f == 1:
+                            print(f"  Dependency (value-level): Row {u} dependent on Row {u-1} | Scenario {scenario_list[s]} Future {f}")
+
+                        continue  # Skip normal interpolation for this dependent row
+                #######################################################################
 
                 Exact_X = experiment_dictionary[u]['Exact_X']
                 X_Cat = experiment_dictionary[u]['Category']
@@ -1379,7 +1550,7 @@ if __name__ == '__main__':
                         #         # sys.exit()
                         
                         #------------------------------------------------------------------------------------------------------------------------------------------#
-                        if Math_Type in ['Time_Series', 'Constant', 'Logistic', 'Linear'] and Explored_Parameter_of_X=='Final_Value':
+                        if Math_Type in ['Time_Series', 'Constant', 'Logistic', 'Linear', 'Step'] and Explored_Parameter_of_X=='Final_Value':
                             
                             
                             
@@ -1427,10 +1598,12 @@ if __name__ == '__main__':
                                         new_value_list = deepcopy(AUX.interpolation_linear(time_list, value_list, float(Values_per_Future[fut_id]), last_year_analysis, Initial_Year_of_Uncertainty))
                                     elif Math_Type == 'Logistic':
                                         new_value_list = deepcopy(AUX.interpolation_logistic_trajectory(time_list, value_list, float(Values_per_Future[fut_id]), last_year_analysis, Initial_Year_of_Uncertainty))
-                                       
-                                        
-                                        
-                                        
+                                    elif Math_Type == 'Step':
+                                        new_value_list = deepcopy(AUX.interpolation_step(time_list, value_list, float(Values_per_Future[fut_id]), Initial_Year_of_Uncertainty))
+
+
+
+
                                         # import matplotlib.pyplot as plt
                                         # new_value_list_constant = deepcopy(AUX.interpolation_constant_trajectory(time_list, value_list, Initial_Year_of_Uncertainty))
                                         # new_value_list_non_linear = deepcopy(AUX.interpolation_non_linear_final(time_list, value_list, float(Values_per_Future[fut_id]), last_year_analysis, Initial_Year_of_Uncertainty))
@@ -1531,6 +1704,8 @@ if __name__ == '__main__':
                                                 new_value_list = deepcopy(AUX.interpolation_constant_trajectory(time_list, value_list, Initial_Year_of_Uncertainty))
                                             elif Math_Type == 'Logistic':
                                                 new_value_list = deepcopy(AUX.interpolation_logistic_trajectory(time_list, value_list, float(Values_per_Future[fut_id]), last_year_analysis, Initial_Year_of_Uncertainty))
+                                            elif Math_Type == 'Step':
+                                                new_value_list = deepcopy(AUX.interpolation_step(time_list, value_list, float(Values_per_Future[fut_id]), Initial_Year_of_Uncertainty))
                                             #
                                             new_value_list_rounded = [ round(elem, round_cs) for elem in new_value_list ]
                                             #--------------------------------------------------------------------#``
@@ -1587,6 +1762,8 @@ if __name__ == '__main__':
                                                     new_value_list = deepcopy(AUX.interpolation_constant_trajectory(time_list, value_list, Initial_Year_of_Uncertainty))
                                                 elif Math_Type == 'Logistic':
                                                     new_value_list = deepcopy(AUX.interpolation_logistic_trajectory(time_list, value_list, float(Values_per_Future[fut_id]), last_year_analysis, Initial_Year_of_Uncertainty))
+                                                elif Math_Type == 'Step':
+                                                    new_value_list = deepcopy(AUX.interpolation_step(time_list, value_list, float(Values_per_Future[fut_id]), Initial_Year_of_Uncertainty))
                                                 #
                                                 new_value_list_rounded = [ round(elem, round_cs) for elem in new_value_list ]
                                                 #--------------------------------------------------------------------#``
