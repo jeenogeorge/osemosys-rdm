@@ -114,15 +114,7 @@ if __name__ == '__main__':
     output_path = os.path.join('Results', f'OSEMOSYS_{region}_Energy_Output.csv')
     df_output.to_csv ( output_path, index = None, header=True)
     #
-    df_output = dfa_list[0]
-    output_path = os.path.join('workflow', '1_Experiment', f'OSEMOSYS_{region}_Energy_Output.csv')
-    df_output.to_csv ( output_path, index = None, header=True)
-    #
     # Inputs
     df_input = dfa_list[1]
     input_path = os.path.join('Results', f'OSEMOSYS_{region}_Energy_Input.csv')
-    df_input.to_csv ( input_path, index = None, header=True)
-    #
-    df_input = dfa_list[1]
-    input_path = os.path.join('workflow', '1_Experiment', f'OSEMOSYS_{region}_Energy_Input.csv')
     df_input.to_csv ( input_path, index = None, header=True)

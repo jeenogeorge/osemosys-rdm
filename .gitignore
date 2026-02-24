@@ -16,8 +16,6 @@ src/Guides/html_to_pdf_converter.py
 
 # From 1_Experiment
 src/workflow/1_Experiment/Results
-src/workflow/1_Experiment/OSEMOSYS_UGA_Energy_Input.csv
-src/workflow/1_Experiment/OSEMOSYS_UGA_Energy_Output.csv
 
 # From Executables (DVC manages this directory)
 src/workflow/1_Experiment/Executables/*
