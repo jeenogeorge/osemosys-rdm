@@ -715,7 +715,7 @@ if __name__ == '__main__':
     shape_file = main_path[4]
     
     # solver = 'cplex'
-    # osemosys_model = 'model.v.5.3.txt'
+    # osemosys_model = 'model.v.5.4.txt'
     # Interface_RDM = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\osemosys-rdm\src\Interface_RDM.xlsx'
     # shape_file = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\osemosys-rdm\src\workflow\2_Miscellaneous\shape_of_demand.csv'
 
@@ -2148,7 +2148,6 @@ if __name__ == '__main__':
     inherited_scenarios.clear()  # Clear the original dictionary to free memory
     print("The 'inherited_scenarios' dictionary has been cleared.")
                
-
 
     if generator_or_executor == 'Generator' or generator_or_executor == 'Both':
         print('4: We will now print the input .txt files of diverse future scenarios.')

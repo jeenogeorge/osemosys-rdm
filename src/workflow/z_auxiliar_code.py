@@ -591,7 +591,7 @@ def isolate_params(scenario_file_name):
             row=matriz[i].split(" ")
             name_params.append(row[1])
             count_params=count_params+1
-        if 'set MODEx' in matriz[i] or 'set MODEper' in matriz[i]:
+        if 'set MODEx' in matriz[i] or 'set MODEper' in matriz[i] or 'set INPUTx' in matriz[i]:
             special_sets.append(matriz[i])
 
     
