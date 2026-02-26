@@ -504,10 +504,14 @@ def function_C_mathprog_parallel( fut_index, scen, inherited_scenarios, unpackag
     for param_without_values in parameters_without_values:
         this_param_default_value = list_param_default_value.loc[list_param_default_value["Parameter"] == param_without_values, "Default_Value"].values[0]
         g.write(f'param {param_without_values} default {this_param_default_value} :=\n;\n')
-    for new_final_set in special_sets:
-        g.write(new_final_set)
+    # for new_final_set in special_sets:
+    #     g.write(new_final_set)
     g.write('#\n' + 'end;\n')
     g.close()
+    #
+    # Pre-process the data file to add commodity-technology-mode sets and CRF/PvAnnuity
+    from preprocess_data import main as preprocess_main
+    preprocess_main(g_path, g_path)
     #
     ###########################################################################################################################
     # Furthermore, we must print the inputs separately for fast deployment of the input matrix:
