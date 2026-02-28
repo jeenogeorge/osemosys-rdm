@@ -40,6 +40,215 @@ inherited_scenarios : implemented in procedimental code
 function_C_mathprog_parallel : we will insert it all in a function to run in parallel
 interpolation : implemented in a function for linear of non-linear time-series
 '''
+
+############################################################################################################################################################################################################
+#
+#  FIX: Post-perturbation sign correction for UDC EV penetration constraints
+#
+#  MATHEMATICAL CONTEXT:
+#  ---------------------
+#  The EV penetration UDCs encode a cap on electric vehicle share:
+#
+#      Cap_ELC / (Cap_CONV + Cap_ELC) <= p
+#
+#  Rearranged as a linear inequality for the solver:
+#
+#      -p * Cap_CONV + (1-p) * Cap_ELC <= 0       [UDCTag = 0, UDCConstant = 0]
+#
+#  Where p is the maximum allowed EV penetration fraction (e.g., 0.02 = 2%).
+#
+#  This means:
+#    - Conventional technology coefficients (diesel/gasoline) MUST be negative (-p)
+#    - Electric technology coefficients MUST be positive (1-p)
+#
+#  PROBLEM:
+#  --------
+#  LHS perturbations can add deltas to these coefficients that accumulate over
+#  the model horizon. When the base coefficient is small (e.g., -0.02), the
+#  delta can push it past zero, inverting the sign. With all positive coefficients
+#  and RHS = 0, the only solution is zero capacity for all technologies in the
+#  constraint, which contradicts existing demand and causes infeasibility.
+#
+#  Example (2TRAHTREVCAP in Scenario1_1):
+#    Year 2045: coef_diesel = -0.0005 (barely negative, OK)
+#    Year 2046: coef_diesel = +0.0005 (positive, BREAKS the constraint)
+#    => Error: 'EBb4_EnergyBalanceEachYear4_ICR(RE1,TRAHTR,2046)': 0 >= 2.76937
+#
+#  FIX:
+#  ----
+#  After all perturbations are applied, scan UDC coefficients for the 7 EV
+#  penetration constraints. If any coefficient has the wrong sign, clamp it
+#  to a small epsilon preserving the mathematically required sign.
+#
+############################################################################################################################################################################################################
+
+
+def fix_udc_ev_penetration_coefficients(inherited_scenarios, scenario_list, all_futures,
+                                        ev_udcs, conventional_patterns, electric_pattern,
+                                        log_dir=None):
+    """
+    Post-perturbation validation and correction of UDC EV penetration coefficients.
+
+    Scans UDCMultiplierTotalCapacity, UDCMultiplierNewCapacity, and
+    UDCMultiplierActivity for the EV penetration UDCs. If any conventional
+    (diesel/gasoline) technology coefficient is non-negative, it is clamped to
+    -EPSILON. If any electric technology coefficient is non-positive, it is
+    clamped to +EPSILON.
+
+    Parameters
+    ----------
+    inherited_scenarios : dict
+        Nested dict: inherited_scenarios[scenario][future][parameter][key] = list
+        where key in {'r', 't', 'u', 'y', 'value'}.
+    scenario_list : list
+        List of scenario names (e.g., ['Scenario1']).
+    all_futures : list
+        List of future indices (e.g., [1, 2, ..., N]).
+    ev_udcs : list
+        List of EV penetration UDC names (derived from B1_Model_Structure.xlsx,
+        filtered by 'EVCAP' suffix).
+    conventional_patterns : list
+        Substring patterns that classify conventional technologies
+        (e.g., ['DSL', 'DSH', 'GSL']). Read from Interface_RDM.xlsx Setup sheet.
+    electric_pattern : str
+        Substring pattern that classifies electric technologies
+        (e.g., 'ELC'). Read from Interface_RDM.xlsx Setup sheet.
+    log_dir : str or None
+        If provided, correction logs are written per-future to this directory.
+
+    Returns
+    -------
+    corrections_summary : dict
+        Maps (scenario, future) to a list of correction tuples.
+    """
+
+    EV_UDCS = ev_udcs
+    CONVENTIONAL_PATTERNS = conventional_patterns
+    ELECTRIC_PATTERN = electric_pattern
+
+    # -------------------------------------------------------------------------
+    # Epsilon: the clamping value. Small enough to not materially change the
+    # constraint economics, but large enough to avoid numerical noise.
+    # With EPSILON = 0.001, the implied EV cap is ~0.1%, which is negligible
+    # and preserves the directional intent of the original constraint.
+    # -------------------------------------------------------------------------
+    EPSILON = 0.001
+
+    # -------------------------------------------------------------------------
+    # UDC parameters that participate in the constraint
+    # (all three appear in both UDC1 and UDC2 equations in the model)
+    # -------------------------------------------------------------------------
+    UDC_PARAMS = [
+        'UDCMultiplierTotalCapacity',
+        'UDCMultiplierNewCapacity',
+        'UDCMultiplierActivity',
+    ]
+
+    corrections_summary = {}
+    total_corrections = 0
+
+    for scen in scenario_list:
+        if scen not in inherited_scenarios:
+            continue
+
+        for fut in all_futures:
+            if fut not in inherited_scenarios[scen]:
+                continue
+
+            corrections_key = (scen, fut)
+            corrections_summary[corrections_key] = []
+
+            for param_name in UDC_PARAMS:
+                if param_name not in inherited_scenarios[scen][fut]:
+                    continue
+
+                data = inherited_scenarios[scen][fut][param_name]
+
+                # Verify the expected data structure keys exist
+                if 'u' not in data or 't' not in data or 'value' not in data:
+                    continue
+
+                n_entries = len(data['value'])
+                udc_list = data['u']
+                tech_list = data['t']
+                year_list = data.get('y', ['?'] * n_entries)
+                value_list = data['value']
+
+                for i in range(n_entries):
+                    udc_name = str(udc_list[i])
+
+                    # Only check the 7 EV penetration UDCs
+                    if udc_name not in EV_UDCS:
+                        continue
+
+                    tech_name = str(tech_list[i])
+                    year = str(year_list[i])
+                    value = float(value_list[i])
+
+                    # Classify technology by substring pattern
+                    is_conventional = any(pat in tech_name for pat in CONVENTIONAL_PATTERNS)
+                    is_electric = ELECTRIC_PATTERN in tech_name
+
+                    # ---------------------------------------------------------
+                    # SIGN CHECK AND CORRECTION
+                    # ---------------------------------------------------------
+                    if is_conventional and value >= 0:
+                        # Conventional coefficient MUST be negative.
+                        # A non-negative value means the perturbation pushed
+                        # it past zero, breaking the constraint logic.
+                        old_value = value
+                        data['value'][i] = -EPSILON
+                        corrections_summary[corrections_key].append(
+                            (udc_name, year, tech_name, param_name, old_value, -EPSILON)
+                        )
+                        total_corrections += 1
+
+                    elif is_electric and value <= 0:
+                        # Electric coefficient MUST be positive.
+                        # A non-positive value would invert the constraint.
+                        old_value = value
+                        data['value'][i] = EPSILON
+                        corrections_summary[corrections_key].append(
+                            (udc_name, year, tech_name, param_name, old_value, EPSILON)
+                        )
+                        total_corrections += 1
+
+    # -------------------------------------------------------------------------
+    # Logging: write per-future correction logs
+    # -------------------------------------------------------------------------
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+        for (scen, fut), corr_list in corrections_summary.items():
+            if corr_list:
+                log_file = os.path.join(log_dir, f'{scen}_{fut}_udc_corrections.log')
+                with open(log_file, 'w') as lf:
+                    lf.write(f'UDC EV Penetration Sign Correction Log\n')
+                    lf.write(f'Scenario: {scen}, Future: {fut}\n')
+                    lf.write(f'Total corrections: {len(corr_list)}\n')
+                    lf.write('-' * 90 + '\n')
+                    lf.write(f'{"UDC":<20} {"Year":<6} {"Technology":<20} {"Parameter":<35} {"Old":>12} {"New":>12}\n')
+                    lf.write('-' * 90 + '\n')
+                    for udc, year, tech, param, old_val, new_val in corr_list:
+                        lf.write(f'{udc:<20} {year:<6} {tech:<20} {param:<35} {old_val:>12.10f} {new_val:>12.10f}\n')
+
+    # -------------------------------------------------------------------------
+    # Console summary
+    # -------------------------------------------------------------------------
+    if total_corrections > 0:
+        print(f'    UDC EV Sign Fix: Applied {total_corrections} correction(s) across all futures.')
+        # Per-UDC summary
+        udc_counts = {}
+        for corr_list in corrections_summary.values():
+            for udc, year, tech, param, old_val, new_val in corr_list:
+                udc_counts[udc] = udc_counts.get(udc, 0) + 1
+        for udc, count in sorted(udc_counts.items()):
+            print(f'      {udc}: {count} correction(s)')
+    else:
+        print('    UDC EV Sign Fix: No corrections needed.')
+
+    return corrections_summary
+
+
 ############################################################################################################################################################################################################
 def set_first_list( Executed_Scenario ):
     #
@@ -834,6 +1043,26 @@ if __name__ == '__main__':
     setup_table = book.parse( 'Setup' , 0)
     scenarios_to_reproduce = str( setup_table.loc[ 0 ,'Scenario_to_Reproduce'] )
     experiment_ID = str( setup_table.loc[ 0 ,'Experiment_ID'] )
+    # EV sign-correction configuration (read from Setup sheet, semicolon-separated)
+    _raw_conv = setup_table.loc[ 0 ,'EV_Conventional_Patterns']
+    _raw_elec = setup_table.loc[ 0 ,'EV_Electric_Pattern']
+    _raw_udcs = setup_table.loc[ 0 ,'EV_UDCs']
+    ev_config_is_empty = (
+        pd.isna(_raw_conv) or str(_raw_conv).strip() == '' or
+        pd.isna(_raw_elec) or str(_raw_elec).strip() == '' or
+        pd.isna(_raw_udcs) or str(_raw_udcs).strip() == ''
+    )
+    if ev_config_is_empty:
+        conv_patterns = []
+        elec_pattern  = ''
+        ev_udcs       = []
+        print('    WARNING: EV sign-correction config is incomplete in Setup sheet '
+              '(EV_Conventional_Patterns, EV_Electric_Pattern, or EV_UDCs is empty). '
+              'UDC EV sign correction will be SKIPPED.')
+    else:
+        conv_patterns = str(_raw_conv).split(';')
+        elec_pattern  = str(_raw_elec).strip()
+        ev_udcs       = str(_raw_udcs).split(';')
     df_Params_Sets_Vari = book.parse( 'Params_Sets_Vari' )
     # Step 1: Remove the 'parameter' column and store its values to use as index
     new_index = df_Params_Sets_Vari['parameter'].reset_index(drop=True)
@@ -2103,6 +2332,35 @@ if __name__ == '__main__':
             fut_id += 1
 
     print( '    We have finished the experiment and inheritance' )
+
+    # =========================================================================
+    # FIX: Correct UDC EV penetration coefficient signs (in-memory, pre-write)
+    # =========================================================================
+    # At this point, PART 3 has finished: all LHS perturbations have been
+    # applied to `inherited_scenarios` in memory, but NO files have been
+    # written yet (pickle serialization and .txt generation happen below).
+    #
+    # Some perturbations may have flipped the sign of UDC coefficients
+    # (e.g., a diesel coefficient going from -0.02 to +0.0005), which
+    # makes the EV penetration cap constraint mathematically infeasible.
+    #
+    # We fix the signs here, so the corrected values flow into pickle
+    # serialization (below) and .txt file generation (PART 4).
+    # =========================================================================
+    current_script_path_fix = os.path.dirname(os.path.abspath(__file__))
+    udc_log_dir = os.path.join(current_script_path_fix, 'Experimental_Platform', 'Logs', 'UDC_Corrections')
+    if ev_config_is_empty:
+        udc_corrections = {}
+    else:
+        udc_corrections = fix_udc_ev_penetration_coefficients(
+            inherited_scenarios, scenario_list, all_futures,
+            ev_udcs=ev_udcs,
+            conventional_patterns=conv_patterns,
+            electric_pattern=elec_pattern,
+            log_dir=udc_log_dir
+        )
+    # =========================================================================
+
     #
     time_list = []
     #
@@ -2112,7 +2370,7 @@ if __name__ == '__main__':
     # Before printing the experiment dictionary, be sure to add future 0:
     experiment_dictionary[1]['Futures'] = [0] + experiment_dictionary[1]['Futures']
     experiment_dictionary[1]['Values'] = [3] + experiment_dictionary[1]['Values']
-    
+
     # Save the dictionary in chunks by scenario and future into Pickle files
     directory_path = "data_inherited_scenarios"
     max_x_per_iter = int(setup_table.loc[0, 'Parallel_Use'])  # Get the number of scenarios per file
@@ -2141,7 +2399,7 @@ if __name__ == '__main__':
                 
                 if not os.path.exists(directory_path):
                     os.makedirs(directory_path)
-                    print(f"Directorio creado: {directory_path}")
+                    print(f"Directory created: {directory_path}")
                 # Save the chunk of futures into a Pickle file
                 file_name = f"data_inherited_scenarios/{scenario}_futures_part_{f_idx + 1}.pkl"  # Define the file name with the scenario and future part
                 with open(file_name, 'wb') as f:
