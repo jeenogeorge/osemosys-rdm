@@ -22,6 +22,8 @@ original_sys_path = sys.path.copy()
 
 # Get the path of the "workflow" folder
 workflow_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+# Get the path of the current script's directory (for local imports)
+_script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Temporarily add "workflow" to sys.path
 sys.path.append(workflow_path)
@@ -32,6 +34,11 @@ try:
 finally:
     # Restore the original sys.path
     sys.path = original_sys_path
+
+# Import local dataset creators from the same directory
+sys.path.insert(0, _script_dir)
+import local_dataset_creator_0
+import local_dataset_creator_f
 
 '''
 We implement OSEMOSYS in a procedimental code
@@ -1043,6 +1050,7 @@ if __name__ == '__main__':
     setup_table = book.parse( 'Setup' , 0)
     scenarios_to_reproduce = str( setup_table.loc[ 0 ,'Scenario_to_Reproduce'] )
     experiment_ID = str( setup_table.loc[ 0 ,'Experiment_ID'] )
+    region = str( setup_table.loc[ 0 ,'Region'] )
     # EV sign-correction configuration (read from Setup sheet, semicolon-separated)
     _raw_conv = setup_table.loc[ 0 ,'EV_Conventional_Patterns']
     _raw_elec = setup_table.loc[ 0 ,'EV_Electric_Pattern']
@@ -2516,7 +2524,50 @@ if __name__ == '__main__':
         '''
         ##########################################################################
         '''
-    
+
+        # --- Generate consolidated Energy_Input.csv after all txt files ---
+        print('Generating consolidated OSEMOSYS Energy Input CSV...')
+
+        dir_executables_path = os.path.join(current_script_path, 'Executables')
+        dir_futures_path = os.path.join(current_script_path, 'Experimental_Platform', 'Futures')
+
+        local_dataset_creator_0.execute_local_dataset_creator_0_inputs(dir_executables_path)
+        local_dataset_creator_f.execute_local_dataset_creator_f_inputs(dir_futures_path)
+
+        # Read aggregated baseline inputs
+        input_dataset_0_path = os.path.join(dir_executables_path, 'input_dataset_0.csv')
+        df_0_input = pd.read_csv(input_dataset_0_path, index_col=None, header=0, low_memory=False)
+        df_0_input['Scen_fut'] = df_0_input['Strategy'].astype(str) + "_" + df_0_input['Future.ID'].astype(str)
+
+        # Read aggregated futures inputs
+        input_dataset_f_path = os.path.join(dir_futures_path, 'input_dataset_f.parquet')
+        df_f_input = pd.read_parquet(input_dataset_f_path, engine='pyarrow')
+
+        # Concatenate
+        df_input = pd.concat([df_0_input, df_f_input], axis=0, ignore_index=True)
+
+        # Clean YEAR column
+        df_input['YEAR'] = pd.to_numeric(df_input['YEAR'], errors='coerce')
+        df_input['YEAR'] = df_input['YEAR'].fillna(0)
+        df_input['YEAR'] = df_input['YEAR'].astype(int)
+
+        # Sort
+        df_input.sort_values(by=[
+            'Strategy', 'Future.ID', 'REGION', 'COMMODITY', 'TECHNOLOGY', 'EMISSION',
+            'YEAR', 'TIMESLICE', 'MODE_OF_OPERATION', 'SEASON', 'DAYTYPE',
+            'DAILYTIMEBRACKET', 'STORAGE', 'STORAGEINTRADAY', 'STORAGEINTRAYEAR', 'UDC'
+        ], inplace=True)
+
+        # Create Results folder if needed
+        if not os.path.exists('Results'):
+            os.makedirs('Results')
+            print("Folder 'Results' created.")
+
+        # Save
+        input_csv_path = os.path.join('Results', f'OSEMOSYS_{region}_Energy_Input.csv')
+        df_input.to_csv(input_csv_path, index=None, header=True)
+        print(f'Energy Input CSV saved: {input_csv_path}')
+
     #########################################################################################
     #
     if generator_or_executor == 'Executor' or generator_or_executor == 'Both':

@@ -41,10 +41,13 @@ stages:
       - src/workflow/1_Experiment/Experimental_Platform/:
           cache: true
           persist: false
+      - src/Results/:
+          cache: true
+          persist: true
     metrics:
       - src/workflow/1_Experiment/rdm_experiment_metrics.json:
           cache: false
-    desc: Execute RDM experiment with Latin Hypercube Sampling uncertainty analysis
+    desc: Execute RDM experiment with Latin Hypercube Sampling uncertainty analysis and generate consolidated Energy Input CSV
 
   postprocess:
     cmd: python scripts/run_postprocess.py
@@ -54,14 +57,12 @@ stages:
       - src/workflow/1_Experiment/1_output_dataset_creator.py
       - src/workflow/1_Experiment/local_dataset_creator_0.py
       - src/workflow/1_Experiment/local_dataset_creator_f.py
+      - src/Results/
       - scripts/run_postprocess.py
-    outs:
-      - src/Results/:
-          cache: true
     metrics:
       - src/workflow/3_Postprocessing/postprocess_metrics.json:
           cache: false
-    desc: Aggregate and concatenate results from all RDM futures into final CSVs
+    desc: Aggregate and concatenate output results from all RDM futures into final Energy Output CSV
 
   # ============================================================================
   # PRIM (Patient Rule Induction Method) Stages

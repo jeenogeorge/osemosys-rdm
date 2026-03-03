@@ -9,26 +9,26 @@ stages:
       size: 6257
     - path: src/Interface_RDM.xlsx
       hash: md5
-      md5: 0b1b34692ccd178946420e941782389f
-      size: 30436
+      md5: d65143b3b81cdfdc5ed4773b421711e2
+      size: 34587
     - path: src/workflow/0_Scenarios/
       hash: md5
-      md5: 235ce08b6b09fa9bc337f4863a3b656e.dir
-      size: 771692
+      md5: 9f9a06ac2088b1e9f8630e943e2881b2.dir
+      size: 1023911
       nfiles: 1
     - path: src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
       hash: md5
-      md5: 945513be94eb9a4423ac481db0a187b3
-      size: 16944
+      md5: 797d665f5c3c29ab39048fabb24d1e5b
+      size: 16838
     outs:
     - path: src/workflow/1_Experiment/Executables/
       hash: md5
-      md5: f3064203b41fc19bcde70c161515d026.dir
-      size: 17887476
+      md5: c4310dbde366e1f35b2e3e71a0f6a9c7.dir
+      size: 28735459
       nfiles: 3
     - path: src/workflow/1_Experiment/base_future_metrics.json
       hash: md5
-      md5: e835560f1af6b87736ceaf0af38da6c3
+      md5: 492c62754ba8c0e2e60b011280d38b38
       size: 119
   rdm_experiment:
     cmd: python scripts/run_rdm_experiment.py
@@ -39,30 +39,35 @@ stages:
       size: 6974
     - path: src/Interface_RDM.xlsx
       hash: md5
-      md5: 0b1b34692ccd178946420e941782389f
-      size: 30436
+      md5: d65143b3b81cdfdc5ed4773b421711e2
+      size: 34587
     - path: src/workflow/0_Scenarios/
       hash: md5
-      md5: 235ce08b6b09fa9bc337f4863a3b656e.dir
-      size: 771692
+      md5: 9f9a06ac2088b1e9f8630e943e2881b2.dir
+      size: 1023911
       nfiles: 1
     - path: src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
       hash: md5
-      md5: 945513be94eb9a4423ac481db0a187b3
-      size: 16944
+      md5: 797d665f5c3c29ab39048fabb24d1e5b
+      size: 16838
     - path: src/workflow/2_Miscellaneous/shape_of_demand.csv
       hash: md5
       md5: 5cfd4909193033e968a8e3441b3bf7ae
       size: 2421
     outs:
+    - path: src/Results/
+      hash: md5
+      md5: dbfbea20d3484b9aa3def0ecdd281b5a.dir
+      size: 174241240
+      nfiles: 4
     - path: src/workflow/1_Experiment/Experimental_Platform/
       hash: md5
-      md5: f3a5055a8509fef2a6d98a7b0dcc9418.dir
-      size: 26624310
+      md5: c6b6d72851fbb60a3f6fa51005dd0c96.dir
+      size: 34687944
       nfiles: 10
     - path: src/workflow/1_Experiment/rdm_experiment_metrics.json
       hash: md5
-      md5: 0eb4a12c389a762be118711283e79369
+      md5: 076282a4deb756bde0836808953a4552
       size: 157
   postprocess:
     cmd: python scripts/run_postprocess.py
@@ -71,19 +76,24 @@ stages:
       hash: md5
       md5: 5ec7af655696cf470f8cc47c4fc3d8fe
       size: 4374
+    - path: src/Results/
+      hash: md5
+      md5: dbfbea20d3484b9aa3def0ecdd281b5a.dir
+      size: 174241240
+      nfiles: 4
     - path: src/workflow/1_Experiment/1_output_dataset_creator.py
       hash: md5
-      md5: a9ab03dd88000a0e573eb50c40d34dec
-      size: 6264
+      md5: 047a8f2cd70b0df61cb55fa36ece94b7
+      size: 3832
     - path: src/workflow/1_Experiment/Executables/
       hash: md5
-      md5: 7f603d8de64f06d91d551c6f5ef0db72.dir
-      size: 35308337
+      md5: feded31afe249163f362cfaeee96aa6c.dir
+      size: 56822199
       nfiles: 5
     - path: src/workflow/1_Experiment/Experimental_Platform/
       hash: md5
-      md5: f3a5055a8509fef2a6d98a7b0dcc9418.dir
-      size: 26624310
+      md5: c6b6d72851fbb60a3f6fa51005dd0c96.dir
+      size: 34687944
       nfiles: 10
     - path: src/workflow/1_Experiment/local_dataset_creator_0.py
       hash: md5
@@ -94,15 +104,10 @@ stages:
       md5: 0b2c8ef5e818ed43b52bbb354db5d4ef
       size: 8451
     outs:
-    - path: src/Results/
-      hash: md5
-      md5: e2b1ca0f1255af648c3928b22cf1a1f7.dir
-      size: 68148258
-      nfiles: 2
     - path: src/workflow/3_Postprocessing/postprocess_metrics.json
       hash: md5
-      md5: 46f243c7606e5ecd202de8aafd72e69e
-      size: 325
+      md5: 864aa45133dc2c2f77ff394ff639cd60
+      size: 509
   prim_files_creator:
     cmd: python scripts/run_prim_files_creator.py
     deps:

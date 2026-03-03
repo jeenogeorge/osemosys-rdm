@@ -313,7 +313,7 @@ def verify_rdm_results() -> bool:
     if not results_dir.exists():
         return False
     csv_files = list(results_dir.glob("*.csv"))
-    return len(csv_files) >= 2  # At least Input and Output CSVs
+    return len(csv_files) >= 1  # At least Input CSV from rdm_experiment
 
 # ---------- Duration Formatting ----------
 def format_duration(start_time: dt.datetime, end_time: dt.datetime) -> str:
