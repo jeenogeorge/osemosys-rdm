@@ -41,6 +41,12 @@ It can also support OSeMOSYS-based models that represent additional domains (e.g
 - **End-to-end automation**
   - preprocessing → solve → postprocessing → consolidated datasets in `src/Results/`
 
+- **Automatic data preprocessing**
+  - pre-processes MUIO/OSeMOSYS data files to add commodity-technology-mode sets and calculate `CapitalRecoveryFactor` / `PvAnnuity`, reducing matrix generation time
+
+- **EV penetration constraint safeguard**
+  - post-perturbation sign correction for UDC EV penetration coefficients, preventing infeasibility when LHS deltas flip coefficient signs
+
 - **Scenario discovery**
   - integrated **PRIM** workflow for identifying parameter ranges associated with success/risk outcomes
 
@@ -51,10 +57,10 @@ It can also support OSeMOSYS-based models that represent additional domains (e.g
 
 ## Compatibility: OSeMOSYS formulation/version
 
-This workflow is designed for the **GNU MathProg** implementation of OSeMOSYS (LP formulation), and has been tested with the formulation used in **MUIO v5.3**.
+This workflow is designed for the **GNU MathProg** implementation of OSeMOSYS (LP formulation), and has been tested with the formulations used in **MUIO v5.3** and **v5.4**.
 
 - MUIO v5.3 release notes (GitHub): https://github.com/OSeMOSYS/MUIO/releases/tag/v5.3
-- A reference formulation consistent with this workflow is included as `model.v.5.3.txt`.
+- Reference formulations consistent with this workflow are included as `model.v.5.3.txt` and `model.v.5.4.txt`.
 
 ### What “compatible” means in practice
 
@@ -130,7 +136,7 @@ src/Interface_RDM.xlsx
 
 Typical configuration happens in:
 
-- `Setup` sheet (timeslices model, solver, model name, region, toggles)
+- `Setup` sheet (timeslices model, solver, model name, region, toggles, EV sign-correction patterns)
 - `To_Print` sheet (outputs to export)
 
 ### 3) Run the pipeline
@@ -170,10 +176,10 @@ Options:
 At a high level, OSeMOSYS-RDM does: 
 
 1. **Structure extraction** from scenario inputs (sets/parameters present, model structure)
-2. **Data preprocessing** into solver-ready inputs
+2. **Data preprocessing** — pre-processes data files to add commodity-technology-mode sets and compute `CapitalRecoveryFactor` / `PvAnnuity` (via `preprocess_data.py`)
 3. **Model execution** with the selected solver
 4. **Output processing** into standardized datasets
-5. *(Optional)* **RDM experiment generation** (sampling + batch execution)
+5. *(Optional)* **RDM experiment generation** (sampling + batch execution), including EV UDC sign correction and consolidated `Energy_Input.csv` generation
 6. *(Optional)* **Scenario discovery** with PRIM
 
 ---
@@ -209,6 +215,34 @@ You define your experimental design primarily through `src/Interface_RDM.xlsx`, 
 - which input/output parameters are exported and consolidated for analysis
 
 > For detailed step-by-step instructions, see the HTML guide(s) in `src/Guides/`.
+
+### Data preprocessing (automatic)
+
+Each data file generated for a future is automatically pre-processed by `preprocess_data.py` before solving. This step:
+
+1. Parses bracket-format parameters (`OutputActivityRatio`, `InputActivityRatio`, `EmissionActivityRatio`, etc.)
+2. Calculates `CapitalRecoveryFactor` and `PvAnnuity` for each technology
+3. Adds preprocessed sets (`MODExTECHNOLOGYperFUELout`, `MODExTECHNOLOGYperFUELin`, `MODEperTECHNOLOGY`, etc.)
+
+This reduces matrix generation time and is required when using OSeMOSYS model formulation v5.4.
+
+### EV penetration constraint safeguard
+
+When using **User-Defined Constraints (UDC)** to model EV penetration caps, LHS perturbations during RDM can flip the sign of coefficients, making the constraint infeasible. The workflow includes an automatic post-perturbation sign correction that:
+
+- Scans `UDCMultiplierTotalCapacity`, `UDCMultiplierNewCapacity`, and `UDCMultiplierActivity` for EV penetration UDCs
+- Ensures conventional technology coefficients remain negative and electric technology coefficients remain positive
+- Clamps flipped values to a small epsilon (0.001) preserving the constraint's directional intent
+
+This is configured in `Interface_RDM.xlsx` → `Setup` sheet via three fields:
+
+| Field | Description | Example |
+|---|---|---|
+| `EV_Conventional_Patterns` | Semicolon-separated substrings identifying conventional technologies | `DSL;DSH;GSL` |
+| `EV_Electric_Pattern` | Substring identifying electric technologies | `ELC` |
+| `EV_UDCs` | Semicolon-separated names of EV penetration UDC constraints | `2TRAHTREVCAP;2TRALTREVCAP;...` |
+
+If any of these fields is empty, the sign correction is skipped.
 
 ---
 
@@ -334,6 +368,7 @@ osemosys-rdm/
 │   │   ├── 1_Experiment/           # Experiment execution workspace
 │   │   │   ├── 0_From_Confection/  # Generated model structure / extracted elements
 │   │   │   ├── Executables/        # Base future (Future 0) runs
+│   │   │   ├── preprocess_data.py  # MUIO/OSeMOSYS data file preprocessor
 │   │   │   └── Experimental_Platform/
 │   │   │       └── Futures/        # RDM experiment futures
 │   │   ├── 2_Miscellaneous/        # Reference files
@@ -346,7 +381,8 @@ osemosys-rdm/
 │   ├── z_auxiliar_code.py          # Core library functions
 │   ├── Interface_RDM.xlsx          # Main configuration interface
 │   └── RUN_RDM.py                  # Legacy execution entry point
-├── model.v.5.3.txt                 # Reference OSeMOSYS GNU MathProg model (tested formulation)
+├── model.v.5.3.txt                 # Reference OSeMOSYS GNU MathProg model (v5.3)
+├── model.v.5.4.txt                 # Reference OSeMOSYS GNU MathProg model (v5.4)
 ├── LICENSE
 └── README.md
 ```
@@ -380,7 +416,7 @@ If you want to understand/extend the code, these are the key entry points:
 
 This project works with models expressed using the OSeMOSYS architecture.
 
-The included reference formulation (`model.v.5.3.txt`) defines (among others):
+The included reference formulations (`model.v.5.3.txt` and `model.v.5.4.txt`) define (among others):
 
 - **Core sets**
   - `REGION`, `TECHNOLOGY`, `COMMODITY`, `EMISSION`, `YEAR`
@@ -436,7 +472,8 @@ python run.py rdm --force
 │  └──────────────┘     └──────────────────┘     └─────────────────┘         │
 │        │                      │                        │                    │
 │        ▼                      ▼                        ▼                    │
-│   Executables/          Futures/                  src/Results/              │
+│   Executables/          Futures/ +               Energy_Output.csv         │
+│                         Energy_Input.csv                                   │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     │

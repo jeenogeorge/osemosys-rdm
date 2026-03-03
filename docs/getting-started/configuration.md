@@ -22,13 +22,22 @@ The `Setup` sheet controls the main execution parameters:
 | `Run_Base_Future` | Yes/No | Execute baseline scenario | `Yes` |
 | `Run_RDM` | Yes/No | Execute RDM uncertainty analysis | `Yes` |
 | `Region` | String | Model region identifier | `UGA`, `KEN`, etc. |
-| `OSeMOSYS_Model_Name` | String | Model formulation file | `model.v.5.3.txt` |
+| `OSeMOSYS_Model_Name` | String | Model formulation file | `model.v.5.3.txt` or `model.v.5.4.txt` |
 | `Timeslices_model` | Integer | Number of time slices | `48` |
 | `Number_of_Runs` | Integer | Number of futures to generate | `100` |
 | `Parallel_Use` | Integer | Batch size for parallel execution | `10` |
 | `Initial_Year_of_Uncertainty` | Integer | Year uncertainties begin | `2025` |
 | `Scenario_to_Reproduce` | String | Which scenarios to run | `Experiment` |
 | `Experiment_ID` | String | Identifier for this experiment | `1` |
+| `EV_Conventional_Patterns` | String | Semicolon-separated substrings for conventional EV technologies | `DSL;DSH;GSL` |
+| `EV_Electric_Pattern` | String | Substring for electric technologies | `ELC` |
+| `EV_UDCs` | String | Semicolon-separated EV penetration UDC names | `2TRAHTREVCAP;2TRALTREVCAP` |
+
+```{note}
+The `EV_Conventional_Patterns`, `EV_Electric_Pattern`, and `EV_UDCs` fields configure the automatic
+EV UDC sign correction. If any of these fields is empty, the correction is skipped.
+See the [RDM Pipeline](../user-guide/rdm-pipeline.md) for details.
+```
 
 ### Solver Selection
 
@@ -232,6 +241,7 @@ osemosys-rdm/
 │   │   ├── 3_Postprocessing/       # Output processing
 │   │   └── 4_PRIM/                 # PRIM configuration
 │   └── Results/                    # Final outputs
-├── model.v.5.3.txt                 # OSeMOSYS formulation
+├── model.v.5.3.txt                 # OSeMOSYS formulation (v5.3)
+├── model.v.5.4.txt                 # OSeMOSYS formulation (v5.4)
 └── run.py                          # Main runner script
 ```

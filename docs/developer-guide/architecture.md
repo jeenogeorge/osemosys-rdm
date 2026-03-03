@@ -43,7 +43,8 @@ osemosys-rdm/
 ├── run.py                          # Main entry point
 ├── dvc.yaml                        # Pipeline definition
 ├── environment.yaml                # Conda environment
-├── model.v.5.3.txt                 # OSeMOSYS formulation
+├── model.v.5.3.txt                 # OSeMOSYS formulation (v5.3)
+├── model.v.5.4.txt                 # OSeMOSYS formulation (v5.4)
 │
 ├── scripts/                        # DVC wrapper scripts
 │   ├── run_base_future.py
@@ -64,6 +65,7 @@ osemosys-rdm/
         │   ├── 0_From_Confection/  # Model structure
         │   ├── 0_experiment_manager.py
         │   ├── 1_output_dataset_creator.py
+        │   ├── preprocess_data.py  # MUIO/OSeMOSYS data preprocessor
         │   ├── Executables/        # Base future runs
         │   └── Experimental_Platform/
         │       └── Futures/        # RDM futures
@@ -122,30 +124,56 @@ Contains all shared functions:
 
 ### 0_experiment_manager.py - RDM Engine
 
-Handles uncertainty sampling and future generation:
+Handles uncertainty sampling, future generation, EV UDC sign correction, and consolidated input CSV generation:
 
 ```python
 # Core workflow
 def main():
     # Latin Hypercube Sampling
     hypercube = lhs(P-subtracter, samples=N)
-    
+
     # Generate experiment dictionary
     for n in range(N):
         for p in range(P):
             # Calculate sampled values
             evaluation_value = scipy.stats.uniform.ppf(...)
-            
+
     # Apply uncertainties to scenarios
     for s in range(len(scenario_list)):
         for f in range(1, len(all_futures)+1):
             for u in range(1, len(experiment_dictionary)+1):
                 # Modify parameters
-                
-    # Generate and solve futures
+
+    # Post-perturbation: fix UDC EV penetration coefficient signs
+    fix_udc_ev_penetration_coefficients(...)
+
+    # Generate and solve futures (each data file is preprocessed by preprocess_data.py)
     for fut_index in range(len(all_futures)):
         function_C_mathprog_parallel(...)
+
+    # Generate consolidated Energy_Input.csv in src/Results/
+    local_dataset_creator_0.execute_local_dataset_creator_0_inputs(...)
+    local_dataset_creator_f.execute_local_dataset_creator_f_inputs(...)
 ```
+
+### preprocess_data.py - Data Preprocessor
+
+Pre-processes MUIO/OSeMOSYS data files (v5.4+) to reduce matrix generation time:
+
+1. Parses bracket-format parameters (`OutputActivityRatio`, `InputActivityRatio`, etc.)
+2. Calculates `CapitalRecoveryFactor` and `PvAnnuity` for each technology
+3. Adds preprocessed sets (`MODExTECHNOLOGYperFUELout`, `MODExTECHNOLOGYperFUELin`, `MODEperTECHNOLOGY`, etc.)
+
+Called automatically within `function_C_mathprog_parallel()` after each data file is written.
+
+### fix_udc_ev_penetration_coefficients() - EV UDC Sign Correction
+
+Post-perturbation validation that prevents infeasibility in EV penetration UDC constraints:
+
+- Scans `UDCMultiplierTotalCapacity`, `UDCMultiplierNewCapacity`, `UDCMultiplierActivity`
+- Ensures conventional technology coefficients remain negative, electric remain positive
+- Clamps flipped values to epsilon (0.001)
+- Configured via `EV_Conventional_Patterns`, `EV_Electric_Pattern`, `EV_UDCs` in Setup sheet
 
 ## Data Flow
 
@@ -166,9 +194,12 @@ flowchart TD
     A[Uncertainty_Table] --> B[LHS Sampling]
     B --> C[experiment_dictionary]
     C --> D[inherited_scenarios]
-    D --> E[Modified Scenarios]
-    E --> F[Solve Each Future]
+    D --> D2[EV UDC Sign Correction]
+    D2 --> E[Modified Scenarios]
+    E --> E2[preprocess_data.py]
+    E2 --> F[Solve Each Future]
     F --> G[Parquet Outputs]
+    G --> H[Energy_Input.csv]
 ```
 
 ### Postprocessing
@@ -178,7 +209,7 @@ flowchart LR
     A[Future Outputs] --> B[local_dataset_creator_f]
     B --> C[output_dataset_f.parquet]
     C --> D[Concatenate]
-    D --> E[Final CSV/Parquet]
+    D --> E[Energy_Output.csv]
 ```
 
 ## Parallelization

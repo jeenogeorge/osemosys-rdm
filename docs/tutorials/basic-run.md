@@ -68,7 +68,7 @@ Open `src/Interface_RDM.xlsx` and configure the Setup sheet:
 | Run_Base_Future | `Yes` | Enable for first run |
 | Run_RDM | `No` | Disable for this tutorial |
 | Region | `REG1` | Match your scenario |
-| OSeMOSYS_Model_Name | `model.v.5.3.txt` | Model formulation |
+| OSeMOSYS_Model_Name | `model.v.5.4.txt` | Model formulation (v5.3 also supported) |
 | Timeslices_model | `4` | Match your time slices |
 
 ### Save the File

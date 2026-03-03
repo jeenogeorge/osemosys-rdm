@@ -373,6 +373,22 @@ for fut in all_futures:
 - Add slack variables to the model
 - Review constraint formulations
 
+### EV UDC Infeasibility
+
+When using User-Defined Constraints (UDC) to model EV penetration caps, LHS perturbations can flip the sign of UDC coefficients (e.g., a diesel coefficient going from -0.02 to +0.0005), making the constraint mathematically infeasible.
+
+OSeMOSYS-RDM includes an automatic **post-perturbation sign correction** that prevents this. To enable it, configure three fields in `Interface_RDM.xlsx` → `Setup` sheet:
+
+| Field | Description | Example |
+|---|---|---|
+| `EV_Conventional_Patterns` | Semicolon-separated substrings for conventional technologies | `DSL;DSH;GSL` |
+| `EV_Electric_Pattern` | Substring for electric technologies | `ELC` |
+| `EV_UDCs` | Semicolon-separated EV penetration UDC names | `2TRAHTREVCAP;2TRALTREVCAP` |
+
+The correction clamps flipped values to a small epsilon (0.001), preserving the constraint's directional intent. Correction logs are saved to `Experimental_Platform/Logs/UDC_Corrections/`.
+
+If any of these fields is empty, the correction is skipped (useful when your model doesn't use EV penetration UDCs).
+
 ### Memory Errors
 
 ```bash

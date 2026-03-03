@@ -32,7 +32,7 @@ This guide provides detailed documentation for the `Interface_RDM.xlsx` configur
 | Parameter | Type | Values | Description |
 |-----------|------|--------|-------------|
 | Solver | String | glpk/cbc/cplex/gurobi | Optimization solver |
-| OSeMOSYS_Model_Name | String | filename | Model formulation file |
+| OSeMOSYS_Model_Name | String | filename | Model formulation file (e.g., `model.v.5.4.txt`) |
 
 #### Model Settings
 
@@ -50,6 +50,18 @@ This guide provides detailed documentation for the `Interface_RDM.xlsx` configur
 | Experiment_ID | String | Any | Unique experiment identifier |
 | Initial_Year_of_Uncertainty | Integer | Year | Global uncertainty start year |
 
+#### EV UDC Sign Correction
+
+| Parameter | Type | Values | Description |
+|-----------|------|--------|-------------|
+| EV_Conventional_Patterns | String | Substrings | Semicolon-separated patterns for conventional technologies (e.g., `DSL;DSH;GSL`) |
+| EV_Electric_Pattern | String | Substring | Pattern for electric technologies (e.g., `ELC`) |
+| EV_UDCs | String | Names | Semicolon-separated EV penetration UDC constraint names |
+
+```{note}
+These three fields configure automatic post-perturbation sign correction for UDC EV penetration coefficients. If any field is empty, the correction is skipped. See the [RDM Pipeline](rdm-pipeline.md) for a full explanation of the mathematical context.
+```
+
 ### Example Configuration
 
 ```
@@ -57,7 +69,7 @@ Solver: cplex
 Run_Base_Future: Yes
 Run_RDM: Yes
 Region: UGA
-OSeMOSYS_Model_Name: model.v.5.3.txt
+OSeMOSYS_Model_Name: model.v.5.4.txt
 Timeslices_model: 48
 Number_of_Runs: 100
 Parallel_Use: 10

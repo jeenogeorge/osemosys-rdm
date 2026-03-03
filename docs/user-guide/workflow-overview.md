@@ -19,7 +19,7 @@ flowchart TB
     subgraph Input["📁 Inputs"]
         A[Scenario Files<br/>.txt] 
         B[Interface_RDM.xlsx]
-        C[Model Formulation<br/>model.v.5.3.txt]
+        C[Model Formulation<br/>model.v.5.3/5.4.txt]
     end
     
     subgraph Pipeline["🔧 DVC Pipeline"]
@@ -59,7 +59,7 @@ The base future represents your baseline scenario without uncertainties.
 
 **Process:**
 1. Extract model structure from scenario file
-2. Preprocess data into solver-ready format
+2. Preprocess data into solver-ready format (via `preprocess_data.py`: adds commodity-technology-mode sets, computes `CapitalRecoveryFactor` and `PvAnnuity`)
 3. Execute optimization with selected solver
 4. Process outputs into standardized CSV format
 
@@ -79,9 +79,11 @@ The RDM experiment generates multiple futures by systematically varying uncertai
 **Process:**
 1. Read uncertainty definitions from `Interface_RDM.xlsx`
 2. Generate parameter samples using LHS
-3. Create modified scenario files for each future
-4. Execute all futures (parallelized)
-5. Store results in Parquet format
+3. Apply perturbations and correct EV UDC coefficient signs (if configured)
+4. Create modified scenario files for each future (with automatic data preprocessing)
+5. Execute all futures (parallelized)
+6. Store results in Parquet format
+7. Generate consolidated `Energy_Input.csv` in `src/Results/`
 
 **Key Concepts:**
 
@@ -94,24 +96,28 @@ The RDM experiment generates multiple futures by systematically varying uncertai
 
 ### Stage 3: Postprocessing
 
-Consolidates results from all futures into analysis-ready datasets.
+Consolidates output results from all futures into analysis-ready datasets.
 
 **Purpose:**
-- Aggregate outputs from parallel runs
-- Create unified input/output datasets
-- Generate efficient Parquet files
+- Aggregate output results from parallel runs
+- Create unified output dataset
+- Generate the consolidated `Energy_Output.csv`
 
 **Process:**
-1. Collect outputs from all futures
+1. Collect output results from all futures
 2. Standardize column formats
-3. Concatenate into master datasets
-4. Export as CSV and Parquet
+3. Concatenate into master output dataset
+4. Export as CSV
+
+```{note}
+The `Energy_Input.csv` is generated during the `rdm_experiment` stage (immediately after all futures are solved), while the `Energy_Output.csv` is generated during this `postprocess` stage.
+```
 
 **Output Files:**
 ```
 src/Results/
-├── OSEMOSYS_{Region}_Energy_Output.csv
-├── OSEMOSYS_{Region}_Energy_Input.csv
+├── OSEMOSYS_{Region}_Energy_Output.csv   (generated in postprocess)
+├── OSEMOSYS_{Region}_Energy_Input.csv    (generated in rdm_experiment)
 └── (additional analysis files)
 ```
 
@@ -213,12 +219,13 @@ src/Results/
 
 OSeMOSYS-RDM is designed for the GNU MathProg implementation of OSeMOSYS.
 
-### Tested Formulation
+### Tested Formulations
 
-The workflow has been tested with **MUIO v5.3**:
-- Reference formulation: `model.v.5.3.txt`
+The workflow has been tested with **MUIO v5.3** and **v5.4**:
+- Reference formulations: `model.v.5.3.txt` and `model.v.5.4.txt`
 - Standard OSeMOSYS sets and parameters
 - Support for storage and user-defined constraints
+- v5.4 requires the automatic data preprocessing step (handled by `preprocess_data.py`)
 
 ### Compatible Model Features
 

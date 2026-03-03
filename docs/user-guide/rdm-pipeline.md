@@ -51,26 +51,61 @@ Each future is created by modifying baseline parameters.
 for future_id in range(1, N+1):
     # Generate parameter modifications from LHS sample
     modifications = apply_uncertainties(baseline, lhs_sample[future_id])
-    
+
     # Create scenario file
     create_scenario_file(modifications, future_id)
-    
+
+    # Preprocess data file (add sets, compute CRF/PvAnnuity)
+    preprocess_data(scenario_file)
+
     # Solve optimization
     solve(scenario_file, solver)
-    
+
     # Export results
     export_results(future_id)
 ```
 
+#### Automatic Data Preprocessing
+
+Before each future is solved, the data file is automatically pre-processed by `preprocess_data.py`. This step:
+
+1. Parses bracket-format parameters (`OutputActivityRatio`, `InputActivityRatio`, `EmissionActivityRatio`, etc.)
+2. Calculates `CapitalRecoveryFactor` and `PvAnnuity` for each technology
+3. Adds preprocessed sets (`MODExTECHNOLOGYperFUELout`, `MODExTECHNOLOGYperFUELin`, `MODEperTECHNOLOGY`, etc.)
+
+This is required for OSeMOSYS model formulation v5.4 and reduces matrix generation time.
+
+#### EV UDC Sign Correction
+
+When using User-Defined Constraints (UDC) to model EV penetration caps, LHS perturbations can flip coefficient signs, causing infeasibility. The workflow includes automatic post-perturbation sign correction:
+
+- Scans `UDCMultiplierTotalCapacity`, `UDCMultiplierNewCapacity`, and `UDCMultiplierActivity`
+- Ensures conventional technology coefficients (e.g., diesel/gasoline) remain **negative**
+- Ensures electric technology coefficients remain **positive**
+- Clamps flipped values to a small epsilon (0.001)
+
+This is configured via three fields in `Interface_RDM.xlsx` → `Setup` sheet:
+
+| Field | Description | Example |
+|---|---|---|
+| `EV_Conventional_Patterns` | Semicolon-separated substrings for conventional technologies | `DSL;DSH;GSL` |
+| `EV_Electric_Pattern` | Substring for electric technologies | `ELC` |
+| `EV_UDCs` | Semicolon-separated EV penetration UDC names | `2TRAHTREVCAP;2TRALTREVCAP` |
+
+If any of these fields is empty, the correction is skipped. Correction logs are saved to `Experimental_Platform/Logs/UDC_Corrections/`.
+
 ### 4. Result Aggregation
 
-All futures are consolidated into unified datasets.
+Results are consolidated into unified datasets across two stages:
+
+- **`rdm_experiment` stage:** generates `OSEMOSYS_{Region}_Energy_Input.csv` immediately after all futures are solved
+- **`postprocess` stage:** generates `OSEMOSYS_{Region}_Energy_Output.csv`
 
 ```
 src/Results/
-├── OSEMOSYS_{Region}_Energy_Output.csv  # All outputs
-├── OSEMOSYS_{Region}_Energy_Input.csv   # All inputs
-└── *.parquet                            # Efficient storage
+├── OSEMOSYS_{Region}_Energy_Input.csv   # Generated in rdm_experiment
+├── OSEMOSYS_{Region}_Energy_Output.csv  # Generated in postprocess
+└── *.parquet                            # Efficient intermediate storage
 ```
 
 ## Configuring Uncertainties
@@ -257,14 +292,14 @@ Experimental_Platform/Futures/Scenario1/Scenario1_1/
 
 ### Aggregated Outputs
 
-After postprocessing:
+After pipeline completion:
 ```
 src/Results/
-├── OSEMOSYS_{Region}_Energy_Output.csv
-│   └── Columns: Strategy, Future.ID, YEAR, TECHNOLOGY, Value, ...
-├── OSEMOSYS_{Region}_Energy_Input.csv
+├── OSEMOSYS_{Region}_Energy_Input.csv    (from rdm_experiment stage)
 │   └── Columns: Strategy, Future.ID, YEAR, Parameter, Value, ...
-└── *.parquet (efficient versions of above)
+├── OSEMOSYS_{Region}_Energy_Output.csv   (from postprocess stage)
+│   └── Columns: Strategy, Future.ID, YEAR, TECHNOLOGY, Value, ...
+└── *.parquet (efficient intermediate storage)
 ```
 
 ## Best Practices
