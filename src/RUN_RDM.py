@@ -217,6 +217,19 @@ if run_base_future == 'Yes':
 
 if run_RDM == 'Yes':
     'Step 10: Execute RDM experiment'
+
+    # Clean Futures folder to avoid concatenating old results with new ones
+    dir_futures_clean = './workflow/1_Experiment/Experimental_Platform/Futures'
+    if os.path.exists(dir_futures_clean):
+        for files in os.listdir(dir_futures_clean):
+            path = os.path.join(dir_futures_clean, files)
+            if '.py' not in files:
+                try:
+                    shutil.rmtree(path)
+                except OSError:
+                    os.remove(path)
+        print('Futures folder cleaned for new RDM run.')
+
     print('Start RDM experiment\n')
     AUX.run_scripts('./workflow/1_Experiment/0_experiment_manager.py', solver, osemosys_model, os.path.abspath('Interface_RDM.xlsx'), shape_file=os.path.abspath('./workflow/2_Miscellaneous/shape_of_demand.csv'))
     

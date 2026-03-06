@@ -172,6 +172,16 @@ def main():
         # Configure for RDM experiment only
         configure_for_rdm_only(interface_path)
 
+        # Clean Futures folder to avoid mixing old results with new ones
+        futures_dir = platform_dir / 'Futures'
+        if futures_dir.exists():
+            for item in futures_dir.iterdir():
+                if item.is_dir():
+                    shutil.rmtree(item)
+                elif item.suffix not in ('.py',):
+                    item.unlink()
+            print(f"✓ Cleaned Futures directory: {futures_dir}")
+
         # Change to src directory and execute RUN_RDM
         print("\n🚀 Executing RUN_RDM.py for RDM experiment...")
         print("-" * 70)
