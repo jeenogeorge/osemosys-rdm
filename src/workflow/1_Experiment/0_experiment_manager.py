@@ -257,6 +257,231 @@ def fix_udc_ev_penetration_coefficients(inherited_scenarios, scenario_list, all_
 
 
 ############################################################################################################################################################################################################
+#
+#  FIX: Post-perturbation emission limit consistency check
+#
+#  PROBLEM:
+#  --------
+#  When LHS perturbations increase demands (e.g., AccumulatedAnnualDemand for
+#  livestock commodities), the technologies that satisfy those demands MUST
+#  operate at higher levels.  If those technologies emit into a capped emission
+#  (e.g., LVSCO2eq), the increased activity may push total emissions above the
+#  AnnualEmissionLimit, causing infeasibility — even when the emission limit
+#  itself was NOT perturbed.
+#
+#  ALGORITHM:
+#  ----------
+#  For each emission with a finite AnnualEmissionLimit, compute the theoretical
+#  minimum emissions required to satisfy all AccumulatedAnnualDemand obligations:
+#
+#    min_emission(e, y) = SUM over commodities c of:
+#        demand(c, y) * min over techs T producing c of (EmissionRatio(T,e) / OutputRatio(T,c))
+#
+#  A commodity only contributes if ALL technologies that produce it also emit
+#  to emission e (i.e., there is no "clean" alternative).  If at least one
+#  technology produces the commodity without emitting e, the demand can
+#  theoretically be met with zero contribution to e.
+#
+#  If min_emission(e, y) > AnnualEmissionLimit(e, y), the limit is raised to:
+#        new_limit = min_emission * (1 + margin)
+#
+#  FIX:
+#  ----
+#  After all perturbations are applied, scan all emissions with finite limits
+#  and adjust them upward when demand-driven activity makes them infeasible.
+#
+############################################################################################################################################################################################################
+
+
+def fix_emission_limit_consistency(inherited_scenarios, scenario_list, all_futures,
+                                   margin=0.05, limit_threshold=99999, log_dir=None):
+    """
+    Post-perturbation validation: ensures AnnualEmissionLimit is consistent
+    with AccumulatedAnnualDemand obligations.
+
+    When demand perturbations force technologies to operate above what the
+    emission budget allows, the limit is raised to the minimum feasible
+    level plus a safety margin.
+
+    Parameters
+    ----------
+    inherited_scenarios : dict
+        Nested dict: inherited_scenarios[scenario][future][parameter][key] = list
+    scenario_list : list
+        List of scenario names.
+    all_futures : list
+        List of future indices.
+    margin : float
+        Safety margin above the minimum required emissions (default 5%).
+    limit_threshold : float
+        Limits above this value are considered "effectively unlimited" and skipped.
+    log_dir : str or None
+        If provided, correction logs are written per-future to this directory.
+
+    Returns
+    -------
+    corrections_summary : dict
+        Maps (scenario, future) to a list of correction tuples.
+    """
+
+    corrections_summary = {}
+    total_corrections = 0
+
+    for scen in scenario_list:
+        if scen not in inherited_scenarios:
+            continue
+
+        for fut in all_futures:
+            if fut not in inherited_scenarios[scen]:
+                continue
+
+            sd = inherited_scenarios[scen][fut]
+            corrections_key = (scen, fut)
+            corrections_summary[corrections_key] = []
+
+            # Skip if essential parameters are missing
+            required_params = ['AnnualEmissionLimit', 'EmissionActivityRatio',
+                               'OutputActivityRatio', 'AccumulatedAnnualDemand']
+            if any(p not in sd for p in required_params):
+                continue
+
+            ael_data = sd['AnnualEmissionLimit']
+            ear_data = sd['EmissionActivityRatio']
+            oar_data = sd['OutputActivityRatio']
+            aad_data = sd['AccumulatedAnnualDemand']
+
+            # ---- Build lookup structures ----
+
+            # demand_map: {(commodity, year): demand_value}
+            demand_map = {}
+            for i in range(len(aad_data['value'])):
+                commodity = str(aad_data['f'][i])
+                year = str(aad_data['y'][i])
+                val = float(aad_data['value'][i])
+                if val > 0:
+                    demand_map[(commodity, year)] = val
+
+            if not demand_map:
+                continue
+
+            # output_map: {(tech, mode, year, commodity): output_ratio}
+            output_map = {}
+            for i in range(len(oar_data['value'])):
+                tech = str(oar_data['t'][i])
+                mode = str(oar_data['m'][i])
+                year = str(oar_data['y'][i])
+                commodity = str(oar_data['f'][i])
+                val = float(oar_data['value'][i])
+                if val > 0:
+                    output_map[(tech, mode, year, commodity)] = val
+
+            # emission_ratio_map: {(tech, emission, mode, year): ratio}
+            emission_ratio_map = {}
+            for i in range(len(ear_data['value'])):
+                tech = str(ear_data['t'][i])
+                emission = str(ear_data['e'][i])
+                mode = str(ear_data['m'][i])
+                year = str(ear_data['y'][i])
+                val = float(ear_data['value'][i])
+                emission_ratio_map[(tech, emission, mode, year)] = val
+
+            # commodity_producers: {(commodity, year): set of (tech, mode)}
+            commodity_producers = {}
+            for (tech, mode, year, commodity), out_ratio in output_map.items():
+                key = (commodity, year)
+                if key not in commodity_producers:
+                    commodity_producers[key] = set()
+                commodity_producers[key].add((tech, mode))
+
+            # ---- Check each emission limit ----
+
+            for i in range(len(ael_data['value'])):
+                emission = str(ael_data['e'][i])
+                year = str(ael_data['y'][i])
+                limit_val = float(ael_data['value'][i])
+
+                if limit_val >= limit_threshold:
+                    continue  # effectively unlimited, skip
+
+                # Compute minimum emissions from demanded commodities
+                min_total_emission = 0.0
+
+                for (commodity, yr), demand_val in demand_map.items():
+                    if yr != year:
+                        continue
+
+                    producers = commodity_producers.get((commodity, yr), set())
+                    if not producers:
+                        continue
+
+                    # For each producer, check if it emits this emission
+                    has_clean_option = False
+                    min_intensity = float('inf')
+
+                    for (tech, mode) in producers:
+                        er_key = (tech, emission, mode, year)
+                        if er_key in emission_ratio_map:
+                            er_val = emission_ratio_map[er_key]
+                            if er_val <= 0:
+                                # Negative or zero emission = clean option
+                                has_clean_option = True
+                            else:
+                                out_ratio = output_map.get((tech, mode, year, commodity), 1.0)
+                                intensity = er_val / out_ratio
+                                min_intensity = min(min_intensity, intensity)
+                        else:
+                            # No emission ratio entry = clean option
+                            has_clean_option = True
+
+                    if not has_clean_option and min_intensity < float('inf'):
+                        min_total_emission += demand_val * min_intensity
+
+                # Adjust limit if the minimum required exceeds it
+                if min_total_emission > limit_val:
+                    new_limit = round(min_total_emission * (1 + margin), 10)
+                    ael_data['value'][i] = new_limit
+                    corrections_summary[corrections_key].append(
+                        (emission, year, limit_val, new_limit, min_total_emission)
+                    )
+                    total_corrections += 1
+
+    # -------------------------------------------------------------------------
+    # Logging: write per-future correction logs
+    # -------------------------------------------------------------------------
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+        for (scen, fut), corr_list in corrections_summary.items():
+            if corr_list:
+                log_file = os.path.join(log_dir, f'{scen}_{fut}_emission_limit_corrections.log')
+                with open(log_file, 'w') as lf:
+                    lf.write('Emission Limit Consistency Correction Log\n')
+                    lf.write(f'Scenario: {scen}, Future: {fut}\n')
+                    lf.write(f'Margin: {margin*100:.1f}%\n')
+                    lf.write(f'Total corrections: {len(corr_list)}\n')
+                    lf.write('-' * 100 + '\n')
+                    lf.write(f'{"Emission":<15} {"Year":<6} {"Old Limit":>14} {"Min Required":>14} {"New Limit":>14}\n')
+                    lf.write('-' * 100 + '\n')
+                    for em, yr, old_lim, new_lim, min_req in corr_list:
+                        lf.write(f'{em:<15} {yr:<6} {old_lim:>14.6f} {min_req:>14.6f} {new_lim:>14.6f}\n')
+
+    # -------------------------------------------------------------------------
+    # Console summary
+    # -------------------------------------------------------------------------
+    if total_corrections > 0:
+        print(f'    Emission Limit Fix: Applied {total_corrections} correction(s) across all futures.')
+        emission_counts = {}
+        for corr_list in corrections_summary.values():
+            for em, yr, old_lim, new_lim, min_req in corr_list:
+                emission_counts[em] = emission_counts.get(em, 0) + 1
+        for em, count in sorted(emission_counts.items()):
+            print(f'      {em}: {count} correction(s)')
+    else:
+        print('    Emission Limit Fix: No corrections needed.')
+
+    return corrections_summary
+
+
+############################################################################################################################################################################################################
 def set_first_list( Executed_Scenario ):
     #
     # Get the directory of the current script
@@ -891,16 +1116,16 @@ def function_C_mathprog_parallel( fut_index, scen, inherited_scenarios, unpackag
 if __name__ == '__main__':
     
     # Take the solver from the script call
-    # main_path = sys.argv
-    # solver = main_path[1]
-    # osemosys_model = main_path[2]
-    # Interface_RDM = main_path[3]
-    # shape_file = main_path[4]
+    main_path = sys.argv
+    solver = main_path[1]
+    osemosys_model = main_path[2]
+    Interface_RDM = main_path[3]
+    shape_file = main_path[4]
     
-    solver = 'cplex'
-    osemosys_model = 'model.v.5.4.txt'
-    Interface_RDM = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\osemosys-rdm\src\Interface_RDM.xlsx'
-    shape_file = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\osemosys-rdm\src\workflow\2_Miscellaneous\shape_of_demand.csv'
+    # solver = 'cplex'
+    # osemosys_model = 'model.v.5.4.txt'
+    # Interface_RDM = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\osemosys-rdm\src\Interface_RDM.xlsx'
+    # shape_file = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\osemosys-rdm\src\workflow\2_Miscellaneous\shape_of_demand.csv'
 
     book=pd.ExcelFile(Interface_RDM)
     '''
@@ -1675,6 +1900,7 @@ if __name__ == '__main__':
                             dep_parameter = dep_params[p_idx]
                             pri_parameter = pri_params[min(p_idx, len(pri_params)-1)]
 
+                            print(dep_parameter)
                             number_sets_dep = int(df_Params_Sets_Vari.loc['Number', dep_parameter])
                             number_sets_pri = int(df_Params_Sets_Vari.loc['Number', pri_parameter])
 
@@ -2369,6 +2595,26 @@ if __name__ == '__main__':
             electric_pattern=elec_pattern,
             log_dir=udc_log_dir
         )
+    # =========================================================================
+
+    # =========================================================================
+    # FIX: Ensure AnnualEmissionLimit is consistent with perturbed demands
+    # =========================================================================
+    # When LHS perturbations increase demands (e.g., livestock), technologies
+    # that satisfy those demands must operate at higher levels.  If those
+    # technologies emit into a capped emission (e.g., LVSCO2eq), the increased
+    # activity may push total minimum emissions above the AnnualEmissionLimit.
+    #
+    # This check computes the theoretical minimum emissions needed to satisfy
+    # all AccumulatedAnnualDemand and adjusts AnnualEmissionLimit upward
+    # (with a 5% margin) when necessary.
+    # =========================================================================
+    emission_log_dir = os.path.join(current_script_path_fix, 'Experimental_Platform', 'Logs', 'Emission_Limit_Corrections')
+    emission_corrections = fix_emission_limit_consistency(
+        inherited_scenarios, scenario_list, all_futures,
+        margin=0.05, limit_threshold=99999,
+        log_dir=emission_log_dir
+    )
     # =========================================================================
 
     #
