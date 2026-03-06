@@ -45,21 +45,27 @@ def configure_for_rdm_only(interface_path):
     """
     Modify Interface_RDM.xlsx to run only RDM experiment.
     Sets Run_Base_Future=No and Run_RDM=Yes
-    Also caches formula values in Uncertainty_Table to avoid NaN issues.
+    Also caches formula values in all sheets to avoid NaN issues when
+    openpyxl saves the file (openpyxl cannot evaluate Excel formulas).
     """
     print("📝 Configuring Interface_RDM.xlsx for RDM experiment only...")
 
     # Load with data_only=True to get calculated values from formulas
     wb_data = load_workbook(interface_path, data_only=True)
 
-    # Extract calculated values from Uncertainty_Table
-    ws_unc_data = wb_data['Uncertainty_Table']
-    cached_values = {}
-    for row_idx in range(1, ws_unc_data.max_row + 1):
-        for col_idx in range(1, ws_unc_data.max_column + 1):
-            cell_value = ws_unc_data.cell(row=row_idx, column=col_idx).value
-            if cell_value is not None:
-                cached_values[(row_idx, col_idx)] = cell_value
+    # Extract calculated values from ALL sheets (formulas exist in
+    # Uncertainty_Table, Params_Sets_Vari, and potentially others)
+    all_cached_values = {}  # {sheet_name: {(row, col): value}}
+    for sheet_name in wb_data.sheetnames:
+        ws_data = wb_data[sheet_name]
+        sheet_cache = {}
+        for row_idx in range(1, ws_data.max_row + 1):
+            for col_idx in range(1, ws_data.max_column + 1):
+                cell_value = ws_data.cell(row=row_idx, column=col_idx).value
+                if cell_value is not None:
+                    sheet_cache[(row_idx, col_idx)] = cell_value
+        if sheet_cache:
+            all_cached_values[sheet_name] = sheet_cache
     wb_data.close()
 
     # Load normally to modify
@@ -77,13 +83,14 @@ def configure_for_rdm_only(interface_path):
     if 'Run_RDM' in headers:
         ws_setup.cell(row=2, column=headers['Run_RDM'], value='Yes')
 
-    # Write cached values back to Uncertainty_Table to preserve formula results
-    ws_unc = wb['Uncertainty_Table']
-    for (row_idx, col_idx), value in cached_values.items():
-        cell = ws_unc.cell(row=row_idx, column=col_idx)
-        # Only replace formula cells with their calculated values
-        if str(cell.value).startswith('=') if cell.value else False:
-            cell.value = value
+    # Write cached values back to ALL sheets to preserve formula results
+    for sheet_name, sheet_cache in all_cached_values.items():
+        ws = wb[sheet_name]
+        for (row_idx, col_idx), value in sheet_cache.items():
+            cell = ws.cell(row=row_idx, column=col_idx)
+            # Only replace formula cells with their calculated values
+            if cell.value and str(cell.value).startswith('='):
+                cell.value = value
 
     # Save the workbook
     wb.save(interface_path)
