@@ -333,7 +333,7 @@ def format_duration(start_time: dt.datetime, end_time: dt.datetime) -> str:
     return " ".join(duration_parts)
 
 # ---------- Pipeline Execution Functions ----------
-def run_rdm_pipeline(env_name: str, force: bool, skip_pull: bool) -> None:
+def run_rdm_pipeline(env_name: str, skip_pull: bool) -> None:
     """Execute the RDM pipeline (base_future → rdm_experiment → postprocess)."""
     print("\n" + "=" * 70)
     print("🔬 RDM Pipeline (Robust Decision Making)")
@@ -357,9 +357,7 @@ def run_rdm_pipeline(env_name: str, force: bool, skip_pull: bool) -> None:
     print("-" * 70)
     start_time = dt.datetime.now()
 
-    repro_args = f"repro {RDM_FINAL_STAGE}"
-    if force:
-        repro_args += " --force"
+    repro_args = f"repro {RDM_FINAL_STAGE} --force"
     dvc_command(env_name, repro_args)
 
     end_time = dt.datetime.now()
@@ -368,7 +366,7 @@ def run_rdm_pipeline(env_name: str, force: bool, skip_pull: bool) -> None:
     print("-" * 70)
     print(f"✅ RDM Pipeline completed in {duration}!")
 
-def run_prim_pipeline(env_name: str, force: bool, skip_pull: bool) -> None:
+def run_prim_pipeline(env_name: str, skip_pull: bool) -> None:
     """Execute the PRIM analysis pipeline."""
     print("\n" + "=" * 70)
     print("📊 PRIM Pipeline (Patient Rule Induction Method)")
@@ -396,9 +394,7 @@ def run_prim_pipeline(env_name: str, force: bool, skip_pull: bool) -> None:
     print("-" * 70)
     start_time = dt.datetime.now()
 
-    repro_args = f"repro {PRIM_FINAL_STAGE}"
-    if force:
-        repro_args += " --force"
+    repro_args = f"repro {PRIM_FINAL_STAGE} --force"
     dvc_command(env_name, repro_args)
 
     end_time = dt.datetime.now()
@@ -417,7 +413,6 @@ Examples:
   python run.py rdm          Execute RDM pipeline only
   python run.py prim         Execute PRIM analysis only (requires RDM results)
   python run.py all          Execute both RDM and PRIM sequentially
-  python run.py rdm --force  Force re-execution of all RDM stages
         """
     )
 
@@ -444,12 +439,6 @@ Examples:
         action="store_true",
         help="Skip 'dvc pull' even if remote is configured"
     )
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        help="Force reproduction of all stages"
-    )
-
     args = parser.parse_args()
 
     # Determine environment name
@@ -492,14 +481,14 @@ Examples:
         overall_start = dt.datetime.now()
 
         if args.module == "rdm":
-            run_rdm_pipeline(env_name, args.force, args.skip_pull)
+            run_rdm_pipeline(env_name, args.skip_pull)
 
         elif args.module == "prim":
-            run_prim_pipeline(env_name, args.force, args.skip_pull)
+            run_prim_pipeline(env_name, args.skip_pull)
 
         elif args.module == "all":
-            run_rdm_pipeline(env_name, args.force, args.skip_pull)
-            run_prim_pipeline(env_name, args.force, args.skip_pull)
+            run_rdm_pipeline(env_name, args.skip_pull)
+            run_prim_pipeline(env_name, args.skip_pull)
 
         overall_end = dt.datetime.now()
         overall_duration = format_duration(overall_start, overall_end)

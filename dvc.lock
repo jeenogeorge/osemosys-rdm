@@ -5,12 +5,12 @@ stages:
     deps:
     - path: scripts/run_base_future.py
       hash: md5
-      md5: e9bd853a8f709e672eba7392fa9af9f3
-      size: 6257
+      md5: 943e551bd0174c2bf9b9dbad2e4182b2
+      size: 6646
     - path: src/Interface_RDM.xlsx
       hash: md5
-      md5: d65143b3b81cdfdc5ed4773b421711e2
-      size: 34587
+      md5: 964401126dff45e9b198c209c442bd9e
+      size: 26824
     - path: src/workflow/0_Scenarios/
       hash: md5
       md5: 9f9a06ac2088b1e9f8630e943e2881b2.dir
@@ -18,8 +18,8 @@ stages:
       nfiles: 1
     - path: src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
       hash: md5
-      md5: 797d665f5c3c29ab39048fabb24d1e5b
-      size: 16838
+      md5: aa08338be1ab0e980e80d82c13659945
+      size: 16839
     outs:
     - path: src/workflow/1_Experiment/Executables/
       hash: md5
@@ -28,19 +28,19 @@ stages:
       nfiles: 3
     - path: src/workflow/1_Experiment/base_future_metrics.json
       hash: md5
-      md5: 492c62754ba8c0e2e60b011280d38b38
+      md5: 6a37fe5dbf2d283dc94109bc5f6198e5
       size: 119
   rdm_experiment:
     cmd: python scripts/run_rdm_experiment.py
     deps:
     - path: scripts/run_rdm_experiment.py
       hash: md5
-      md5: 39e660d9f3ecf44afc906bee94496c68
-      size: 6974
+      md5: f968899787d5894498631833279ed66c
+      size: 7799
     - path: src/Interface_RDM.xlsx
       hash: md5
-      md5: d65143b3b81cdfdc5ed4773b421711e2
-      size: 34587
+      md5: 964401126dff45e9b198c209c442bd9e
+      size: 26824
     - path: src/workflow/0_Scenarios/
       hash: md5
       md5: 9f9a06ac2088b1e9f8630e943e2881b2.dir
@@ -48,8 +48,8 @@ stages:
       nfiles: 1
     - path: src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
       hash: md5
-      md5: 797d665f5c3c29ab39048fabb24d1e5b
-      size: 16838
+      md5: aa08338be1ab0e980e80d82c13659945
+      size: 16839
     - path: src/workflow/2_Miscellaneous/shape_of_demand.csv
       hash: md5
       md5: 5cfd4909193033e968a8e3441b3bf7ae
@@ -57,17 +57,17 @@ stages:
     outs:
     - path: src/Results/
       hash: md5
-      md5: dbfbea20d3484b9aa3def0ecdd281b5a.dir
-      size: 174241240
-      nfiles: 4
+      md5: 08cd230f59a088b35a6ff14dd0ad86f9.dir
+      size: 114662650
+      nfiles: 2
     - path: src/workflow/1_Experiment/Experimental_Platform/
       hash: md5
-      md5: c6b6d72851fbb60a3f6fa51005dd0c96.dir
-      size: 34687944
+      md5: eb451de82926da22a6ae09c7436f4566.dir
+      size: 44132380
       nfiles: 10
     - path: src/workflow/1_Experiment/rdm_experiment_metrics.json
       hash: md5
-      md5: 076282a4deb756bde0836808953a4552
+      md5: 52a65b1e41f9430430220a604137e1c4
       size: 157
   postprocess:
     cmd: python scripts/run_postprocess.py
@@ -78,9 +78,9 @@ stages:
       size: 4374
     - path: src/Results/
       hash: md5
-      md5: dbfbea20d3484b9aa3def0ecdd281b5a.dir
-      size: 174241240
-      nfiles: 4
+      md5: 08cd230f59a088b35a6ff14dd0ad86f9.dir
+      size: 114662650
+      nfiles: 2
     - path: src/workflow/1_Experiment/1_output_dataset_creator.py
       hash: md5
       md5: 047a8f2cd70b0df61cb55fa36ece94b7
@@ -92,8 +92,8 @@ stages:
       nfiles: 5
     - path: src/workflow/1_Experiment/Experimental_Platform/
       hash: md5
-      md5: c6b6d72851fbb60a3f6fa51005dd0c96.dir
-      size: 34687944
+      md5: eb451de82926da22a6ae09c7436f4566.dir
+      size: 44132380
       nfiles: 10
     - path: src/workflow/1_Experiment/local_dataset_creator_0.py
       hash: md5
@@ -106,8 +106,8 @@ stages:
     outs:
     - path: src/workflow/3_Postprocessing/postprocess_metrics.json
       hash: md5
-      md5: 864aa45133dc2c2f77ff394ff639cd60
-      size: 509
+      md5: 5cb1a5db94f726530f489b2c0011f20b
+      size: 326
   prim_files_creator:
     cmd: python scripts/run_prim_files_creator.py
     deps:
