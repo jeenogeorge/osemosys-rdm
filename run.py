@@ -276,6 +276,13 @@ def ensure_dvc_repo(env_name: str, use_scm: bool = True) -> None:
     """
     if is_dvc_repo():
         print("✓ DVC repository detected (.dvc/ directory found).")
+        # If git is not available, ensure DVC is configured for no-scm mode
+        if not use_scm:
+            config_file = Path(".dvc/config")
+            config_text = config_file.read_text() if config_file.exists() else ""
+            if "no_scm" not in config_text:
+                print("  Configuring DVC for standalone mode (no Git)...")
+                run(f"conda run -n {env_name} dvc config core.no_scm true")
         return
 
     print("📦 Initializing DVC repository...")
