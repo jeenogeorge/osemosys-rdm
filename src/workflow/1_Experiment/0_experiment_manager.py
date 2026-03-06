@@ -375,8 +375,8 @@ def function_C_mathprog_parallel( fut_index, scen, inherited_scenarios, unpackag
         fut = all_futures[fut_index - 6*len( all_futures ) ]
         # scen = 6
     #
-    # header = ['Scenario','Parameter','REGION','TECHNOLOGY','COMMODITY','EMISSION','MODE_OF_OPERATION','TIMESLICE','YEAR','SEASON','DAYTYPE','DAILYTIMEBRACKET','STORAGE','STORAGEINTRADAY','STORAGEINTRAYEAR','Value']
-    header_indices = ['Scenario','Parameter','r','t','f','e','m','l','y','ls','ld','lh','s','sd','sy','value']
+    # header = ['Scenario','Parameter','REGION','TECHNOLOGY','COMMODITY','EMISSION','MODE_OF_OPERATION','TIMESLICE','YEAR','SEASON','DAYTYPE','DAILYTIMEBRACKET','STORAGE','STORAGEINTRADAY','STORAGEINTRAYEAR','UDC','Value']
+    header_indices = ['Scenario','Parameter','r','t','f','e','m','l','y','ls','ld','lh','s','sd','sy','u','value']
     #
     fut = all_futures[fut_index - scen*len( all_futures ) ]
     #
@@ -731,7 +731,9 @@ def function_C_mathprog_parallel( fut_index, scen, inherited_scenarios, unpackag
     #
     ###########################################################################################################################
     # Furthermore, we must print the inputs separately for fast deployment of the input matrix:
-    basic_header_elements = [ 'Future.ID', 'Strategy.ID', 'Strategy', 'Commodity', 'Technology', 'Emission', 'TimeSlice', 'Year']#, 'Season']
+    basic_header_elements = [ 'Future.ID', 'Strategy.ID', 'Strategy', 'Commodity', 'Technology', 'Emission', 'TimeSlice',
+                             'Year', 'Mode_of_operation', 'Season', 'Daytype', 'Dailytimebracket', 'Storage', 'Storageintraday',
+                             'Storageintrayear', 'Udc']#
     #
     parameters_to_print = parameters_in_the_model
     #
@@ -742,12 +744,24 @@ def function_C_mathprog_parallel( fut_index, scen, inherited_scenarios, unpackag
     combination_list = []
     synthesized_all_data_row = []
     #
-    # memory elements:
-    f_unique_list, f_counter, f_counter_list, f_unique_counter_list = [], 1, [], []
-    t_unique_list, t_counter, t_counter_list, t_unique_counter_list = [], 1, [], []
-    e_unique_list, e_counter, e_counter_list, e_unique_counter_list = [], 1, [], []
-    l_unique_list, l_counter, l_counter_list, l_unique_counter_list = [], 1, [], []
-    y_unique_list, y_counter, y_counter_list, y_unique_counter_list = [], 1, [], []
+    # memory elements for all OSeMOSYS indexes:
+    index_config = {
+        'f':  { 'unique_list': [], 'counter_list': [], 'unique_counter_list': [], 'counter': 1, 'padding': '0'   },
+        't':  { 'unique_list': [], 'counter_list': [], 'unique_counter_list': [], 'counter': 1, 'padding': '0'   },
+        'e':  { 'unique_list': [], 'counter_list': [], 'unique_counter_list': [], 'counter': 1, 'padding': '0'   },
+        'l':  { 'unique_list': [], 'counter_list': [], 'unique_counter_list': [], 'counter': 1, 'padding': '000' },
+        'y':  { 'unique_list': [], 'counter_list': [], 'unique_counter_list': [], 'counter': 1, 'padding': '0'   },
+        'm':  { 'unique_list': [], 'counter_list': [], 'unique_counter_list': [], 'counter': 1, 'padding': '0'   },
+        'ls': { 'unique_list': [], 'counter_list': [], 'unique_counter_list': [], 'counter': 1, 'padding': '0'   },
+        'ld': { 'unique_list': [], 'counter_list': [], 'unique_counter_list': [], 'counter': 1, 'padding': '0'   },
+        'lh': { 'unique_list': [], 'counter_list': [], 'unique_counter_list': [], 'counter': 1, 'padding': '0'   },
+        's':  { 'unique_list': [], 'counter_list': [], 'unique_counter_list': [], 'counter': 1, 'padding': '0'   },
+        'sd': { 'unique_list': [], 'counter_list': [], 'unique_counter_list': [], 'counter': 1, 'padding': '0'   },
+        'sy': { 'unique_list': [], 'counter_list': [], 'unique_counter_list': [], 'counter': 1, 'padding': '0'   },
+        'u':  { 'unique_list': [], 'counter_list': [], 'unique_counter_list': [], 'counter': 1, 'padding': '0'   },
+    }
+    # Order must match basic_header_elements (after Future.ID, Strategy.ID, Strategy)
+    index_keys_ordered = ['f', 't', 'e', 'l', 'y', 'm', 'ls', 'ld', 'lh', 's', 'sd', 'sy', 'u']
     #
     for p in range( len( parameters_to_print ) ):
         #
@@ -768,75 +782,22 @@ def function_C_mathprog_parallel( fut_index, scen, inherited_scenarios, unpackag
             #
             strcode = ''
             #
-            if 'f' in this_p_index_list:
-                single_data_row.append( this_scenario_data[ parameters_to_print[p] ][ 'f' ][n] ) # Filling FUEL if necessary
-                if single_data_row[-1] not in f_unique_list:
-                    f_unique_list.append( single_data_row[-1] )
-                    f_counter_list.append( f_counter )
-                    f_unique_counter_list.append( f_counter )
-                    f_counter += 1
+            for key in index_keys_ordered:
+                cfg = index_config[key]
+                if key in this_p_index_list:
+                    value = this_scenario_data[ parameters_to_print[p] ][key][n]
+                    single_data_row.append(value)
+                    if value not in cfg['unique_list']:
+                        cfg['unique_list'].append(value)
+                        cfg['unique_counter_list'].append(cfg['counter'])
+                        cfg['counter_list'].append(cfg['counter'])
+                        cfg['counter'] += 1
+                    else:
+                        cfg['counter_list'].append( cfg['unique_counter_list'][ cfg['unique_list'].index(value) ] )
+                    strcode += str(cfg['counter_list'][-1])
                 else:
-                    f_counter_list.append( f_unique_counter_list[ f_unique_list.index( single_data_row[-1] ) ] )
-                strcode += str(f_counter_list[-1])
-            else:
-                single_data_row.append( '' )
-                strcode += '0'
-            #
-            if 't' in this_p_index_list:
-                single_data_row.append( this_scenario_data[ parameters_to_print[p] ][ 't' ][n] ) # Filling TECHNOLOGY if necessary
-                if single_data_row[-1] not in t_unique_list:
-                    t_unique_list.append( single_data_row[-1] )
-                    t_counter_list.append( t_counter )
-                    t_unique_counter_list.append( t_counter )
-                    t_counter += 1
-                else:
-                    t_counter_list.append( t_unique_counter_list[ t_unique_list.index( single_data_row[-1] ) ] )
-                strcode += str(t_counter_list[-1])
-            else:
-                single_data_row.append( '' )
-                strcode += '0'
-            #
-            if 'e' in this_p_index_list:
-                single_data_row.append( this_scenario_data[ parameters_to_print[p] ][ 'e' ][n] ) # Filling EMISSION if necessary
-                if single_data_row[-1] not in e_unique_list:
-                    e_unique_list.append( single_data_row[-1] )
-                    e_counter_list.append( e_counter )
-                    e_unique_counter_list.append( e_counter )
-                    e_counter += 1
-                else:
-                    e_counter_list.append( e_unique_counter_list[ e_unique_list.index( single_data_row[-1] ) ] )
-                strcode += str(e_counter_list[-1])
-            else:
-                single_data_row.append( '' )
-                strcode += '0'
-            #
-            if 'l' in this_p_index_list:
-                single_data_row.append( this_scenario_data[ parameters_to_print[p] ][ 'l' ][n] ) # Filling SEASON if necessary
-                if single_data_row[-1] not in l_unique_list:
-                    l_unique_list.append( single_data_row[-1] )
-                    l_counter_list.append( l_counter )
-                    l_unique_counter_list.append( l_counter )
-                    l_counter += 1
-                else:
-                    l_counter_list.append( l_unique_counter_list[ l_unique_list.index( single_data_row[-1] ) ] )
-                strcode += str(l_counter_list[-1])
-            else:
-                single_data_row.append( '' )
-                strcode += '000' # this is done to avoid repeated characters
-            #
-            if 'y' in this_p_index_list:
-                single_data_row.append( this_scenario_data[ parameters_to_print[p] ][ 'y' ][n] ) # Filling YEAR if necessary
-                if single_data_row[-1] not in y_unique_list:
-                    y_unique_list.append( single_data_row[-1] )
-                    y_counter_list.append( y_counter )
-                    y_unique_counter_list.append( y_counter )
-                    y_counter += 1
-                else:
-                    y_counter_list.append( y_unique_counter_list[ y_unique_list.index( single_data_row[-1] ) ] )
-                strcode += str(y_counter_list[-1])
-            else:
-                single_data_row.append( '' )
-                strcode += '0'
+                    single_data_row.append('')
+                    strcode += cfg['padding']
             #
             this_combination_str = str(1) + strcode # deepcopy( single_data_row )
             this_combination = int( this_combination_str )
@@ -891,7 +852,9 @@ def function_C_mathprog_parallel( fut_index, scen, inherited_scenarios, unpackag
 
 
     
-    dic_columnas={'Commodity':'COMMODITY','Technology':'TECHNOLOGY','Emission':'EMISSION','Season':'SEASON','Year':'YEAR','TimeSlice':'TIMESLICE','Region':'REGION'}
+    dic_columnas={'Commodity':'COMMODITY','Technology':'TECHNOLOGY','Emission':'EMISSION','Season':'SEASON','Year':'YEAR','TimeSlice':'TIMESLICE','Region':'REGION',
+                  'Mode_of_operation':'MODE_OF_OPERATION', 'Daytype':'DAYTYPE', 'Dailytimebravket':'DAILYTIMEBRACKET', 'Storage':'STORAGE', 'Storageintraday':'STORAGEINTRADAY',
+                  'Storageintrayear':'STORAGEINTRAYEAR', 'Udc':'UDC'}
     df = df.rename(columns=dic_columnas)
     # Save as Parquet file
     df.to_parquet(param_parquet_path, engine='pyarrow', index=False)
@@ -928,16 +891,16 @@ def function_C_mathprog_parallel( fut_index, scen, inherited_scenarios, unpackag
 if __name__ == '__main__':
     
     # Take the solver from the script call
-    main_path = sys.argv
-    solver = main_path[1]
-    osemosys_model = main_path[2]
-    Interface_RDM = main_path[3]
-    shape_file = main_path[4]
+    # main_path = sys.argv
+    # solver = main_path[1]
+    # osemosys_model = main_path[2]
+    # Interface_RDM = main_path[3]
+    # shape_file = main_path[4]
     
-    # solver = 'cplex'
-    # osemosys_model = 'model.v.5.4.txt'
-    # Interface_RDM = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\osemosys-rdm\src\Interface_RDM.xlsx'
-    # shape_file = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\osemosys-rdm\src\workflow\2_Miscellaneous\shape_of_demand.csv'
+    solver = 'cplex'
+    osemosys_model = 'model.v.5.4.txt'
+    Interface_RDM = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\osemosys-rdm\src\Interface_RDM.xlsx'
+    shape_file = r'C:\Users\ClimateLeadGroup\Desktop\CLG_repositories\osemosys-rdm\src\workflow\2_Miscellaneous\shape_of_demand.csv'
 
     book=pd.ExcelFile(Interface_RDM)
     '''
@@ -1072,8 +1035,10 @@ if __name__ == '__main__':
         elec_pattern  = str(_raw_elec).strip()
         ev_udcs       = str(_raw_udcs).split(';')
     df_Params_Sets_Vari = book.parse( 'Params_Sets_Vari' )
+    
     # Step 1: Remove the 'parameter' column and store its values to use as index
     new_index = df_Params_Sets_Vari['parameter'].reset_index(drop=True)
+    df_Params_Sets_Vari1=df_Params_Sets_Vari
     df_Params_Sets_Vari = df_Params_Sets_Vari.drop(columns='parameter')
     
     # Step 2: Replace NaN values in the index (empty cells) with meaningful labels
@@ -1167,17 +1132,49 @@ if __name__ == '__main__':
             # Emssion_year_0 = str( uncertainty_table.loc[ p ,'Emssion_year_0'] )
 
             # Read Dependency column (for complementary dependencies between consecutive rows)
+            # Supported values:
+            #   NO        – independent row (no dependency)
+            #   DEP       – this row is the dependent (its values are computed from the previous YES_* row)
+            #   YES_ADD   – this row is the primary; next row (DEP) uses additive dependency
+            #   YES_PROP  – this row is the primary; next row (DEP) uses proportional dependency
+            #   YES_ELAST – this row is the primary; next row (DEP) uses elastic dependency
+            # YES and SI are kept as aliases for YES_ADD for backward compatibility
             try:
                 Dependency_Flag = str(uncertainty_table.loc[p, 'Dependency']).strip().upper()
             except KeyError:
                 # Column doesn't exist in older versions - default to NO
                 Dependency_Flag = 'NO'
 
+            # Normalize legacy values: YES/SI -> YES_ADD
+            if Dependency_Flag in ['YES', 'SI']:
+                Dependency_Flag = 'YES_ADD'
+
+            VALID_DEP_FLAGS = ['NO', 'DEP', 'YES_ADD', 'YES_PROP', 'YES_ELAST']
+            if Dependency_Flag not in VALID_DEP_FLAGS and n == 0:
+                print(f"WARNING: Row X_Num={uncertainty_table.loc[p, 'X_Num']} has invalid Dependency='{Dependency_Flag}'. Defaulting to NO. Valid: {VALID_DEP_FLAGS}")
+                Dependency_Flag = 'NO'
+
             # Validate Dependency configuration
-            # Note: Row 0 CAN have Dependency=YES (it means row 1 depends on row 0)
-            if p == P-1 and Dependency_Flag in ['YES', 'SI'] and n == 0:
+            # Note: Row 0 CAN have Dependency=YES_* (it means row 1 depends on row 0)
+            if p == P-1 and Dependency_Flag in ['YES_ADD', 'YES_PROP', 'YES_ELAST'] and n == 0:
                 # Only print warning once (when n == 0)
-                print(f"WARNING: Last row (X_Num={X_Num[-1]}) has Dependency=YES but there's no next row to depend on it")
+                print(f"WARNING: Last row (X_Num={X_Num[-1]}) has Dependency={Dependency_Flag} but there's no next row to depend on it")
+
+            # Validate that DEP rows are preceded by a YES_* row
+            if Dependency_Flag == 'DEP' and p == 0 and n == 0:
+                print(f"WARNING: First row (X_Num={uncertainty_table.loc[p, 'X_Num']}) has Dependency=DEP but there's no previous row to be primary")
+
+            # Validate dependency chains at read time
+            if p > 0 and n == 0:
+                prev_flag = str(uncertainty_table.loc[p-1, 'Dependency']).strip().upper()
+                if prev_flag in ['YES', 'SI']:
+                    prev_flag = 'YES_ADD'
+                # After a YES_* row, the next row must be DEP
+                if prev_flag in ['YES_ADD', 'YES_PROP', 'YES_ELAST'] and Dependency_Flag != 'DEP':
+                    print(f"WARNING: Row X_Num={uncertainty_table.loc[p, 'X_Num']} should have Dependency=DEP (previous row has {prev_flag})")
+                # A DEP row must have a YES_* or another DEP before it (chain back to YES_*)
+                if Dependency_Flag == 'DEP' and prev_flag not in ['YES_ADD', 'YES_PROP', 'YES_ELAST', 'DEP']:
+                    print(f"WARNING: Row X_Num={uncertainty_table.loc[p, 'X_Num']} has Dependency=DEP but previous row has Dependency={prev_flag} (expected YES_* or DEP)")
 
             #
             #######################################################################
@@ -1255,10 +1252,11 @@ if __name__ == '__main__':
             evaluation_value = scipy.stats.uniform.ppf(evaluation_value_preliminary, this_loc, this_loc_scale)
             #
             #######################################################################
-            # NOTE: Complementary dependency (Dependency=YES) is now enforced
-            # at value-level in Step 3 (application phase), not here in Step 1.
-            # The dependent row's evaluation_value from LHS is kept but will be
-            # overridden during application to preserve share constraints.
+            # NOTE: Dependency (YES_ADD/YES_PROP/YES_ELAST) is enforced at
+            # value-level in Step 3 (application phase), not here in Step 1.
+            # For YES_ADD and YES_PROP, the dependent row's LHS value is kept
+            # but overridden during application. For YES_ELAST, the dependent
+            # row's LHS value is used as the elasticity parameter (epsilon).
             #######################################################################
             if evaluation_value > 1:
                 this_future_X_change_direction.append('up')
@@ -1545,17 +1543,48 @@ if __name__ == '__main__':
             for u in range( 1, len(experiment_dictionary)+1 ):
 
                 #######################################################################
-                # DEPENDENCY CHECK: If previous row (u-1) has Dependency_Flag=YES,
-                # then THIS row (u) is the dependent row. We skip normal interpolation
-                # and instead compute values to preserve the additive constraint:
-                #   new_dep(t) = baseline_dep(t) + (new_primary(t) - baseline_primary(t))
+                # DEPENDENCY CHECK: If this row (u) has Dependency_Flag=DEP,
+                # it depends on the nearest previous row with YES_*.
+                # Multiple consecutive DEP rows all depend on the same YES_* primary.
+                # Example:  Row 1: YES_PROP  ->  primary
+                #           Row 2: DEP       ->  depends on Row 1
+                #           Row 3: DEP       ->  depends on Row 1
+                #           Row 4: NO        ->  independent
+                # We skip normal interpolation and compute values using the dependency mode:
+                #   YES_ADD:   new_dep(t) = baseline_dep(t) + (new_pri(t) - baseline_pri(t))
+                #   YES_PROP:  new_dep(t) = baseline_dep(t) * (new_pri(t) / baseline_pri(t))
+                #   YES_ELAST: new_dep(t) = baseline_dep(t) * (1 + e * (new_pri(t) - baseline_pri(t)) / baseline_pri(t))
+                #              where e = LHS-sampled elasticity from the dependent row's Values
                 #######################################################################
                 if u > 1:
+                    this_dep_flag = str(experiment_dictionary[u].get('Dependency_Flag', 'NO')).strip().upper()
+                    # Check if this row is dependent (DEP or previous row is YES_*)
                     prev_dep_flag = str(experiment_dictionary[u-1].get('Dependency_Flag', 'NO')).strip().upper()
-                    if prev_dep_flag in ['YES', 'SI']:
-                        # This row (u) is DEPENDENT on row (u-1)
+                    is_dependent = this_dep_flag == 'DEP' or prev_dep_flag in ['YES_ADD', 'YES_PROP', 'YES_ELAST']
+
+                    if is_dependent:
+                        # Search backwards for the nearest YES_* primary row
+                        pri_row = None
+                        pri_dep_mode = None
+                        for search_u in range(u-1, 0, -1):
+                            search_flag = str(experiment_dictionary[search_u].get('Dependency_Flag', 'NO')).strip().upper()
+                            if search_flag in ['YES_ADD', 'YES_PROP', 'YES_ELAST']:
+                                pri_row = search_u
+                                pri_dep_mode = search_flag
+                                break
+                            elif search_flag != 'DEP':
+                                # Hit a NO row before finding YES_* — no valid primary
+                                break
+
+                        if pri_row is None:
+                            print(f"  WARNING: Row {u} has DEP but no previous YES_* row found. Skipping dependency.")
+                            is_dependent = False
+
+                    if is_dependent:
+                        # This row (u) is DEPENDENT on row (pri_row)
                         dep_info = experiment_dictionary[u]
-                        pri_info = experiment_dictionary[u-1]
+                        pri_info = experiment_dictionary[pri_row]
+                        prev_dep_flag = pri_dep_mode
 
                         dep_scenarios = dep_info['Involved_Scenarios']
                         if str(scenario_list[s]) not in dep_scenarios:
@@ -1570,169 +1599,142 @@ if __name__ == '__main__':
                         pri_second_sets = pri_info.get('Involved_Second_Sets_in_Osemosys', [])
                         pri_third_sets = pri_info.get('Involved_Third_Sets_in_Osemosys', [])
 
+                        # Validate: dependency rows must have exactly 1 value in Involved_First_Sets_in_Osemosys
+                        if len(pri_first_sets) > 1:
+                            print(f"\nERROR: Dependency row {pri_row} (primary, Dependency={prev_dep_flag}) has "
+                                  f"{len(pri_first_sets)} values in Involved_First_Sets_in_Osemosys: {pri_first_sets}. "
+                                  f"When using dependency, each row must have exactly 1 value in this column.")
+                            sys.exit(1)
+                        if len(dep_first_sets) > 1:
+                            print(f"\nERROR: Dependency row {u} (dependent on row {pri_row}, Dependency={prev_dep_flag}) has "
+                                  f"{len(dep_first_sets)} values in Involved_First_Sets_in_Osemosys: {dep_first_sets}. "
+                                  f"When using dependency, each row must have exactly 1 value in this column.")
+                            sys.exit(1)
+
                         round_dep = 10
+
+                        # For YES_ELAST, read the LHS-sampled elasticity for this future
+                        dep_elasticity = None
+                        if prev_dep_flag == 'YES_ELAST':
+                            try:
+                                dep_elasticity = float(dep_info['Values'][f-1])
+                            except (KeyError, IndexError, TypeError):
+                                dep_elasticity = 1.0  # fallback to full proportional
+
+                        # Helper: compute new dependent values based on dependency mode
+                        def compute_dep_values(dep_baseline, pri_new, pri_baseline, mode, elasticity, rnd):
+                            n_v = min(len(dep_baseline), len(pri_baseline))
+                            result = []
+                            for i in range(n_v):
+                                if mode == 'YES_ADD':
+                                    val = dep_baseline[i] + (pri_new[i] - pri_baseline[i])
+                                elif mode == 'YES_PROP':
+                                    if pri_baseline[i] != 0:
+                                        val = dep_baseline[i] * (pri_new[i] / pri_baseline[i])
+                                    else:
+                                        val = dep_baseline[i]
+                                elif mode == 'YES_ELAST':
+                                    if pri_baseline[i] != 0:
+                                        pct_change = (pri_new[i] - pri_baseline[i]) / pri_baseline[i]
+                                        val = dep_baseline[i] * (1.0 + elasticity * pct_change)
+                                    else:
+                                        val = dep_baseline[i]
+                                else:
+                                    val = dep_baseline[i]
+                                result.append(round(val, rnd))
+                            return result
+
+                        # Helper: find sorted indices for a parameter given set values,
+                        # using only as many set dimensions as the parameter actually has.
+                        def find_param_indices(parameter, scenario_data, set_values):
+                            """
+                            parameter: the OSeMOSYS parameter name
+                            scenario_data: inherited_scenarios[scenario][future][parameter] dict
+                            set_values: list of (set_name_in_structure, set_value) tuples to filter by
+                            Returns sorted list of matching indices, or empty list.
+                            """
+                            n_sets = int(df_Params_Sets_Vari.loc['Number', parameter])
+                            # Only use as many set dimensions as the parameter supports
+                            actual_sets = set_values[:n_sets]
+                            if not actual_sets:
+                                return []
+                            # Start with indices from the first set
+                            ts_initial_0 = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(
+                                df_Params_Sets_Vari.loc['Set1', parameter])]
+                            result = set(i for i, x in enumerate(scenario_data[ts_initial_0]) if x == str(actual_sets[0][1]))
+                            # Intersect with additional sets
+                            for dim in range(1, len(actual_sets)):
+                                set_key = f'Set{dim+1}'
+                                ts_initial = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(
+                                    df_Params_Sets_Vari.loc[set_key, parameter])]
+                                dim_indices = set(i for i, x in enumerate(scenario_data[ts_initial]) if x == str(actual_sets[dim][1]))
+                                result = result & dim_indices
+                            return sorted(result)
 
                         for p_idx in range(len(dep_params)):
                             dep_parameter = dep_params[p_idx]
                             pri_parameter = pri_params[min(p_idx, len(pri_params)-1)]
 
-                            number_sets_dep = df_Params_Sets_Vari.loc['Number', dep_parameter]
+                            number_sets_dep = int(df_Params_Sets_Vari.loc['Number', dep_parameter])
+                            number_sets_pri = int(df_Params_Sets_Vari.loc['Number', pri_parameter])
 
-                            # --- 1-set case ---
-                            if number_sets_dep == 1:
-                                set1_dep = df_Params_Sets_Vari.loc['Set1', dep_parameter]
-                                tsfirst_dep = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set1_dep)]
+                            # Iterate over dependent's set combinations
+                            dep_first_sets_iter = dep_first_sets if dep_first_sets else ['']
+                            dep_second_sets_iter = dep_second_sets if (dep_second_sets and number_sets_dep >= 2) else [None]
+                            dep_third_sets_iter = dep_third_sets if (dep_third_sets and number_sets_dep >= 3) else [None]
 
-                                set1_pri = df_Params_Sets_Vari.loc['Set1', pri_parameter]
-                                tsfirst_pri = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set1_pri)]
+                            for f_set_dep in range(len(dep_first_sets_iter)):
+                                this_set_first_dep = dep_first_sets_iter[f_set_dep]
 
-                                for f_set_dep in range(len(dep_first_sets)):
-                                    this_set_dep = dep_first_sets[f_set_dep]
-                                    dep_indices = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][dep_parameter][tsfirst_dep]) if x == str(this_set_dep)]
-                                    if not dep_indices:
-                                        continue
-                                    dep_indices.sort()
+                                for s_set_dep in range(len(dep_second_sets_iter)):
+                                    this_set_second_dep = dep_second_sets_iter[s_set_dep]
 
-                                    # Read dependent baseline from stable_scenarios
-                                    dep_baseline = [float(v) for v in stable_scenarios[scenario_list[s]][dep_parameter]['value'][dep_indices[0]:dep_indices[-1]+1]]
+                                    for t_set_dep in range(len(dep_third_sets_iter)):
+                                        this_set_third_dep = dep_third_sets_iter[t_set_dep]
 
-                                    # Read primary's indices (use first primary set for delta)
-                                    pri_set = pri_first_sets[min(f_set_dep, len(pri_first_sets)-1)]
-                                    pri_indices = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][pri_parameter][tsfirst_pri]) if x == str(pri_set)]
-                                    if not pri_indices:
-                                        continue
-                                    pri_indices.sort()
+                                        # Build dep set_values list (only include non-None dimensions)
+                                        dep_set_vals = [(None, this_set_first_dep)]
+                                        if this_set_second_dep is not None:
+                                            dep_set_vals.append((None, this_set_second_dep))
+                                        if this_set_third_dep is not None:
+                                            dep_set_vals.append((None, this_set_third_dep))
 
-                                    # Primary modified values (already processed by row u-1)
-                                    pri_new = [float(v) for v in inherited_scenarios[scenario_list[s]][f][pri_parameter]['value'][pri_indices[0]:pri_indices[-1]+1]]
-                                    # Primary baseline from stable_scenarios
-                                    pri_baseline = [float(v) for v in stable_scenarios[scenario_list[s]][pri_parameter]['value'][pri_indices[0]:pri_indices[-1]+1]]
-
-                                    # Apply additive constraint: same delta as primary
-                                    n_vals = min(len(dep_baseline), len(pri_baseline))
-                                    new_dep_values = [
-                                        round(dep_baseline[i] + (pri_new[i] - pri_baseline[i]), round_dep)
-                                        for i in range(n_vals)
-                                    ]
-
-                                    inherited_scenarios[scenario_list[s]][f][dep_parameter]['value'][dep_indices[0]:dep_indices[0]+n_vals] = deepcopy(new_dep_values)
-
-                            # --- 2-set case ---
-                            elif number_sets_dep == 2:
-                                set1_dep = df_Params_Sets_Vari.loc['Set1', dep_parameter]
-                                set2_dep = df_Params_Sets_Vari.loc['Set2', dep_parameter]
-                                tsfirst_dep = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set1_dep)]
-                                tssecond_dep = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set2_dep)]
-
-                                set1_pri = df_Params_Sets_Vari.loc['Set1', pri_parameter]
-                                set2_pri = df_Params_Sets_Vari.loc['Set2', pri_parameter]
-                                tsfirst_pri = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set1_pri)]
-                                tssecond_pri = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set2_pri)]
-
-                                for f_set_dep in range(len(dep_first_sets)):
-                                    this_set_first_dep = dep_first_sets[f_set_dep]
-                                    dep_indices_first = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][dep_parameter][tsfirst_dep]) if x == str(this_set_first_dep)]
-
-                                    dep_second_sets_iter = dep_second_sets if dep_second_sets else ['']
-                                    for s_set_dep in range(len(dep_second_sets_iter)):
-                                        this_set_second_dep = dep_second_sets_iter[s_set_dep]
-                                        dep_indices_second = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][dep_parameter][tssecond_dep]) if x == str(this_set_second_dep)]
-
-                                        dep_indices = sorted(set(dep_indices_first) & set(dep_indices_second))
+                                        dep_indices = find_param_indices(dep_parameter,
+                                            inherited_scenarios[scenario_list[s]][f][dep_parameter],
+                                            dep_set_vals)
                                         if not dep_indices:
                                             continue
 
                                         dep_baseline = [float(v) for v in stable_scenarios[scenario_list[s]][dep_parameter]['value'][dep_indices[0]:dep_indices[-1]+1]]
 
-                                        # Primary indices
-                                        pri_set_first = pri_first_sets[min(f_set_dep, len(pri_first_sets)-1)]
-                                        pri_indices_first = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][pri_parameter][tsfirst_pri]) if x == str(pri_set_first)]
+                                        # Build pri set_values: map from dep iteration indices,
+                                        # but only include as many dimensions as the primary supports
+                                        pri_sv1 = pri_first_sets[min(f_set_dep, len(pri_first_sets)-1)]
+                                        pri_set_vals = [(None, pri_sv1)]
+                                        if number_sets_pri >= 2 and pri_second_sets:
+                                            pri_sv2 = pri_second_sets[min(s_set_dep, len(pri_second_sets)-1)]
+                                            pri_set_vals.append((None, pri_sv2))
+                                        if number_sets_pri >= 3 and pri_third_sets:
+                                            pri_sv3 = pri_third_sets[min(t_set_dep, len(pri_third_sets)-1)]
+                                            pri_set_vals.append((None, pri_sv3))
 
-                                        pri_second_sets_iter = pri_second_sets if pri_second_sets else ['']
-                                        pri_set_second = pri_second_sets_iter[min(s_set_dep, len(pri_second_sets_iter)-1)]
-                                        pri_indices_second = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][pri_parameter][tssecond_pri]) if x == str(pri_set_second)]
-
-                                        pri_indices = sorted(set(pri_indices_first) & set(pri_indices_second))
+                                        pri_indices = find_param_indices(pri_parameter,
+                                            inherited_scenarios[scenario_list[s]][f][pri_parameter],
+                                            pri_set_vals)
                                         if not pri_indices:
                                             continue
 
                                         pri_new = [float(v) for v in inherited_scenarios[scenario_list[s]][f][pri_parameter]['value'][pri_indices[0]:pri_indices[-1]+1]]
                                         pri_baseline = [float(v) for v in stable_scenarios[scenario_list[s]][pri_parameter]['value'][pri_indices[0]:pri_indices[-1]+1]]
 
-                                        n_vals = min(len(dep_baseline), len(pri_baseline))
-                                        new_dep_values = [
-                                            round(dep_baseline[i] + (pri_new[i] - pri_baseline[i]), round_dep)
-                                            for i in range(n_vals)
-                                        ]
+                                        new_dep_values = compute_dep_values(dep_baseline, pri_new, pri_baseline, prev_dep_flag, dep_elasticity, round_dep)
 
-                                        inherited_scenarios[scenario_list[s]][f][dep_parameter]['value'][dep_indices[0]:dep_indices[0]+n_vals] = deepcopy(new_dep_values)
-
-                            # --- 3-set case ---
-                            elif number_sets_dep == 3:
-                                set1_dep = df_Params_Sets_Vari.loc['Set1', dep_parameter]
-                                set2_dep = df_Params_Sets_Vari.loc['Set2', dep_parameter]
-                                set3_dep = df_Params_Sets_Vari.loc['Set3', dep_parameter]
-                                tsfirst_dep = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set1_dep)]
-                                tssecond_dep = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set2_dep)]
-                                tsthird_dep = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set3_dep)]
-
-                                set1_pri = df_Params_Sets_Vari.loc['Set1', pri_parameter]
-                                set2_pri = df_Params_Sets_Vari.loc['Set2', pri_parameter]
-                                set3_pri = df_Params_Sets_Vari.loc['Set3', pri_parameter]
-                                tsfirst_pri = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set1_pri)]
-                                tssecond_pri = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set2_pri)]
-                                tsthird_pri = S_DICT_sets_structure['initial'][S_DICT_sets_structure['set'].index(set3_pri)]
-
-                                for f_set_dep in range(len(dep_first_sets)):
-                                    this_set_first_dep = dep_first_sets[f_set_dep]
-                                    dep_indices_first = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][dep_parameter][tsfirst_dep]) if x == str(this_set_first_dep)]
-
-                                    dep_second_sets_iter = dep_second_sets if dep_second_sets else ['']
-                                    for s_set_dep in range(len(dep_second_sets_iter)):
-                                        this_set_second_dep = dep_second_sets_iter[s_set_dep]
-                                        dep_indices_second = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][dep_parameter][tssecond_dep]) if x == str(this_set_second_dep)]
-
-                                        dep_third_sets_iter = dep_third_sets if dep_third_sets else ['']
-                                        for t_set_dep in range(len(dep_third_sets_iter)):
-                                            this_set_third_dep = dep_third_sets_iter[t_set_dep]
-                                            dep_indices_third = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][dep_parameter][tsthird_dep]) if x == str(this_set_third_dep)]
-
-                                            dep_indices = sorted(set(dep_indices_first) & set(dep_indices_second) & set(dep_indices_third))
-                                            if not dep_indices:
-                                                continue
-
-                                            dep_baseline = [float(v) for v in stable_scenarios[scenario_list[s]][dep_parameter]['value'][dep_indices[0]:dep_indices[-1]+1]]
-
-                                            # Primary indices
-                                            pri_set_first = pri_first_sets[min(f_set_dep, len(pri_first_sets)-1)]
-                                            pri_indices_first = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][pri_parameter][tsfirst_pri]) if x == str(pri_set_first)]
-
-                                            pri_second_sets_iter = pri_second_sets if pri_second_sets else ['']
-                                            pri_set_second = pri_second_sets_iter[min(s_set_dep, len(pri_second_sets_iter)-1)]
-                                            pri_indices_second = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][pri_parameter][tssecond_pri]) if x == str(pri_set_second)]
-
-                                            pri_third_sets_iter = pri_third_sets if pri_third_sets else ['']
-                                            pri_set_third = pri_third_sets_iter[min(t_set_dep, len(pri_third_sets_iter)-1)]
-                                            pri_indices_third = [i for i, x in enumerate(inherited_scenarios[scenario_list[s]][f][pri_parameter][tsthird_pri]) if x == str(pri_set_third)]
-
-                                            pri_indices = sorted(set(pri_indices_first) & set(pri_indices_second) & set(pri_indices_third))
-                                            if not pri_indices:
-                                                continue
-
-                                            pri_new = [float(v) for v in inherited_scenarios[scenario_list[s]][f][pri_parameter]['value'][pri_indices[0]:pri_indices[-1]+1]]
-                                            pri_baseline = [float(v) for v in stable_scenarios[scenario_list[s]][pri_parameter]['value'][pri_indices[0]:pri_indices[-1]+1]]
-
-                                            n_vals = min(len(dep_baseline), len(pri_baseline))
-                                            new_dep_values = [
-                                                round(dep_baseline[i] + (pri_new[i] - pri_baseline[i]), round_dep)
-                                                for i in range(n_vals)
-                                            ]
-
-                                            inherited_scenarios[scenario_list[s]][f][dep_parameter]['value'][dep_indices[0]:dep_indices[0]+n_vals] = deepcopy(new_dep_values)
+                                        inherited_scenarios[scenario_list[s]][f][dep_parameter]['value'][dep_indices[0]:dep_indices[0]+len(new_dep_values)] = deepcopy(new_dep_values)
 
                         # Debug output for first future
                         if f == 1:
-                            print(f"  Dependency (value-level): Row {u} dependent on Row {u-1} | Scenario {scenario_list[s]} Future {f}")
+                            elast_str = f" | elasticity={dep_elasticity}" if prev_dep_flag == 'YES_ELAST' else ""
+                            print(f"  Dependency ({prev_dep_flag}): Row {u} dependent on Row {pri_row} | Scenario {scenario_list[s]} Future {f}{elast_str}")
 
                         continue  # Skip normal interpolation for this dependent row
                 #######################################################################
