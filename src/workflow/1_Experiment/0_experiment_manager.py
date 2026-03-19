@@ -1475,6 +1475,7 @@ if __name__ == '__main__':
                 this_loc = this_min + 0.5*(this_max - this_min)
             #
             evaluation_value = scipy.stats.uniform.ppf(evaluation_value_preliminary, this_loc, this_loc_scale)
+            evaluation_value = max(min(evaluation_value, this_max), this_min)
             #
             #######################################################################
             # NOTE: Dependency (YES_ADD/YES_PROP/YES_ELAST) is enforced at
