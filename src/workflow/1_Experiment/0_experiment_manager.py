@@ -1473,6 +1473,7 @@ if __name__ == '__main__':
                 this_loc_scale = 0.5*(this_max - this_min)
             elif evaluation_value < 1: # this approach serves for symmentrical or assymetrical experiments
                 this_loc = this_min + 0.5*(this_max - this_min)
+                this_loc_scale = 0.5*(this_max - this_min)
             #
             evaluation_value = scipy.stats.uniform.ppf(evaluation_value_preliminary, this_loc, this_loc_scale)
             evaluation_value = max(min(evaluation_value, this_max), this_min)
