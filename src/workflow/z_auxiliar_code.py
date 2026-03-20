@@ -17,6 +17,7 @@ import time
 import re
 import subprocess
 import sys
+from check_sol_status import main as check_sol_status
 
 '''
 Function 1: Notes
@@ -4110,6 +4111,9 @@ def data_processor_new(output_file, model_structure, strategy, fut_id, solver, p
         df_output_sol.to_parquet(case_out_path, engine='pyarrow', index=False)
 
 
+
+    # Save solution status before deleting .sol files
+    check_sol_status()
 
     # Optionally delete the solver solution file
     if solver == 'cplex' or solver == 'cbc' or solver == 'gurobi':
