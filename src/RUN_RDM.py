@@ -9,6 +9,7 @@ import pandas as pd
 
 'Auxiliar code'
 from workflow import z_auxiliar_code as AUX
+from workflow.check_sol_status import main as check_sol_status
 
 start = time.time()
 
@@ -217,6 +218,10 @@ if run_base_future == 'Yes':
                                     'csv')
         print('Step 9.Output finished')    
     print('Step 9 finished')
+
+    # Save solution status summary for all base futures
+    check_sol_status()
+
     end_1 = time.time()
     time_elapsed_1 = -start1 + end_1
     print('   The total time producing outputs and storing data of base futures have been: ' + str( time_elapsed_1 ) + ' seconds' )
@@ -248,6 +253,10 @@ if run_RDM == 'Yes':
     AUX.run_scripts('./workflow/1_Experiment/1_output_dataset_creator.py', region)
     
     print('Step 11 finished\n')
+
+    # Save solution status summary for all futures (base + RDM)
+    check_sol_status()
+
     end_3 = time.time()
     time_elapsed_3 = -start3 + end_3
     print('   The total time producing storing data of the experiment has been: ' + str( time_elapsed_3 ) + ' seconds' )

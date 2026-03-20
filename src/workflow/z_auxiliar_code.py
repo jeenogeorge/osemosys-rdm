@@ -17,7 +17,10 @@ import time
 import re
 import subprocess
 import sys
-from check_sol_status import main as check_sol_status
+try:
+    from workflow.check_sol_status import main as check_sol_status
+except ModuleNotFoundError:
+    from check_sol_status import main as check_sol_status
 
 '''
 Function 1: Notes
@@ -4112,12 +4115,4 @@ def data_processor_new(output_file, model_structure, strategy, fut_id, solver, p
 
 
 
-    # Save solution status before deleting .sol files
-    check_sol_status()
-
-    # Optionally delete the solver solution file
-    if solver == 'cplex' or solver == 'cbc' or solver == 'gurobi':
-        shutil.os.remove(output_file)
-        shutil.os.remove(output_file.replace('sol', 'lp'))
-    elif solver == 'glpk':
-        shutil.os.remove(output_file)
+    # Note: .sol and .lp files are deleted by check_sol_status() after reading all statuses

@@ -5,7 +5,7 @@ Outputs a summary .txt file in the Results/ folder.
 
 Supports CPLEX (.xml), CBC, Gurobi, and GLPK solver output formats.
 
-@author: Climate Lead Group, Andrey Salazar-Vargas
+@author: Andrey Salazar-Vargas
 """
 
 import os
@@ -49,6 +49,15 @@ def find_sol_file(directory):
     return sol_files[0] if sol_files else None
 
 
+def _delete_solver_files(sol_path):
+    """Delete the .sol file and its companion .lp file if they exist."""
+    if os.path.exists(sol_path):
+        os.remove(sol_path)
+    lp_path = sol_path.rsplit('.', 1)[0] + '.lp'
+    if os.path.exists(lp_path):
+        os.remove(lp_path)
+
+
 def main():
     # Resolve paths relative to this script
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -62,6 +71,7 @@ def main():
     output_path = os.path.join(results_dir, 'solution_status.txt')
 
     results = []
+    sol_files_to_delete = []
 
     # 1) Base future (Scenario*_0) in Executables/
     if os.path.isdir(base_dir):
@@ -73,6 +83,7 @@ def main():
             if sol_file:
                 status = get_sol_status(sol_file)
                 results.append((folder, status))
+                sol_files_to_delete.append(sol_file)
 
     # 2) RDM futures in Experimental_Platform/Futures/
     if os.path.isdir(futures_dir):
@@ -91,6 +102,7 @@ def main():
                 if sol_file:
                     status = get_sol_status(sol_file)
                     results.append((future, status))
+                    sol_files_to_delete.append(sol_file)
 
     # Write output
     with open(output_path, 'w') as f:
@@ -110,6 +122,10 @@ def main():
 
         for name, status in results:
             f.write(f'{name}: {status}\n')
+
+    # Delete .sol and .lp files after reading all statuses
+    for sol_path in sol_files_to_delete:
+        _delete_solver_files(sol_path)
 
     print(f'Results written to: {output_path}')
     print(f'{len(results)} futures processed: {optimal_count} optimal, {infeasible_count} infeasible')

@@ -73,13 +73,11 @@ if __name__ == '__main__':
 
     today = date.today()
     #
-    # Check if 'Results' folder exists, and create it if not
-    if not os.path.exists('Results'):
-        os.makedirs('Results')
-        print("Folder 'Results' created.")
-    else:
-        print("Folder 'Results' already exists.")
+    # Create Results folder at repo root if needed
+    repo_root = os.path.abspath(os.path.join(current_script_path, '..', '..', '..'))
+    results_dir = os.path.join(repo_root, 'Results')
+    os.makedirs(results_dir, exist_ok=True)
     #
     # Outputs
-    output_path = os.path.join('Results', f'OSEMOSYS_{region}_Energy_Output.csv')
+    output_path = os.path.join(results_dir, f'OSEMOSYS_{region}_Energy_Output.csv')
     df_output.to_csv ( output_path, index = None, header=True)

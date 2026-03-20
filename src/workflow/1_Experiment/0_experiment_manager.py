@@ -2810,13 +2810,13 @@ if __name__ == '__main__':
             'DAILYTIMEBRACKET', 'STORAGE', 'STORAGEINTRADAY', 'STORAGEINTRAYEAR', 'UDC'
         ], inplace=True)
 
-        # Create Results folder if needed
-        if not os.path.exists('Results'):
-            os.makedirs('Results')
-            print("Folder 'Results' created.")
+        # Create Results folder at repo root if needed
+        repo_root = os.path.abspath(os.path.join(_script_dir, '..', '..', '..'))
+        results_dir = os.path.join(repo_root, 'Results')
+        os.makedirs(results_dir, exist_ok=True)
 
         # Save
-        input_csv_path = os.path.join('Results', f'OSEMOSYS_{region}_Energy_Input.csv')
+        input_csv_path = os.path.join(results_dir, f'OSEMOSYS_{region}_Energy_Input.csv')
         df_input.to_csv(input_csv_path, index=None, header=True)
         print(f'Energy Input CSV saved: {input_csv_path}')
 
