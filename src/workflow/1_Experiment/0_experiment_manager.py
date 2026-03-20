@@ -494,7 +494,7 @@ def set_first_list( Executed_Scenario ):
     first_list = [e for e in first_list_raw if ( '.csv' not in e ) and ( 'Table' not in e ) and ( '.py' not in e ) and ( '__pycache__' not in e ) ]
 
 ############################################################################################################################################################################################################
-def main_executer(n1, Executed_Scenario, time_vector, scenario_list,solver,osemosys_model,parameters_to_print):
+def main_executer(n1, Executed_Scenario, time_vector, scenario_list,solver,osemosys_model,parameters_to_print,threads_cplex_gurobi=1,time_cbc=0):
     print('# ' + str(n1+1) + ' of ' + Executed_Scenario )
     set_first_list( Executed_Scenario )
     file_aboslute_address = os.path.abspath("0_experiment_manager.py")
@@ -523,17 +523,17 @@ def main_executer(n1, Executed_Scenario, time_vector, scenario_list,solver,osemo
             os.system( str_start and str_matrix )
             
             if solver == 'cbc':
-                str_solve = 'cbc ' + str( output_file ) + '.lp solve -solu ' + str( output_file ) + '.sol'
+                str_solve = 'cbc ' + str( output_file ) + '.lp sec ' + str( time_cbc ) + ' solve -solu ' + str( output_file ) + '.sol'
 
             elif solver == 'cplex':
                 if os.path.exists(output_file + '.sol'):
                     shutil.os.remove(output_file + '.sol')
-                str_solve = 'cplex -c "read ' + str( output_file ) + '.lp" "set threads 2" "optimize" "write ' + str( output_file ) + '.sol"'
+                str_solve = 'cplex -c "read ' + str( output_file ) + '.lp" "set threads ' + str( threads_cplex_gurobi ) + '" "optimize" "write ' + str( output_file ) + '.sol"'
 
             elif solver == 'gurobi':
                 if os.path.exists(output_file + '.sol'):
                     shutil.os.remove(output_file + '.sol')
-                str_solve = 'gurobi_cl ResultFile=' + str( output_file ) + '.sol ' + str( output_file ) + '.lp'
+                str_solve = 'gurobi_cl Threads=' + str( threads_cplex_gurobi ) + ' ResultFile=' + str( output_file ) + '.sol ' + str( output_file ) + '.lp'
         os.system( str_start and str_solve )
         time.sleep(1)
         #
@@ -1239,6 +1239,8 @@ if __name__ == '__main__':
     scenarios_to_reproduce = str( setup_table.loc[ 0 ,'Scenario_to_Reproduce'] )
     experiment_ID = str( setup_table.loc[ 0 ,'Experiment_ID'] )
     region = str( setup_table.loc[ 0 ,'Region'] )
+    threads_cplex_gurobi = int( setup_table.loc[ 0 ,'Threads_CPLEX_Gurobi'] )
+    time_cbc = int( setup_table.loc[ 0 ,'Time_CBC'] )
     # EV sign-correction configuration (read from Setup sheet, semicolon-separated)
     _raw_conv = setup_table.loc[ 0 ,'EV_Conventional_Patterns']
     _raw_elec = setup_table.loc[ 0 ,'EV_Electric_Pattern']
@@ -2855,7 +2857,7 @@ if __name__ == '__main__':
                 #
                 for n2 in range( n_ini , max_iter ):
 
-                    p = mp.Process(target=main_executer, args=(n2,Executed_Scenario,time_range_vector,scenario_list_print,solver,osemosys_model,parameters_to_print) )
+                    p = mp.Process(target=main_executer, args=(n2,Executed_Scenario,time_range_vector,scenario_list_print,solver,osemosys_model,parameters_to_print,threads_cplex_gurobi,time_cbc) )
                     processes.append(p)
                     p.start()
                 #

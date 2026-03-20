@@ -3621,12 +3621,12 @@ def create_output_dataset_future_0(case, time_range_vector, first_list, structur
     #print( 'We finished with printing the outputs: ' + str(first_list[case]))
     
     
-def run_osemosys( solver, scenario_dir, data_file, model_file, output_file ):
-    
+def run_osemosys( solver, scenario_dir, data_file, model_file, output_file, threads_cplex_gurobi=1, time_cbc=0 ):
+
     file_aboslute_address = os.path.abspath("z_auxiliar_code.py")
     file_adress = re.escape( file_aboslute_address.replace( 'z_auxiliar_code.py', '' ) )
     file_config_address = get_config_main_path(os.path.abspath(''),os.path.join('workflow','3_Postprocessing'))
-    
+
     str_start = "start /B start cmd.exe @cmd /k cd " + file_adress
 
     output_file = data_file.replace('.txt','') + '_Output'
@@ -3638,17 +3638,17 @@ def run_osemosys( solver, scenario_dir, data_file, model_file, output_file ):
         os.system( str_start and str_matrix )
 
         if solver == 'cbc':
-            str_solve = 'cbc ' + str( output_file ) + '.lp solve -solu ' + str( output_file ) + '.sol'
+            str_solve = 'cbc ' + str( output_file ) + '.lp sec ' + str( time_cbc ) + ' solve -solu ' + str( output_file ) + '.sol'
 
         elif solver == 'cplex':
             if os.path.exists(output_file + '.sol'):
                 shutil.os.remove(output_file + '.sol')
-            str_solve = 'cplex -c "read ' + str( output_file ) + '.lp" "optimize" "write ' + str( output_file ) + '.sol"'
+            str_solve = 'cplex -c "read ' + str( output_file ) + '.lp" "set threads ' + str( threads_cplex_gurobi ) + '" "optimize" "write ' + str( output_file ) + '.sol"'
 
         elif solver == 'gurobi':
             if os.path.exists(output_file + '.sol'):
                 shutil.os.remove(output_file + '.sol')
-            str_solve = 'gurobi_cl ResultFile=' + str( output_file ) + '.sol ' + str( output_file ) + '.lp'
+            str_solve = 'gurobi_cl Threads=' + str( threads_cplex_gurobi ) + ' ResultFile=' + str( output_file ) + '.sol ' + str( output_file ) + '.lp'
     os.system( str_start and str_solve )
     
     time.sleep(1)

@@ -30,6 +30,10 @@ run_RDM = str( setup_table.loc[ 0 ,'Run_RDM'] )
 'Solver use to solve the problem'
 solver = str( setup_table.loc[ 0 ,'Solver'] )
 
+'Solver parameters'
+threads_cplex_gurobi = int( setup_table.loc[ 0 ,'Threads_CPLEX_Gurobi'] )
+time_cbc = int( setup_table.loc[ 0 ,'Time_CBC'] )
+
 'Name of the OSeMOSYS model use to solve problem'
 osemosys_model = str( setup_table.loc[ 0 ,'OSeMOSYS_Model_Name'] )
 
@@ -179,8 +183,10 @@ if run_base_future == 'Yes':
         AUX.run_osemosys(solver,
                           './workflow/1_Experiment/Executables/'+list_scenarios[i].replace('.txt','_0/'),
                           './workflow/1_Experiment/Executables/'+list_scenarios[i].replace('.txt','_0/')+list_scenarios[i].replace('.txt','_0.txt'),
-                          './workflow/' + osemosys_model, 
-                          './workflow/1_Experiment/Executables/'+list_scenarios[i].replace('.txt','_0/')+list_scenarios[i].replace('.txt',''))
+                          './workflow/' + osemosys_model,
+                          './workflow/1_Experiment/Executables/'+list_scenarios[i].replace('.txt','_0/')+list_scenarios[i].replace('.txt',''),
+                          threads_cplex_gurobi,
+                          time_cbc)
         
         print('Step 9.Input finished')
         
