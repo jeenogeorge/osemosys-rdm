@@ -254,27 +254,82 @@ Step 2 finished
 
 ## Parallel Execution
 
-RDM experiments are parallelized for efficiency.
+RDM experiments are parallelized for efficiency. Each future launches its own system process (solver), so the number of futures you can run simultaneously depends on your CPU threads, RAM, and the solver you are using.
 
 ### Configuration
 
 ```
 # In Interface_RDM.xlsx, Setup sheet:
-Parallel_Use: 10  # Futures processed simultaneously
+Parallel_Use: 10           # Futures processed simultaneously
+Threads_CPLEX_Gurobi: 4    # Threads per solve (CPLEX/Gurobi only)
+Time_CBC: 3600             # Max solve time in seconds (CBC only)
 ```
 
-### Resource Considerations
+### Calculating `Parallel_Use` Based on Your Machine
+
+The key resource is the number of **logical CPU threads** available. You can check this with:
+
+- **Windows:** Task Manager → Performance → CPU → "Logical processors"
+- **Linux/macOS:** `nproc` or `lscpu`
+
+You must always **reserve threads for the operating system and background processes** (typically 2–4 threads). The formula depends on whether your solver uses single or multiple threads:
+
+#### Single-thread solvers (CBC, GLPK)
+
+These solvers use exactly **1 thread per future**:
+
+```
+Parallel_Use = Total_CPU_Threads - Reserved_Threads
+```
+
+**Example:** A machine with 16 threads, reserving 4:
+```
+Parallel_Use = 16 - 4 = 12
+```
+
+#### Multi-thread solvers (CPLEX, Gurobi)
+
+These solvers use **multiple threads per future** (configured via `Threads_CPLEX_Gurobi`):
+
+```
+Parallel_Use = (Total_CPU_Threads - Reserved_Threads) / Threads_CPLEX_Gurobi
+```
+
+**Example:** A machine with 16 threads, reserving 4, with `Threads_CPLEX_Gurobi = 4`:
+```
+Parallel_Use = (16 - 4) / 4 = 3
+```
+
+#### Summary Table
+
+| Machine Threads | Reserved | Solver | Threads per Solve | Max `Parallel_Use` |
+|:-:|:-:|--------|:-:|:-:|
+| 8 | 2 | CBC/GLPK | 1 | 6 |
+| 8 | 2 | CPLEX/Gurobi | 2 | 3 |
+| 16 | 4 | CBC/GLPK | 1 | 12 |
+| 16 | 4 | CPLEX/Gurobi | 4 | 3 |
+| 32 | 4 | CBC/GLPK | 1 | 28 |
+| 32 | 4 | CPLEX/Gurobi | 4 | 7 |
+| 64 | 4 | CBC/GLPK | 1 | 60 |
+| 64 | 4 | CPLEX/Gurobi | 8 | 7 |
+
+```{warning}
+**Do not exceed your machine's capacity.** If `Parallel_Use × Threads_per_Solve` exceeds the available CPU threads, the operating system will over-subscribe the CPU. This causes heavy context switching, degrades solver performance significantly (each individual solve takes much longer), and can make the machine unresponsive — potentially requiring a forced restart. Always leave threads free for the OS and other processes.
+```
+
+### Memory Considerations
+
+Besides CPU threads, each parallel future also consumes RAM. A rough guide:
 
 | Parallel_Use | RAM Needed | Speed |
-|-------------|------------|-------|
+|:-:|------------|-------|
 | 1 | ~4 GB | Slowest |
 | 5 | ~8 GB | Moderate |
 | 10 | ~16 GB | Fast |
 | 20 | ~32 GB | Fastest |
 
-```{warning}
-Set `Parallel_Use` based on your system's available memory. 
-Too high a value can cause out-of-memory errors.
+```{note}
+RAM usage depends heavily on model size (number of technologies, time slices, years). For large models, monitor memory usage during the first batch and adjust `Parallel_Use` accordingly.
 ```
 
 ## Output Structure
@@ -300,6 +355,41 @@ src/Results/
 ├── OSEMOSYS_{Region}_Energy_Output.csv   (from postprocess stage)
 │   └── Columns: Strategy, Future.ID, YEAR, TECHNOLOGY, Value, ...
 └── *.parquet (efficient intermediate storage)
+```
+
+## Solution Status Report
+
+After all futures are solved, the pipeline automatically generates a **solution status report** at `Results/solution_status.txt`. This file summarizes whether each future reached an optimal solution, was infeasible, or ended with another status.
+
+### Report Format
+
+```
+Solution Status Summary
+========================================
+
+Total futures: 101
+Optimal:      98
+Infeasible:   3
+
+----------------------------------------
+
+Scenario1_0: optimal
+Scenario1_1: optimal
+Scenario1_2: infeasible
+...
+```
+
+The report covers both the base future (`Scenario*_0`) and all RDM futures. Supported solver output formats are CPLEX (XML), Gurobi, CBC, and GLPK.
+
+### What Happens Internally
+
+1. After all futures finish solving, `check_sol_status.py` scans the `.sol` files in each future's directory.
+2. It extracts the solution status from solver-specific output formats.
+3. It writes the summary to `Results/solution_status.txt`.
+4. It deletes the `.sol` and `.lp` files to free disk space (these files can be very large for big models).
+
+```{note}
+If a future is infeasible, its output Parquet files will not contain valid results. Check the solution status report to identify and exclude infeasible futures from downstream analysis.
 ```
 
 ## Best Practices

@@ -209,6 +209,9 @@ src/workflow/1_Experiment/
 ### Output Data
 
 ```
+Results/
+└── solution_status.txt                    # Per-future solver status (optimal/infeasible)
+
 src/Results/
 ├── OSEMOSYS_{Region}_Energy_Output.csv
 ├── OSEMOSYS_{Region}_Energy_Input.csv

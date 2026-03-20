@@ -32,6 +32,8 @@ This guide provides detailed documentation for the `Interface_RDM.xlsx` configur
 | Parameter | Type | Values | Description |
 |-----------|------|--------|-------------|
 | Solver | String | glpk/cbc/cplex/gurobi | Optimization solver |
+| Threads_CPLEX_Gurobi | Integer | ≥1 | Number of threads allocated to CPLEX or Gurobi per solve. Ignored for single-thread solvers (CBC, GLPK). See [Parallel Execution](rdm-pipeline.md#parallel-execution) for sizing guidance. |
+| Time_CBC | Integer | seconds | Maximum solve time for CBC solver (passed as `sec` parameter). Ignored for other solvers. |
 | OSeMOSYS_Model_Name | String | filename | Model formulation file (e.g., `model.v.5.4.txt`) |
 
 #### Model Settings
@@ -66,6 +68,8 @@ These three fields configure automatic post-perturbation sign correction for UDC
 
 ```
 Solver: cplex
+Threads_CPLEX_Gurobi: 4
+Time_CBC: 3600
 Run_Base_Future: Yes
 Run_RDM: Yes
 Region: UGA
