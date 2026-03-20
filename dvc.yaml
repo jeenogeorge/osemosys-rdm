@@ -41,7 +41,7 @@ stages:
       - src/workflow/1_Experiment/Experimental_Platform/:
           cache: true
           persist: false
-      - src/Results/:
+      - Results/:
           cache: true
           persist: true
     metrics:
@@ -57,7 +57,7 @@ stages:
       - src/workflow/1_Experiment/1_output_dataset_creator.py
       - src/workflow/1_Experiment/local_dataset_creator_0.py
       - src/workflow/1_Experiment/local_dataset_creator_f.py
-      - src/Results/
+      - Results/
       - scripts/run_postprocess.py
     metrics:
       - src/workflow/3_Postprocessing/postprocess_metrics.json:
@@ -75,7 +75,7 @@ stages:
     cmd: python scripts/run_prim_files_creator.py
     deps:
       # RDM results (required input)
-      - src/Results/
+      - Results/
       # PRIM configuration files
       - src/workflow/4_PRIM/Population.xlsx
       - src/workflow/4_PRIM/prim_files_creator_cntrl.xlsx
