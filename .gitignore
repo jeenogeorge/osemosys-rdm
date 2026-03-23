@@ -1,6 +1,7 @@
 # Results folder (DVC manages this directory)
 src/Results/*
 !src/Results/.gitkeep
+Results/
 
 # Dashboard test (excluded due to large file sizes)
 Dashboard.twbx
