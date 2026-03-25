@@ -395,48 +395,44 @@ def main(data_infile, data_outfile):
             dict_inp, fuel_list, "set MODExTECHNOLOGYperFUELin[", ""
         )
 
-        if emi_list:
-            file_output_function(
-                dict_emi, emi_list, "set MODExTECHNOLOGYperEMISSION[", ""
-            )
-            file_output_function(
-                dict_emichange,
-                emi_list,
-                "set MODExTECHNOLOGYperEMISSIONChange[",
-                "",
-            )
+        file_output_function(
+            dict_emi, emi_list, "set MODExTECHNOLOGYperEMISSION[", ""
+        )
+        file_output_function(
+            dict_emichange,
+            emi_list,
+            "set MODExTECHNOLOGYperEMISSIONChange[",
+            "",
+        )
 
-        if stg_list:
-            file_output_function(
-                dict_tts, stg_list, "set MODExTECHNOLOGYperSTORAGEto[", ""
-            )
-            file_output_function(
-                dict_tfs, stg_list, "set MODExTECHNOLOGYperSTORAGEfrom[", ""
-            )
+        file_output_function(
+            dict_tts, stg_list, "set MODExTECHNOLOGYperSTORAGEto[", ""
+        )
+        file_output_function(
+            dict_tfs, stg_list, "set MODExTECHNOLOGYperSTORAGEfrom[", ""
+        )
 
-        if input_fuel_list:
-            file_output_function(
-                dict_itnc,
-                input_fuel_list,
-                "set INPUTxNEWxCAPACITYperFUEL[",
-                "",
-                output_type="input",
-            )
-            file_output_function(
-                dict_ittc,
-                input_fuel_list,
-                "set INPUTxTOTALxCAPACITYperFUEL[",
-                "",
-                output_type="input",
-            )
+        file_output_function(
+            dict_itnc,
+            input_fuel_list,
+            "set INPUTxNEWxCAPACITYperFUEL[",
+            "",
+            output_type="input",
+        )
+        file_output_function(
+            dict_ittc,
+            input_fuel_list,
+            "set INPUTxTOTALxCAPACITYperFUEL[",
+            "",
+            output_type="input",
+        )
 
         file_output_function(
             dict_all, tech_list, "set MODEperTECHNOLOGY[", "*"
         )
 
-        if input_fuel_list:
-            line = "set INPUTxFUEL:=" + ", ".join(input_fuel_list)
-            file_out.write(line + ";\n")
+        line = "set INPUTxFUEL:=" + ", ".join(input_fuel_list)
+        file_out.write(line + ";\n")
 
         file_out.write("end;")
 
