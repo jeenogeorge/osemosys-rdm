@@ -578,32 +578,10 @@ def function_C_mathprog_parallel( fut_index, scen, inherited_scenarios, unpackag
     list_param_default_value_params = list( list_param_default_value['Parameter'] )
     list_param_default_value_value = list( list_param_default_value['Default_Value'] )
     #
-    if fut_index < len( all_futures ):
-        fut = all_futures[fut_index]
-        # scen = 0
-    if fut_index >= len( all_futures ) and fut_index < 2*len( all_futures ):
-        fut = all_futures[fut_index - len( all_futures ) ]
-        # scen = 1
-    if fut_index >= 2*len( all_futures ) and fut_index < 3*len( all_futures ):
-        fut = all_futures[fut_index - 2*len( all_futures ) ]
-        # scen = 2
-    if fut_index >= 3*len( all_futures ) and fut_index < 4*len( all_futures ):
-        fut = all_futures[fut_index - 3*len( all_futures ) ]
-        # scen = 3
-    if fut_index >= 4*len( all_futures ) and fut_index < 5*len( all_futures ):
-        fut = all_futures[fut_index - 4*len( all_futures ) ]
-        # scen = 4
-    if fut_index >= 5*len( all_futures ) and fut_index < 6*len( all_futures ):
-        fut = all_futures[fut_index - 5*len( all_futures ) ]
-        # scen = 5
-    if fut_index >= 6*len( all_futures ):
-        fut = all_futures[fut_index - 6*len( all_futures ) ]
-        # scen = 6
-    #
     # header = ['Scenario','Parameter','REGION','TECHNOLOGY','COMMODITY','EMISSION','MODE_OF_OPERATION','TIMESLICE','YEAR','SEASON','DAYTYPE','DAILYTIMEBRACKET','STORAGE','STORAGEINTRADAY','STORAGEINTRAYEAR','UDC','Value']
     header_indices = ['Scenario','Parameter','r','t','f','e','m','l','y','ls','ld','lh','s','sd','sy','u','value']
     #
-    fut = all_futures[fut_index - scen*len( all_futures ) ]
+    fut = all_futures[fut_index]
     #
     print('# This is future:', fut, ' and scenario ', scenario_list[scen] )
     #
@@ -2712,31 +2690,8 @@ if __name__ == '__main__':
                     # Process each future within the current chunk
                     for n2 in range(n_ini, max_iter):
                         
-                        # let's apply the filter here for faster results:
                         fut_index = n2
-                        if fut_index < len( all_futures ):
-                            fut = all_futures[fut_index]
-                            scen = 0
-                        if fut_index >= len( all_futures ) and fut_index < 2*len( all_futures ):
-                            fut = all_futures[fut_index - len( all_futures ) ]
-                            scen = 1
-                        if fut_index >= 2*len( all_futures ) and fut_index < 3*len( all_futures ):
-                            fut = all_futures[fut_index - 2*len( all_futures ) ]
-                            scen = 2
-                        if fut_index >= 3*len( all_futures ) and fut_index < 4*len( all_futures ):
-                            fut = all_futures[fut_index - 3*len( all_futures ) ]
-                            scen = 3
-                        if fut_index >= 4*len( all_futures ) and fut_index < 5*len( all_futures ):
-                            fut = all_futures[fut_index - 4*len( all_futures ) ]
-                            scen = 4
-                        if fut_index >= 5*len( all_futures ) and fut_index < 6*len( all_futures ):
-                            fut = all_futures[fut_index - 5*len( all_futures ) ]
-                            scen = 5
-                        if fut_index >= 6*len( all_futures ):
-                            fut = all_futures[fut_index - 6*len( all_futures ) ]
-                            scen = 6
-                        #
-                        fut = all_futures[fut_index - scen*len( all_futures ) ]
+                        fut = all_futures[fut_index]
         
                         # Load the appropriate chunk of the 'inherited_scenarios' based on scenario and future
                         file_name = f"data_inherited_scenarios/{scenario_list_print[fut_id_new]}_futures_part_{(fut_index // max_x_per_iter) + 1}.pkl"
