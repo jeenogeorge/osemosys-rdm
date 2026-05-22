@@ -2001,7 +2001,7 @@ if __name__ == '__main__':
                         #         # sys.exit()
                         
                         #------------------------------------------------------------------------------------------------------------------------------------------#
-                        if Math_Type in ['Time_Series', 'Constant', 'Logistic', 'Linear', 'Step'] and Explored_Parameter_of_X=='Final_Value':
+                        if Math_Type in ['Time_Series', 'Constant', 'Logistic', 'Linear', 'Step'] and Explored_Parameter_of_X in ['Final_Value', 'Final_Value_Multiplicative']:
                             
                             
                             
@@ -2042,7 +2042,10 @@ if __name__ == '__main__':
                                     #--------------------------------------------------------------------#
                                     # now that the value is extracted, we must manipulate the result and assign back
                                     if Math_Type == 'Time_Series':
-                                        new_value_list = deepcopy(AUX.interpolation_non_linear_final(time_list, value_list, float(Values_per_Future[fut_id]), last_year_analysis, Initial_Year_of_Uncertainty))
+                                        if Explored_Parameter_of_X == 'Final_Value_Multiplicative':
+                                            new_value_list = deepcopy(AUX.interpolation_multiplicative_final(time_list, value_list, float(Values_per_Future[fut_id]), last_year_analysis, Initial_Year_of_Uncertainty))
+                                        else:
+                                            new_value_list = deepcopy(AUX.interpolation_non_linear_final(time_list, value_list, float(Values_per_Future[fut_id]), last_year_analysis, Initial_Year_of_Uncertainty))
                                     elif Math_Type == 'Constant':
                                         new_value_list = deepcopy(AUX.interpolation_constant_trajectory(time_list, value_list, Initial_Year_of_Uncertainty))
                                     elif Math_Type == 'Linear':
@@ -2150,7 +2153,10 @@ if __name__ == '__main__':
                                             #--------------------------------------------------------------------#
                                             # now that the value is extracted, we must manipulate the result and assign back
                                             if Math_Type == 'Time_Series':
-                                                new_value_list = deepcopy(AUX.interpolation_non_linear_final(time_list, value_list, float(Values_per_Future[fut_id]), last_year_analysis, Initial_Year_of_Uncertainty))
+                                                if Explored_Parameter_of_X == 'Final_Value_Multiplicative':
+                                                    new_value_list = deepcopy(AUX.interpolation_multiplicative_final(time_list, value_list, float(Values_per_Future[fut_id]), last_year_analysis, Initial_Year_of_Uncertainty))
+                                                else:
+                                                    new_value_list = deepcopy(AUX.interpolation_non_linear_final(time_list, value_list, float(Values_per_Future[fut_id]), last_year_analysis, Initial_Year_of_Uncertainty))
                                             elif Math_Type == 'Constant':
                                                 new_value_list = deepcopy(AUX.interpolation_constant_trajectory(time_list, value_list, Initial_Year_of_Uncertainty))
                                             elif Math_Type == 'Logistic':
@@ -2208,7 +2214,10 @@ if __name__ == '__main__':
                                                 #--------------------------------------------------------------------#
                                                 # now that the value is extracted, we must manipulate the result and assign back
                                                 if Math_Type == 'Time_Series':
-                                                    new_value_list = deepcopy(AUX.interpolation_non_linear_final(time_list, value_list, float(Values_per_Future[fut_id]), last_year_analysis, Initial_Year_of_Uncertainty))
+                                                    if Explored_Parameter_of_X == 'Final_Value_Multiplicative':
+                                                        new_value_list = deepcopy(AUX.interpolation_multiplicative_final(time_list, value_list, float(Values_per_Future[fut_id]), last_year_analysis, Initial_Year_of_Uncertainty))
+                                                    else:
+                                                        new_value_list = deepcopy(AUX.interpolation_non_linear_final(time_list, value_list, float(Values_per_Future[fut_id]), last_year_analysis, Initial_Year_of_Uncertainty))
                                                 elif Math_Type == 'Constant':
                                                     new_value_list = deepcopy(AUX.interpolation_constant_trajectory(time_list, value_list, Initial_Year_of_Uncertainty))
                                                 elif Math_Type == 'Logistic':

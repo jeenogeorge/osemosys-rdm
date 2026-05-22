@@ -87,8 +87,10 @@ def interpolation_non_linear_final(time_list, value_list, new_relative_final_val
     #
     m_new = ( ydata[-1]*(new_relative_final_value/old_relative_final_value) - ydata[0] ) / ( xdata[-1]-xdata[0] )
     #
-    if int(m_original) == 0:
-        delta_ydata_new = [m_new for i in range( 0,len( ydata_whole ) ) ]
+    EPS = 1e-9
+    if abs(m_original) < EPS:
+        per_year = m_new / max(len(ydata_whole) - 1, 1)
+        delta_ydata_new = [per_year] * len(ydata_whole)
     else:
         delta_ydata_new = [ (m_new/m_original)*(ydata_whole[i]-ydata_whole[i-1]) for i in range( 1 ,len( ydata_whole ) ) ]
         delta_ydata_new = [0] + delta_ydata_new
@@ -123,6 +125,22 @@ def interpolation_non_linear_final(time_list, value_list, new_relative_final_val
     #
     # print('\n\n')
     # We return the list:
+    return new_value_list
+
+def interpolation_multiplicative_final(time_list, value_list, final_multiplier,
+                                       finyear, Initial_Year_of_Uncertainty):
+    new_value_list = []
+    Y0 = Initial_Year_of_Uncertainty
+    Yf = finyear
+    span = max(Yf - Y0, 1)
+    for y, v in zip(time_list, value_list):
+        if y < Y0:
+            ramp = 1.0
+        elif y >= Yf:
+            ramp = float(final_multiplier)
+        else:
+            ramp = 1.0 + (float(final_multiplier) - 1.0) * (y - Y0) / span
+        new_value_list.append(float(v) * ramp)
     return new_value_list
 
 def interpolation_non_linear_initial( time_list, value_list, new_relative_initial_value ):
