@@ -1806,17 +1806,29 @@ if __name__ == '__main__':
                         pri_second_sets = pri_info.get('Involved_Second_Sets_in_Osemosys', [])
                         pri_third_sets = pri_info.get('Involved_Third_Sets_in_Osemosys', [])
 
-                        # Validate: dependency rows must have exactly 1 value in Involved_First_Sets_in_Osemosys
-                        if len(pri_first_sets) > 1:
-                            print(f"\nERROR: Dependency row {pri_row} (primary, Dependency={prev_dep_flag}) has "
-                                  f"{len(pri_first_sets)} values in Involved_First_Sets_in_Osemosys: {pri_first_sets}. "
-                                  f"When using dependency, each row must have exactly 1 value in this column.")
+                        # Validate: both sides must have at least one tech.
+                        # Lengths may differ; the downstream loop maps index-by-index
+                        # with fallback `pri_first_sets[min(idx, len(pri)-1)]`, so when
+                        # `len(dep) > len(pri)` the extra dep techs are paired with the
+                        # last primary. This is safe when baselines on each side are
+                        # uniform (typical case for shared-share UDCs like RE/non-RE
+                        # sum-to-constant constraints): same delta propagates to all
+                        # dep entries regardless of which pri index they land on.
+                        # When baselines are NOT uniform, see the warning printed below.
+                        if len(pri_first_sets) == 0 or len(dep_first_sets) == 0:
+                            print(f"\nERROR: Dependency rows {pri_row} (primary, Dependency={prev_dep_flag}) "
+                                  f"and {u} (dependent) must each have at least one value in "
+                                  f"Involved_First_Sets_in_Osemosys. "
+                                  f"Primary has {len(pri_first_sets)} value(s): {pri_first_sets}. "
+                                  f"Dependent has {len(dep_first_sets)} value(s): {dep_first_sets}.")
                             sys.exit(1)
-                        if len(dep_first_sets) > 1:
-                            print(f"\nERROR: Dependency row {u} (dependent on row {pri_row}, Dependency={prev_dep_flag}) has "
-                                  f"{len(dep_first_sets)} values in Involved_First_Sets_in_Osemosys: {dep_first_sets}. "
-                                  f"When using dependency, each row must have exactly 1 value in this column.")
-                            sys.exit(1)
+                        if len(pri_first_sets) != len(dep_first_sets):
+                            print(f"  WARNING: Dependency rows {pri_row} (primary) and {u} (dependent) "
+                                  f"have different lengths in Involved_First_Sets_in_Osemosys "
+                                  f"({len(pri_first_sets)} vs {len(dep_first_sets)}). "
+                                  f"Dependent indices >= {len(pri_first_sets)} will be paired with "
+                                  f"the last primary ({pri_first_sets[-1]}). "
+                                  f"Assumes uniform baselines on each side.")
 
                         round_dep = 10
 
