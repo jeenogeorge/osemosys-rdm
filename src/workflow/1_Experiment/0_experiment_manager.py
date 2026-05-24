@@ -482,6 +482,166 @@ def fix_emission_limit_consistency(inherited_scenarios, scenario_list, all_futur
 
 
 ############################################################################################################################################################################################################
+# fix_re_nonre_share_per_row
+# ----------------------------------------------------------------------------
+#   Per-row, opt-in post-perturbation fixer that enforces a sum-to-constant
+#   invariant between a Renewable and a non-Renewable group of technologies.
+#
+#   Activation is controlled by three Uncertainty_Table columns:
+#     RE_Techs       semicolon-separated list of RE technologies
+#     NonRE_Techs    semicolon-separated list of non-RE technologies
+#     Sum_To_Value   target sum (defaults to 1.0 if blank)
+#
+#   The fixer runs only for rows where both RE_Techs and NonRE_Techs are
+#   populated. The RE side is treated as the source of truth (already
+#   perturbed by the main pipeline). For each (Region, Year) the non-RE
+#   side is rewritten uniformly to:
+#
+#       new_NonRE_value = (Sum_To_Value - sum(RE_values_in_(R,Y))) / len(NonRE_Techs)
+#
+#   Per row design: configuration lives next to the uncertainty that needs
+#   it. Rows without these columns populated are unaffected.
+############################################################################################################################################################################################################
+
+
+def fix_re_nonre_share_per_row(inherited_scenarios, scenario_list, all_futures,
+                               experiment_dictionary, log_dir=None):
+    """Enforce sum-to-constant between RE and non-RE technologies, per row.
+
+    For each X_Num row in experiment_dictionary with both RE_Techs and
+    NonRE_Techs populated, this function:
+      1. Identifies the parameter to adjust (Exact_Parameters_Involved_in_Osemosys).
+      2. Identifies the optional second set (e.g. UDC name).
+      3. For each (Region, Year), reads the perturbed values of RE_Techs,
+         computes the residual `Sum_To_Value - sum(RE)`, and rewrites the
+         NonRE_Techs uniformly so the total matches.
+
+    Returns
+    -------
+    list of (x_num, scenario, future, region, year, tech, old, new) tuples
+    """
+    corrections = []
+    n_rows_active = 0
+
+    for x_num, row_info in experiment_dictionary.items():
+        re_techs = row_info.get('RE_Techs') or []
+        nonre_techs = row_info.get('NonRE_Techs') or []
+        if not re_techs or not nonre_techs:
+            continue
+
+        sum_to_value = row_info.get('Sum_To_Value')
+        if sum_to_value is None:
+            sum_to_value = 1.0
+
+        params = row_info.get('Exact_Parameters_Involved_in_Osemosys') or []
+        if not params:
+            continue
+        parameter = params[0]
+
+        second_sets = row_info.get('Involved_Second_Sets_in_Osemosys') or []
+        second_set = None
+        for cand in second_sets:
+            if cand and cand != '-':
+                second_set = cand
+                break
+
+        initial_year = row_info.get('Initial_Year_of_Uncertainty')
+        try:
+            initial_year_int = int(initial_year) if initial_year is not None else None
+        except (TypeError, ValueError):
+            initial_year_int = None
+
+        n_rows_active += 1
+        print(f'    RE/NonRE Fix [X_Num={x_num}]: parameter={parameter}, '
+              f'second_set={second_set!r}, |RE|={len(re_techs)}, |NonRE|={len(nonre_techs)}, '
+              f'Sum_To_Value={sum_to_value}, from_year={initial_year_int}')
+
+        for scen in scenario_list:
+            if scen not in inherited_scenarios:
+                continue
+            for fut in all_futures:
+                if fut not in inherited_scenarios[scen]:
+                    continue
+                sd = inherited_scenarios[scen][fut]
+                pdata = sd.get(parameter)
+                if pdata is None:
+                    continue
+                # Detect optional second-set column key (e.g. 'u' for UDC)
+                second_key = None
+                if second_set is not None:
+                    for candidate in ('u', 'e', 'f', 's'):
+                        if candidate in pdata and second_set in [str(x) for x in pdata[candidate]]:
+                            second_key = candidate
+                            break
+
+                # Build a lookup: (r, t, y) -> idx, filtered by second_set when relevant
+                idx_by_key = {}
+                n_entries = len(pdata.get('value', []))
+                for i in range(n_entries):
+                    r = str(pdata['r'][i])
+                    t = str(pdata['t'][i])
+                    y = str(pdata['y'][i])
+                    if second_key is not None and str(pdata[second_key][i]) != second_set:
+                        continue
+                    idx_by_key[(r, t, y)] = i
+
+                # Collect all (r, y) pairs the RE side covers
+                ry_pairs = set()
+                for t in re_techs:
+                    for (r, tt, y), _i in idx_by_key.items():
+                        if tt == t:
+                            ry_pairs.add((r, y))
+
+                for (r, y) in sorted(ry_pairs):
+                    if initial_year_int is not None:
+                        try:
+                            if int(y) < initial_year_int:
+                                continue
+                        except (TypeError, ValueError):
+                            pass
+
+                    re_sum = 0.0
+                    re_found = 0
+                    for t in re_techs:
+                        i = idx_by_key.get((r, t, y))
+                        if i is not None:
+                            re_sum += float(pdata['value'][i])
+                            re_found += 1
+                    if re_found == 0:
+                        continue
+
+                    target_nonre_total = sum_to_value - re_sum
+                    new_value_each = target_nonre_total / len(nonre_techs)
+
+                    for t in nonre_techs:
+                        i = idx_by_key.get((r, t, y))
+                        if i is None:
+                            continue
+                        old = float(pdata['value'][i])
+                        new = round(new_value_each, 10)
+                        if abs(old - new) > 1e-9:
+                            pdata['value'][i] = new
+                            corrections.append((x_num, scen, fut, r, y, t, old, new))
+
+    if log_dir and corrections:
+        os.makedirs(log_dir, exist_ok=True)
+        log_path = os.path.join(log_dir, 're_nonre_share_corrections.log')
+        with open(log_path, 'w') as fh:
+            fh.write('x_num,scenario,future,region,year,tech,old,new\n')
+            for row in corrections:
+                fh.write(','.join(str(x) for x in row) + '\n')
+
+    if n_rows_active == 0:
+        print('    RE/NonRE Fix: no rows opt-in to this fix (columns RE_Techs/NonRE_Techs both empty).')
+    elif corrections:
+        print(f'    RE/NonRE Fix: applied {len(corrections)} correction(s) across all futures.')
+    else:
+        print('    RE/NonRE Fix: no corrections needed (perturbed values already sum to target).')
+
+    return corrections
+
+
+############################################################################################################################################################################################################
 def set_first_list( Executed_Scenario ):
     #
     # Get the directory of the current script
@@ -1518,6 +1678,30 @@ if __name__ == '__main__':
                     experiment_dictionary[ X_Num_unique[-1] ].update({ 'Initial_Year_of_Uncertainty':Initial_Year_of_Uncertainty_EP })
                     # experiment_dictionary[ X_Num_unique[-1] ].update({ 'Emssion_year_0':Emssion_year_0 })
                     experiment_dictionary[ X_Num_unique[-1] ].update({ 'Dependency_Flag': Dependency_Flag })
+                    # Optional RE/non-RE coupling columns (opt-in per row).
+                    # Populated only when the row encodes a sum-to-constant
+                    # constraint between renewable and non-renewable technologies.
+                    re_techs_list = []
+                    nonre_techs_list = []
+                    sum_to_value = None
+                    if 'RE_Techs' in uncertainty_table.columns:
+                        raw = uncertainty_table.loc[p, 'RE_Techs']
+                        if raw is not None and str(raw).strip() and str(raw).strip().lower() != 'nan':
+                            re_techs_list = [t for t in str(raw).replace(' ', '').split(';') if t]
+                    if 'NonRE_Techs' in uncertainty_table.columns:
+                        raw = uncertainty_table.loc[p, 'NonRE_Techs']
+                        if raw is not None and str(raw).strip() and str(raw).strip().lower() != 'nan':
+                            nonre_techs_list = [t for t in str(raw).replace(' ', '').split(';') if t]
+                    if 'Sum_To_Value' in uncertainty_table.columns:
+                        raw = uncertainty_table.loc[p, 'Sum_To_Value']
+                        if raw is not None and str(raw).strip() and str(raw).strip().lower() != 'nan':
+                            try:
+                                sum_to_value = float(raw)
+                            except (TypeError, ValueError):
+                                sum_to_value = None
+                    experiment_dictionary[ X_Num_unique[-1] ].update({ 'RE_Techs': re_techs_list })
+                    experiment_dictionary[ X_Num_unique[-1] ].update({ 'NonRE_Techs': nonre_techs_list })
+                    experiment_dictionary[ X_Num_unique[-1] ].update({ 'Sum_To_Value': sum_to_value })
                     experiment_dictionary[ X_Num_unique[-1] ].update({ 'Futures':[x for x in range( 1, N+1 ) ] })
                     #
                     if math_type in ['Time_Series', 'Discrete_Investments', 'Mult_Adoption_Curve', 'Mult_Restriction', 'Mult_Restriction_Start', 'Mult_Restriction_End', 'Timeslices_Curve', 'Constant', 'Logistic', 'Linear', 'Step']:
@@ -2617,6 +2801,22 @@ if __name__ == '__main__':
         inherited_scenarios, scenario_list, all_futures,
         margin=0.05, limit_threshold=99999,
         log_dir=emission_log_dir
+    )
+    # =========================================================================
+
+    # =========================================================================
+    # FIX: Enforce RE + non-RE sum-to-constant, per Uncertainty_Table row
+    # =========================================================================
+    # Activated for any row that populates BOTH RE_Techs and NonRE_Techs
+    # columns. For each (Region, Year) on the RE side, the non-RE side is
+    # rewritten uniformly so RE_sum + NonRE_sum = Sum_To_Value (default 1.0).
+    # Rows without these columns populated are unaffected.
+    # =========================================================================
+    re_nonre_log_dir = os.path.join(current_script_path_fix, 'Experimental_Platform',
+                                    'Logs', 'RE_NonRE_Share_Corrections')
+    fix_re_nonre_share_per_row(
+        inherited_scenarios, scenario_list, all_futures,
+        experiment_dictionary, log_dir=re_nonre_log_dir,
     )
     # =========================================================================
 

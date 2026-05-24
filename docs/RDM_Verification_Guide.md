@@ -28,9 +28,10 @@ limpieza del `Uncertainty_Table`/`Setup`. Las dos últimas son funcionales:
 uno es un PR/sprint separado).
 
 **Acoplamiento RE/non-RE (UDC sum-to-constant)** se implementa **enteramente en
-`Uncertainty_Table`** vía un par de filas YES_ADD/DEP multivalor (ver guía de
-configuración al final). No hay columnas globales en `Setup` para esto: la
-configuración vive por fila, junto a la incertidumbre que la describe.
+`Uncertainty_Table`**, con dos caminos disponibles (ver sección dedicada al
+final): (A) columnas opt-in `RE_Techs` / `NonRE_Techs` / `Sum_To_Value` por
+fila (recomendado), o (B) par de filas pareadas `YES_ADD`/`DEP` multivalor.
+**No hay configuración global en `Setup`** para esto.
 
 ---
 
@@ -243,23 +244,54 @@ que las filas X_Num 16-17 estén siendo procesadas (buscar en stdout
 
 **Decisión de diseño:** la configuración del acoplamiento RE/non-RE vive **por
 fila** en `Uncertainty_Table`, no en columnas globales de `Setup`. Cada
-incertidumbre que requiera acoplamiento define su par de filas con su propio
-constraint, junto a su rango LHS, año inicial, etc. Esto evita configuración
-global hidden y mantiene cada caso documentado donde se usa.
+incertidumbre que requiera acoplamiento define su lista de técnicas RE y non-RE
+en columnas opt-in propias, junto a su rango LHS, año inicial, etc.
 
-### Mecanismo
+Hay **dos caminos** funcionalmente equivalentes; elige uno según preferencia:
 
-Un par de filas consecutivas `YES_ADD` (primary) + `DEP` (dependent) implementa
+### Camino A — Columnas opt-in `RE_Techs` / `NonRE_Techs` / `Sum_To_Value` (recomendado)
+
+**Una sola fila** declara explícitamente las dos listas y el target de suma:
+
+| Columna | Significado |
+|---|---|
+| `RE_Techs` | Lista separada por `;` de técnicas renovables. La fila las perturba normal (via `Involved_First_Sets_in_Osemosys`). |
+| `NonRE_Techs` | Lista separada por `;` de técnicas no-renovables a ajustar. |
+| `Sum_To_Value` | Valor target de la suma (por defecto `1.0` si la celda está vacía pero `RE_Techs`/`NonRE_Techs` están populados). |
+
+**Activación**: el fixer corre **sólo** si una fila tiene ambas listas populadas.
+Filas con `RE_Techs` o `NonRE_Techs` vacíos no son afectadas. El fixer:
+
+1. Lee los valores **ya perturbados** de cada técnica en `RE_Techs` por
+   `(Region, Year)` (a partir del `Initial_Year_of_Uncertainty` de la fila).
+2. Calcula `target_nonre_total = Sum_To_Value - sum(RE_values_in_(R,Y))`.
+3. Reescribe **cada** técnica en `NonRE_Techs` al valor uniforme
+   `target_nonre_total / len(NonRE_Techs)`.
+
+Logs auditables en `Experimental_Platform/Logs/RE_NonRE_Share_Corrections/re_nonre_share_corrections.log`.
+
+### Camino B — Par YES_ADD/DEP multivalor (alternativa matemática)
+
+**Dos filas pareadas** (`Dependency=YES_ADD` + `Dependency=DEP`) implementan
 matemáticamente la suma constante por construcción:
 
 ```
 new_dep + new_pri = baseline_dep + baseline_pri   (invariante por par de filas)
 ```
 
-Si los baselines son uniformes en cada lado (típico para shares: todos los RE
-techs con `-X` y todos los non-RE con `1-X`), entonces perturbar el lado RE a
-`-X'` propaga delta `(-X' - (-X))` a todos los non-RE → quedan en `1-X'`, y la
-suma sigue siendo `1.0`.
+Si los baselines son uniformes en cada lado (típico para shares), perturbar el
+lado RE a `-X'` propaga delta `(-X' - (-X))` a todos los non-RE → quedan en
+`1-X'`. **No requiere columnas adicionales**; se apoya en el manager existente
+y en la relajación de longitudes (commit `837aa51`).
+
+### Cuándo usar cada uno
+
+- **Camino A** si quieres una sola fila por incertidumbre, con configuración
+  declarativa y target explícito (`Sum_To_Value`). Mejor para incertidumbres
+  que claramente son "shares" y quieres dejar la intención visible.
+- **Camino B** si ya tienes el patrón YES_ADD/DEP en otras incertidumbres y
+  prefieres consistencia, o si necesitas que cada lado tenga su propio rango
+  LHS distinto.
 
 ### Pre-requisito en el modelo base
 
@@ -280,27 +312,46 @@ PWRREN  0.7  0.7 ...  0.7
 Y activar el UDC: `UDCTag[RE1, PWRREN] = 1` (no `0`). Sin esto, las filas RDM
 intentarán perturbar índices que no existen → **silenciosamente sin efecto**.
 
-### Configuración (ejemplo)
+### Configuración (Camino A, ejemplo con UDC PWRREN)
 
-En `Uncertainty_Table`, añadir dos filas consecutivas con:
+En `Uncertainty_Table`, **una sola fila** opt-in:
+
+| Campo | Valor |
+|---|---|
+| `X_Category` | `UDC Renewable Share` |
+| `X_Mathematical_Type` | `Step` |
+| `Explored_Parameter_of_X` | `Final_Value` |
+| `Initial_Year_of_Uncertainty` | `2030` |
+| `Min_Value` / `Max_Value` | `-0.5` / `-0.3` |
+| `Exact_Parameters_Involved_in_Osemosys` | `UDCMultiplierActivity` |
+| `Dependency` | `NO` |
+| `Involved_First_Sets_in_Osemosys` | lista RE techs (mismas que `RE_Techs`) |
+| `Involved_Second_Sets_in_Osemosys` | `PWRREN` |
+| `RE_Techs` | `PWRSOL001 ; PWRBIO001 ; PWRWND001 ; PWRWND001S ; PWRCSP002 ; PWRCSP001 ; PWRSOL001S ; PWRGEO` |
+| `NonRE_Techs` | `PWRCBM001 ; PWRCOA003 ; PWRCOA_CCS ; PWRBIO_CCS ; PWRNGS001 ; PWRCOA001 ; PWRNGS002 ; PWROHC002 ; PWROHC003 ; PWRNUC ; PWRDSL ; PWRLFG001 ; PWRCOA002` |
+| `Sum_To_Value` | `1.0` (o dejar vacío para default 1.0) |
+
+Al correr `RUN_RDM.py`, el manager imprimirá:
+```
+RE/NonRE Fix [X_Num=N]: parameter=UDCMultiplierActivity, second_set='PWRREN',
+  |RE|=8, |NonRE|=13, Sum_To_Value=1.0, from_year=2030
+RE/NonRE Fix: applied K correction(s) across all futures.
+```
+
+### Configuración (Camino B, ejemplo equivalente con YES_ADD/DEP)
+
+Dos filas pareadas (sin necesidad de las columnas RE_Techs/NonRE_Techs/Sum_To_Value):
 
 | Campo | Fila primary (RE) | Fila dependent (non-RE) |
 |---|---|---|
-| `X_Category` | `UDC Renewable Share` | `UDC Renewable Share` |
 | `X_Mathematical_Type` | `Step` | `Step` |
-| `Explored_Parameter_of_X` | `Final_Value` | `Final_Value` |
-| `Initial_Year_of_Uncertainty` | `2030` | `2030` |
-| `Min_Value` / `Max_Value` | `-0.5` / `-0.3` | (mismo rango; será reescrito por DEP) |
 | `Exact_Parameters_Involved_in_Osemosys` | `UDCMultiplierActivity` | `UDCMultiplierActivity` |
 | `Dependency` | `YES_ADD` | `DEP` |
-| `Involved_First_Sets_in_Osemosys` | lista RE techs (N items) | lista non-RE techs (M items) |
+| `Involved_First_Sets_in_Osemosys` | RE techs (8) | non-RE techs (13) |
 | `Involved_Second_Sets_in_Osemosys` | `PWRREN` | `PWRREN` |
 
-`N` y `M` pueden diferir: el código aplica `pri_first_sets[min(idx, N-1)]`
-para parear dep_idx con un pri_idx. Cuando `M > N`, los últimos `M-N` dep
-techs heredan el delta del último primary. Esto es matemáticamente correcto
-**si los baselines de los N RE son uniformes** (mismo delta para todos).
-Aparecerá un WARNING informativo en stdout — leerlo y confirmar.
+Aparecerá un WARNING informativo en stdout sobre lengths distintos (8 vs 13);
+es seguro si los baselines son uniformes.
 
 ### Verificación
 
@@ -317,28 +368,52 @@ assert 'RE_Param' not in headers and 'NonRE_Param' not in headers, \
 print('OK: Setup sin columnas RE_Param/NonRE_Param')
 ```
 
-**Paso 2 — al correr `RUN_RDM.py` con un par YES_ADD/DEP de UDC** debe aparecer:
-
-```
-WARNING: Dependency rows N (primary) and M (dependent) have different lengths
-in Involved_First_Sets_in_Osemosys (8 vs 13). ...
-```
-
-Es informativo (no error). Confirma que el par está siendo procesado con
-lengths asimétricos.
-
-**Paso 3 — verificación funcional**: para cada `(R, Y) >= Initial_Year_of_Uncertainty`,
-confirmar que la suma de los `UDCMultiplierActivity` perturbados sigue siendo la
-misma que en baseline:
+**Paso 2 — confirmar que Uncertainty_Table TIENE las columnas opt-in:**
 
 ```python
-# Para cada futuro y (R, Y):
-sum_baseline = sum(UDC[r, t, PWRREN, y] for t in RE_techs ∪ non_RE_techs)  # baseline
-sum_perturbed = sum(UDC[r, t, PWRREN, y] for t in RE_techs ∪ non_RE_techs)  # perturbed
-assert abs(sum_perturbed - sum_baseline) < 1e-9
+import openpyxl
+wb = openpyxl.load_workbook('src/Interface_RDM.xlsx', data_only=True)
+ws = wb['Uncertainty_Table']
+headers = [c.value for c in ws[1]]
+for col in ('RE_Techs', 'NonRE_Techs', 'Sum_To_Value'):
+    assert col in headers, f"Falta columna {col}"
+print('OK: Uncertainty_Table tiene las 3 columnas opt-in')
 ```
 
-Si se cumple → el acoplamiento RE/non-RE funciona.
+**Paso 3 — unit tests del fixer per-row:**
+
+```powershell
+python tests/test_re_nonre_share_per_row.py
+```
+
+Salida esperada: 7 tests OK (basic, default sum, custom sum, year filter,
+opt-in, no-op, log).
+
+**Paso 4 — al correr `RUN_RDM.py` debe aparecer una de estas dos líneas:**
+
+```
+RE/NonRE Fix: no rows opt-in to this fix (columns RE_Techs/NonRE_Techs both empty).
+```
+(si ninguna fila usa el feature — comportamiento por defecto)
+
+o
+
+```
+RE/NonRE Fix [X_Num=N]: parameter=..., |RE|=..., |NonRE|=..., Sum_To_Value=...
+RE/NonRE Fix: applied K correction(s) across all futures.
+```
+(si una fila tiene RE_Techs y NonRE_Techs populados)
+
+**Paso 5 — verificación funcional**: para cada `(R, Y) >= Initial_Year_of_Uncertainty`,
+confirmar que `sum(RE_values_perturbed) + sum(NonRE_values_perturbed) == Sum_To_Value`:
+
+```python
+# Pseudocódigo
+for (r, y) in regions_x_years:
+    re_sum  = sum(UDC[r, t, PWRREN, y] for t in RE_Techs)   # perturbed
+    nonre_sum = sum(UDC[r, t, PWRREN, y] for t in NonRE_Techs)  # perturbed
+    assert abs((re_sum + nonre_sum) - sum_to_value) < 1e-9
+```
 
 ---
 
@@ -369,8 +444,10 @@ imprimen un mensaje claro con `Row N (primary/dependent) ...`.
 |---------|-----------|-------------|
 | `apply_rdm_cleanup.py` | Aplica 4A/4B/4C/4D al Excel | ✓ |
 | `apply_rdm_problem2.py` | Añade filas X_Num 16/17 (Problema 2) al Excel | ✓ |
+| `add_re_nonre_columns.py` | Añade columnas RE_Techs / NonRE_Techs / Sum_To_Value a Uncertainty_Table | ✓ |
 | `verify_rdm_fixes.py` | Verificación estática del Excel | ✓ |
 | `verify_problem2_ratios.py` | Verificación funcional ratios CapitalCost/FixedCost | ✓ |
+| `tests/test_re_nonre_share_per_row.py` | Unit tests del fixer RE/NonRE per-row | ✓ |
 
 Los scripts en la raíz (`apply_*`, `add_*`, `verify_*`) son herramientas
 operativas. Pueden quedar versionados o borrarse según preferencia del equipo;
@@ -380,12 +457,16 @@ los cambios reales viven en el Excel y en `0_experiment_manager.py`.
 
 ## Archivos modificados (resumen para revisión de PR)
 
-- `src/Interface_RDM.xlsx` — hoja `Uncertainty_Table` (17 filas, antes 13) y
-  hoja `Setup` (15 columnas igual que antes; Region=`RE1`).
+- `src/Interface_RDM.xlsx` — hoja `Uncertainty_Table` (17 filas, antes 13) con
+  3 columnas opt-in nuevas (`RE_Techs`, `NonRE_Techs`, `Sum_To_Value`); hoja
+  `Setup` igual que antes; `Region=RE1`.
 - `src/workflow/1_Experiment/0_experiment_manager.py`:
   - Validación de dependencia multi-valor relajada en dos pasos
-    (ver apéndice). Permite ahora cualquier configuración con al menos
+    (ver apéndice). Permite cualquier configuración con al menos
     un valor en cada lado; longitudes distintas emiten warning.
+  - Nueva función `fix_re_nonre_share_per_row` + wire post-perturbación.
+    Lee las 3 columnas opt-in del `Uncertainty_Table` y aplica el fixer
+    sólo a filas que las populen.
 
 Backup del Excel original: `src/Interface_RDM.xlsx.bak`.
 
