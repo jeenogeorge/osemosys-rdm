@@ -22,11 +22,15 @@ limpieza del `Uncertainty_Table`/`Setup`. Las dos últimas son funcionales:
 | **4C** | Limpieza: `Involved_Scenarios` de `"Scenario1 ; Scenario2"` → `"Scenario1"` | Ruido en logs |
 | **4D** | Descripciones X_Num 2-4 corregidas (other/goat/sheep, antes todas decían cattle) | Sólo cosmético |
 | **P2** | Añadido par `YES_PROP`/`DEP` para `CapitalCost`/`FixedCost` cubriendo 6 técnicas renovables agrupadas en una sola fila multivalor. Requirió **relajar una validación** en `0_experiment_manager.py` que prohibía multi-valor. | Ratio FixedCost/CapitalCost no preservado por técnica |
-| **P3b** | Infraestructura de `fix_renewable_share_consistency` añadida + columnas `RE_Param`/`NonRE_Param` en `Setup` (vacías, inactivas) | N/A — desactivada hasta que se populen las columnas |
-| **VAL** | Segunda relajación de la validación de longitudes: ahora permite `len(primary) != len(dependent)` con warning. Cubre el caso UDC de Jeeno (RE/non-RE shares con listas asimétricas, p.ej. 8 RE vs 13 non-RE). Seguro cuando los baselines son uniformes por lado. | Si los baselines del primary NO son uniformes, los dep con índice >= len(pri) heredan del último primary, lo que puede no ser lo esperado. |
+| **VAL** | Segunda relajación de la validación de longitudes: ahora permite `len(primary) != len(dependent)` con warning. Habilita el caso UDC RE/non-RE shares con listas asimétricas (p.ej. 8 RE vs 13 non-RE). Seguro cuando los baselines son uniformes por lado. | Si los baselines del primary NO son uniformes, los dep con índice >= len(pri) heredan del último primary, lo que puede no ser lo esperado. |
 
 **Refactores 4E.1/4E.2/4E.3 NO se aplicaron** (por recomendación del plan: cada
 uno es un PR/sprint separado).
+
+**Acoplamiento RE/non-RE (UDC sum-to-constant)** se implementa **enteramente en
+`Uncertainty_Table`** vía un par de filas YES_ADD/DEP multivalor (ver guía de
+configuración al final). No hay columnas globales en `Setup` para esto: la
+configuración vive por fila, junto a la incertidumbre que la describe.
 
 ---
 
@@ -49,10 +53,9 @@ Para verificación funcional completa también necesitas un solver instalado
 ```powershell
 python verify_rdm_fixes.py
 python verify_problem2_ratios.py
-python tests/test_renewable_share_fixer.py
 ```
 
-Si los tres salen con código 0 y mensaje final positivo → todo OK. Para entender
+Si los dos salen con código 0 y mensaje final positivo → todo OK. Para entender
 **qué** verifica cada uno o para diagnosticar fallos, ver las secciones de abajo.
 
 ---
@@ -236,76 +239,106 @@ que las filas X_Num 16-17 estén siendo procesadas (buscar en stdout
 
 ---
 
-## Problema 3b — Fixer de renewable share (infraestructura)
+## Configuración RE/non-RE share (in-band en Uncertainty_Table)
 
-**¿Qué se rompía antes?** Cuando se quiere que `RE_share + nonRE_share == 1`
-después de perturbación, los UDC del plan original no existían en el modelo
-(`2POWRENMIN`/`2POWNONRENMAX` no están en `Scenario1.txt`). Sin embargo,
-queríamos dejar la maquinaria lista para cuando se defina un par real.
+**Decisión de diseño:** la configuración del acoplamiento RE/non-RE vive **por
+fila** en `Uncertainty_Table`, no en columnas globales de `Setup`. Cada
+incertidumbre que requiera acoplamiento define su par de filas con su propio
+constraint, junto a su rango LHS, año inicial, etc. Esto evita configuración
+global hidden y mantiene cada caso documentado donde se usa.
 
-**Solución:** función `fix_renewable_share_consistency` añadida a
-`0_experiment_manager.py`, wire-eada después del fix de emisiones,
-condicional a `Setup.RE_Param` y `Setup.NonRE_Param`. Mientras esas dos
-celdas estén **vacías**, el fixer **no se invoca** — comportamiento idéntico
-al pre-fix.
+### Mecanismo
+
+Un par de filas consecutivas `YES_ADD` (primary) + `DEP` (dependent) implementa
+matemáticamente la suma constante por construcción:
+
+```
+new_dep + new_pri = baseline_dep + baseline_pri   (invariante por par de filas)
+```
+
+Si los baselines son uniformes en cada lado (típico para shares: todos los RE
+techs con `-X` y todos los non-RE con `1-X`), entonces perturbar el lado RE a
+`-X'` propaga delta `(-X' - (-X))` a todos los non-RE → quedan en `1-X'`, y la
+suma sigue siendo `1.0`.
+
+### Pre-requisito en el modelo base
+
+Las entradas a perturbar **deben existir** en `src/workflow/0_Scenarios/Scenario1.txt`.
+Para el caso UDC `PWRREN`, eso significa poblar `param UDCMultiplierActivity`
+con slices del tipo:
+
+```
+[RE1,PWRSOL001,*,*]:
+2020 ... 2055 :=
+PWRREN -0.3 -0.3 ... -0.3
+[RE1,PWRCBM001,*,*]:
+2020 ... 2055 :=
+PWRREN  0.7  0.7 ...  0.7
+... (un slice por tech)
+```
+
+Y activar el UDC: `UDCTag[RE1, PWRREN] = 1` (no `0`). Sin esto, las filas RDM
+intentarán perturbar índices que no existen → **silenciosamente sin efecto**.
+
+### Configuración (ejemplo)
+
+En `Uncertainty_Table`, añadir dos filas consecutivas con:
+
+| Campo | Fila primary (RE) | Fila dependent (non-RE) |
+|---|---|---|
+| `X_Category` | `UDC Renewable Share` | `UDC Renewable Share` |
+| `X_Mathematical_Type` | `Step` | `Step` |
+| `Explored_Parameter_of_X` | `Final_Value` | `Final_Value` |
+| `Initial_Year_of_Uncertainty` | `2030` | `2030` |
+| `Min_Value` / `Max_Value` | `-0.5` / `-0.3` | (mismo rango; será reescrito por DEP) |
+| `Exact_Parameters_Involved_in_Osemosys` | `UDCMultiplierActivity` | `UDCMultiplierActivity` |
+| `Dependency` | `YES_ADD` | `DEP` |
+| `Involved_First_Sets_in_Osemosys` | lista RE techs (N items) | lista non-RE techs (M items) |
+| `Involved_Second_Sets_in_Osemosys` | `PWRREN` | `PWRREN` |
+
+`N` y `M` pueden diferir: el código aplica `pri_first_sets[min(idx, N-1)]`
+para parear dep_idx con un pri_idx. Cuando `M > N`, los últimos `M-N` dep
+techs heredan el delta del último primary. Esto es matemáticamente correcto
+**si los baselines de los N RE son uniformes** (mismo delta para todos).
+Aparecerá un WARNING informativo en stdout — leerlo y confirmar.
 
 ### Verificación
 
-**Paso 1 — Setup tiene las columnas y están vacías:**
+**Paso 1 — confirmar que Setup NO tiene columnas RE_Param/NonRE_Param**
+(este mecanismo se eliminó intencionalmente):
 
 ```python
 import openpyxl
 wb = openpyxl.load_workbook('src/Interface_RDM.xlsx', data_only=True)
 ws = wb['Setup']
 headers = [c.value for c in ws[1]]
-assert 'RE_Param' in headers, "Falta columna RE_Param"
-assert 'NonRE_Param' in headers, "Falta columna NonRE_Param"
-re_col = headers.index('RE_Param') + 1
-nonre_col = headers.index('NonRE_Param') + 1
-print(f"RE_Param={ws.cell(2, re_col).value!r}, NonRE_Param={ws.cell(2, nonre_col).value!r}")
-# Esperado: RE_Param=None, NonRE_Param=None (inactivo por defecto)
+assert 'RE_Param' not in headers and 'NonRE_Param' not in headers, \
+    "Setup tiene columnas RE_Param/NonRE_Param — el mecanismo Setup-based fue eliminado"
+print('OK: Setup sin columnas RE_Param/NonRE_Param')
 ```
 
-**Paso 2 — unit tests del fixer:**
+**Paso 2 — al correr `RUN_RDM.py` con un par YES_ADD/DEP de UDC** debe aparecer:
 
-```powershell
-python tests/test_renewable_share_fixer.py
+```
+WARNING: Dependency rows N (primary) and M (dependent) have different lengths
+in Involved_First_Sets_in_Osemosys (8 vs 13). ...
 ```
 
-Salida esperada:
+Es informativo (no error). Confirma que el par está siendo procesado con
+lengths asimétricos.
+
+**Paso 3 — verificación funcional**: para cada `(R, Y) >= Initial_Year_of_Uncertainty`,
+confirmar que la suma de los `UDCMultiplierActivity` perturbados sigue siendo la
+misma que en baseline:
+
+```python
+# Para cada futuro y (R, Y):
+sum_baseline = sum(UDC[r, t, PWRREN, y] for t in RE_techs ∪ non_RE_techs)  # baseline
+sum_perturbed = sum(UDC[r, t, PWRREN, y] for t in RE_techs ∪ non_RE_techs)  # perturbed
+assert abs(sum_perturbed - sum_baseline) < 1e-9
 ```
-  test_basic_correction: OK
-  test_no_correction_needed: OK
-  test_partial_match: OK
-  test_missing_params: OK
-  test_multiple_regions: OK
 
-TODOS LOS TESTS PASAN (fixer 3b funcional)
-```
-
-Los tests son sintéticos — construyen un `inherited_scenarios` mínimo, llaman
-a la función y verifican que tras el fix `RE + nonRE == 1.0` exactamente.
-
-**Paso 3 — confirmar inactividad en el experimento real:**
-
-En el stdout de la última corrida de `RUN_RDM.py`, **NO** debe aparecer la
-línea `Renewable Share Fix: ...`. Su ausencia confirma que el fixer está
-inactivo (correcto, porque las columnas están vacías).
-
-### Cuándo y cómo activar el fixer
-
-Cuando definas qué par de parámetros del modelo deben sumar 1.0:
-
-1. Abrir `src/Interface_RDM.xlsx`, hoja `Setup`.
-2. Poner el nombre del parámetro RE (fuente de verdad) en columna `RE_Param`.
-3. Poner el nombre del parámetro non-RE (el que se reescribe) en `NonRE_Param`.
-4. Correr `RUN_RDM.py`. Debe aparecer en stdout:
-   ```
-   Renewable Share Fix: Applied N correction(s) across all futures (REparam -> NonREparam).
-   ```
-5. Inspeccionar
-   `src/workflow/1_Experiment/Logs/Renewable_Share_Corrections/renewable_share_corrections.log`
-   para auditar las correcciones.
+Si se cumple → el acoplamiento RE/non-RE funciona.
 
 ---
 
@@ -334,11 +367,10 @@ imprimen un mensaje claro con `Row N (primary/dependent) ...`.
 
 | Archivo | Propósito | Idempotente |
 |---------|-----------|-------------|
-| `apply_rdm_fixes.py` | Aplica 4A/4B/4C/4D + Problema 2 al Excel | ✓ |
-| `add_setup_columns.py` | Añade columnas `RE_Param`/`NonRE_Param` a Setup | ✓ |
+| `apply_rdm_cleanup.py` | Aplica 4A/4B/4C/4D al Excel | ✓ |
+| `apply_rdm_problem2.py` | Añade filas X_Num 16/17 (Problema 2) al Excel | ✓ |
 | `verify_rdm_fixes.py` | Verificación estática del Excel | ✓ |
 | `verify_problem2_ratios.py` | Verificación funcional ratios CapitalCost/FixedCost | ✓ |
-| `tests/test_renewable_share_fixer.py` | Unit tests del fixer 3b | ✓ |
 
 Los scripts en la raíz (`apply_*`, `add_*`, `verify_*`) son herramientas
 operativas. Pueden quedar versionados o borrarse según preferencia del equipo;
@@ -349,11 +381,11 @@ los cambios reales viven en el Excel y en `0_experiment_manager.py`.
 ## Archivos modificados (resumen para revisión de PR)
 
 - `src/Interface_RDM.xlsx` — hoja `Uncertainty_Table` (17 filas, antes 13) y
-  hoja `Setup` (17 columnas, antes 15; Region=`RE1`).
+  hoja `Setup` (15 columnas igual que antes; Region=`RE1`).
 - `src/workflow/1_Experiment/0_experiment_manager.py`:
-  - Función nueva `fix_renewable_share_consistency` (~línea 484).
-  - Llamada wire-eada después de `fix_emission_limit_consistency` (~línea 2611).
-  - Validación de dependencia multi-valor relajada (~líneas 1889-1899).
+  - Validación de dependencia multi-valor relajada en dos pasos
+    (ver apéndice). Permite ahora cualquier configuración con al menos
+    un valor en cada lado; longitudes distintas emiten warning.
 
 Backup del Excel original: `src/Interface_RDM.xlsx.bak`.
 

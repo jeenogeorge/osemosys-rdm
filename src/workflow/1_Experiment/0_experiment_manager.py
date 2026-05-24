@@ -482,86 +482,6 @@ def fix_emission_limit_consistency(inherited_scenarios, scenario_list, all_futur
 
 
 ############################################################################################################################################################################################################
-# fix_renewable_share_consistency
-# ----------------------------------------------------------------------------
-#   Post-perturbation fixer for paired RE / non-RE share parameters that must
-#   sum to 1.0 by (Region, Year). After LHS perturbations are applied, the
-#   RE parameter (`re_param`) is taken as the source of truth and the non-RE
-#   parameter (`nonre_param`) is overwritten with `1.0 - re_value` for each
-#   matching (r, y) index. Use when `YES_ADD` is not viable (e.g. when the
-#   two parameters live in asymmetric structures).
-############################################################################################################################################################################################################
-
-
-def fix_renewable_share_consistency(inherited_scenarios, scenario_list, all_futures,
-                                    re_param, nonre_param, log_dir=None):
-    """Force new_RE + new_nonRE == 1.0 by (Region, Year) after perturbation.
-
-    Parameters
-    ----------
-    inherited_scenarios : dict
-        Nested dict: inherited_scenarios[scenario][future][parameter][key] = list
-    scenario_list : list
-        List of scenario names.
-    all_futures : list
-        List of future indices.
-    re_param : str
-        Name of the RE parameter (source of truth).
-    nonre_param : str
-        Name of the non-RE parameter (overwritten to 1 - re_value).
-    log_dir : str or None
-        If provided, a correction log is written to this directory.
-    """
-    corrections = []
-    for scen in scenario_list:
-        if scen not in inherited_scenarios:
-            continue
-        for fut in all_futures:
-            if fut not in inherited_scenarios[scen]:
-                continue
-            sd = inherited_scenarios[scen][fut]
-            re_data = sd.get(re_param)
-            nonre_data = sd.get(nonre_param)
-            if re_data is None or nonre_data is None:
-                continue
-            if 'r' not in re_data or 'y' not in re_data or 'value' not in re_data:
-                continue
-            if 'r' not in nonre_data or 'y' not in nonre_data or 'value' not in nonre_data:
-                continue
-
-            # Build (r, y) -> index lookup on the non-RE side
-            nonre_index = {}
-            for k, (rr, yy) in enumerate(zip(nonre_data['r'], nonre_data['y'])):
-                nonre_index[(str(rr), str(yy))] = k
-
-            for i, (r, y) in enumerate(zip(re_data['r'], re_data['y'])):
-                j = nonre_index.get((str(r), str(y)))
-                if j is None:
-                    continue
-                target = 1.0 - float(re_data['value'][i])
-                old = float(nonre_data['value'][j])
-                if abs(old - target) > 1e-9:
-                    nonre_data['value'][j] = round(target, 10)
-                    corrections.append((scen, fut, str(r), str(y), old, target))
-
-    if log_dir and corrections:
-        os.makedirs(log_dir, exist_ok=True)
-        log_path = os.path.join(log_dir, 'renewable_share_corrections.log')
-        with open(log_path, 'w') as fh:
-            fh.write('scenario,future,region,year,old,new\n')
-            for row in corrections:
-                fh.write(','.join(str(x) for x in row) + '\n')
-
-    if corrections:
-        print(f'    Renewable Share Fix: Applied {len(corrections)} correction(s) '
-              f'across all futures ({re_param} -> {nonre_param}).')
-    else:
-        print('    Renewable Share Fix: No corrections needed.')
-
-    return corrections
-
-
-############################################################################################################################################################################################################
 def set_first_list( Executed_Scenario ):
     #
     # Get the directory of the current script
@@ -2698,32 +2618,6 @@ if __name__ == '__main__':
         margin=0.05, limit_threshold=99999,
         log_dir=emission_log_dir
     )
-    # =========================================================================
-
-    # =========================================================================
-    # FIX: Enforce RE + non-RE shares sum to 1 after perturbation
-    # =========================================================================
-    # When `Setup.RE_Param` and `Setup.NonRE_Param` are both populated, the
-    # non-RE parameter is rewritten to `1 - RE` for each matching (R, Y).
-    # Use only when both parameters share a common (R, Y) grid; if columns
-    # are blank, the fixer is skipped entirely.
-    # =========================================================================
-    re_param_setup = ''
-    nonre_param_setup = ''
-    if 'RE_Param' in setup_table.columns:
-        re_param_setup = str(setup_table.loc[0, 'RE_Param']).strip()
-    if 'NonRE_Param' in setup_table.columns:
-        nonre_param_setup = str(setup_table.loc[0, 'NonRE_Param']).strip()
-    if (re_param_setup and nonre_param_setup
-            and re_param_setup.lower() != 'nan'
-            and nonre_param_setup.lower() != 'nan'):
-        renewable_log_dir = os.path.join(current_script_path_fix, 'Experimental_Platform',
-                                         'Logs', 'Renewable_Share_Corrections')
-        fix_renewable_share_consistency(
-            inherited_scenarios, scenario_list, all_futures,
-            re_param=re_param_setup, nonre_param=nonre_param_setup,
-            log_dir=renewable_log_dir,
-        )
     # =========================================================================
 
     #
