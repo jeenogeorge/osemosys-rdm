@@ -1,197 +1,199 @@
-# Guía de verificación — Fixes RDM 2026-05
+# Verification Guide — RDM Fixes 2026-05
 
-> **Audiencia:** cualquier integrante del equipo que necesite revisar que los
-> arreglos aplicados al pipeline RDM funcionan en su máquina.
+> **Audience:** any team member who needs to verify that the fixes applied to
+> the RDM pipeline work on their machine.
 >
-> **Plan de origen:** [RDM_Remaining_Fixes_Plan.md](RDM_Remaining_Fixes_Plan.md)
+> **Source plan:** [RDM_Remaining_Fixes_Plan.md](RDM_Remaining_Fixes_Plan.md)
 >
-> **Esfuerzo estimado para correr todas las verificaciones:** ~25 min si el
-> experimento RDM ya fue ejecutado; ~45 min si hay que correrlo de cero.
+> **Estimated effort to run all verifications:** ~25 min if the RDM experiment
+> has already been executed; ~45 min if it has to be run from scratch.
 
 ---
 
-## Resumen de cambios
+## Summary of changes
 
-Se aplicaron seis correcciones al pipeline RDM. Las primeras cuatro son
-limpieza del `Uncertainty_Table`/`Setup`. Las dos últimas son funcionales:
+Six fixes were applied to the RDM pipeline. The first four are cleanup of
+`Uncertainty_Table`/`Setup`. The last two are functional:
 
-| ID | Qué cambió | Riesgo si está mal |
+| ID | What changed | Risk if wrong |
 |----|------------|---------------------|
-| **4A** | Filas `DEP` añadidas para `LVSGOACU` y `LVSSHPCU` (eran `YES_PROP` huérfanas) | Cabras/ovejas CU no se mueven correlacionadas con CF |
-| **4B** | `Setup.Region`: `BWA` → `RE1` (alineado con `set REGION` de `Scenario1.txt`) | CSV de salida queda mal etiquetado |
-| **4C** | Limpieza: `Involved_Scenarios` de `"Scenario1 ; Scenario2"` → `"Scenario1"` | Ruido en logs |
-| **4D** | Descripciones X_Num 2-4 corregidas (other/goat/sheep, antes todas decían cattle) | Sólo cosmético |
-| **P2** | Añadido par `YES_PROP`/`DEP` para `CapitalCost`/`FixedCost` cubriendo 6 técnicas renovables agrupadas en una sola fila multivalor. Requirió **relajar una validación** en `0_experiment_manager.py` que prohibía multi-valor. | Ratio FixedCost/CapitalCost no preservado por técnica |
-| **VAL** | Segunda relajación de la validación de longitudes: ahora permite `len(primary) != len(dependent)` con warning. Habilita el caso UDC RE/non-RE shares con listas asimétricas (p.ej. 8 RE vs 13 non-RE). Seguro cuando los baselines son uniformes por lado. | Si los baselines del primary NO son uniformes, los dep con índice >= len(pri) heredan del último primary, lo que puede no ser lo esperado. |
+| **4A** | `DEP` rows added for `LVSGOACU` and `LVSSHPCU` (they were orphan `YES_PROP`) | Goats/sheep CU don't move correlated with CF |
+| **4B** | `Setup.Region`: `BWA` → `RE1` (aligned with `set REGION` from `Scenario1.txt`) | Output CSV gets mislabeled |
+| **4C** | Cleanup: `Involved_Scenarios` from `"Scenario1 ; Scenario2"` → `"Scenario1"` | Log noise |
+| **4D** | X_Num 2-4 descriptions fixed (other/goat/sheep, previously all said cattle) | Cosmetic only |
+| **P2** | Added `YES_PROP`/`DEP` pair for `CapitalCost`/`FixedCost` covering 6 renewable techs grouped in a single multi-value row. Required **relaxing a validation** in `0_experiment_manager.py` that forbade multi-value. | FixedCost/CapitalCost ratio not preserved per technology |
+| **VAL** | Second relaxation of the length validation: now allows `len(primary) != len(dependent)` with warning. Enables the UDC RE/non-RE shares case with asymmetric lists (e.g. 8 RE vs 13 non-RE). Safe when baselines are uniform per side. | If the primary baselines are NOT uniform, dep rows with index >= len(pri) inherit from the last primary, which may not be what's expected. |
 
-**Refactores 4E.1/4E.2/4E.3 NO se aplicaron** (por recomendación del plan: cada
-uno es un PR/sprint separado).
+**Refactors 4E.1/4E.2/4E.3 were NOT applied** (per plan recommendation: each
+one is a separate PR/sprint).
 
-**Acoplamiento RE/non-RE (UDC sum-to-constant)** se implementa **enteramente en
-`Uncertainty_Table`**, con dos caminos disponibles (ver sección dedicada al
-final): (A) columnas opt-in `RE_Techs` / `NonRE_Techs` / `Sum_To_Value` por
-fila (recomendado), o (B) par de filas pareadas `YES_ADD`/`DEP` multivalor.
-**No hay configuración global en `Setup`** para esto.
+**RE/non-RE coupling (UDC sum-to-constant)** is implemented **entirely in
+`Uncertainty_Table`**, with two available paths (see dedicated section at the
+end): (A) per-row opt-in columns `RE_Techs` / `NonRE_Techs` / `Sum_To_Value`
+(recommended), or (B) paired multi-value `YES_ADD`/`DEP` rows.
+**There is no global configuration in `Setup`** for this.
 
 ---
 
-## Pre-requisitos
+## Pre-requisites
 
 ```powershell
-# Desde la raíz del repo
+# From the repo root
 python -c "import openpyxl, pandas; print('OK deps')"
 ```
 
-Si falla, instalar con `pip install openpyxl pandas`.
+If it fails, install with `pip install openpyxl pandas`.
 
-Para verificación funcional completa también necesitas un solver instalado
-(CPLEX por defecto en `Setup.Solver`).
+For full functional verification you also need a solver installed (CPLEX by
+default in `Setup.Solver`).
 
 ---
 
-## Verificación rápida — todas las correcciones a la vez
+## Quick verification — all fixes at once
 
 ```powershell
 python verify_rdm_fixes.py
 python verify_problem2_ratios.py
 ```
 
-Si los dos salen con código 0 y mensaje final positivo → todo OK. Para entender
-**qué** verifica cada uno o para diagnosticar fallos, ver las secciones de abajo.
+If both exit with code 0 and a positive final message → everything is OK. To
+understand **what** each one verifies or to diagnose failures, see the sections
+below.
 
 ---
 
-## Problema 4A — Filas DEP para LVSGOACU y LVSSHPCU
+## Problem 4A — DEP rows for LVSGOACU and LVSSHPCU
 
-**¿Qué se rompía antes?** Las filas 12 (`LVSGOACF`) y 13 (`LVSSHPCF`) declaraban
-`Dependency=YES_PROP` pero no tenían fila `DEP` siguiente. Resultado: las
-versiones CU (no climáticas) de cabra y oveja **no se perturbaban en
-correlación** con su contraparte CF, rompiendo la simetría que sí existe para
-las filas 8-9 (LVSOTHCF/CU) y 10-11 (LVSCTLCF/CU).
+**What was broken before?** Rows 12 (`LVSGOACF`) and 13 (`LVSSHPCF`) declared
+`Dependency=YES_PROP` but had no following `DEP` row. Result: the CU
+(non-climatic) versions of goat and sheep **were not perturbed in correlation**
+with their CF counterpart, breaking the symmetry that does exist for rows 8-9
+(LVSOTHCF/CU) and 10-11 (LVSCTLCF/CU).
 
-**¿Qué debe pasar ahora?** Para cada futuro perturbado, el ratio
-`CU_perturbado/CF_perturbado` debe igualar `CU_baseline/CF_baseline` por
-(Region, AGRWAT1, Year), porque `YES_PROP` aplica
+**What should happen now?** For each perturbed future, the ratio
+`perturbed_CU/perturbed_CF` must equal `baseline_CU/baseline_CF` per
+(Region, AGRWAT1, Year), because `YES_PROP` applies
 `new_dep = baseline_dep * (new_pri / baseline_pri)`.
 
-### Verificación
+### Verification
 
-**Paso 1 — estructura del Excel:**
+**Step 1 — Excel structure:**
 
 ```powershell
 python verify_rdm_fixes.py
 ```
 
-Buscar la línea: `OK sin YES_PROP huérfanos`. Si dice `YES_PROP huérfanos: [...]`
-→ revisar fila citada.
+Look for the line: `OK no orphan YES_PROP`. If it says `Orphan YES_PROP: [...]`
+→ check the cited row.
 
-**Paso 2 — logs del experimento:**
+**Step 2 — experiment logs:**
 
-En el stdout de `RUN_RDM.py`, buscar:
+In the stdout of `RUN_RDM.py`, look for:
 ```
 Dependency (YES_PROP): Row 13 dependent on Row 12 | Scenario Scenario1 Future 1
 Dependency (YES_PROP): Row 15 dependent on Row 14 | Scenario Scenario1 Future 1
 ```
 
-Si no aparece para `Row 13` y `Row 15`, la dependencia no se está procesando.
+If it doesn't appear for `Row 13` and `Row 15`, the dependency isn't being
+processed.
 
-**Paso 3 — comparación numérica (opcional, requiere outputs):**
+**Step 3 — numerical comparison (optional, requires outputs):**
 
-Abrir `src/workflow/1_Experiment/Experimental_Platform/Futures/Scenario1/Scenario1_1/Scenario1_1.txt`
-y `src/workflow/1_Experiment/Executables/Scenario1_0/Scenario1_0.txt`. Localizar
-las filas `LVSGOACF` y `LVSGOACU` dentro del bloque `param InputActivityRatio`.
-Calcular para el mismo (Region, AGRWAT1, Year):
+Open `src/workflow/1_Experiment/Experimental_Platform/Futures/Scenario1/Scenario1_1/Scenario1_1.txt`
+and `src/workflow/1_Experiment/Executables/Scenario1_0/Scenario1_0.txt`. Locate
+the rows `LVSGOACF` and `LVSGOACU` within the `param InputActivityRatio` block.
+Compute for the same (Region, AGRWAT1, Year):
 
 ```
 ratio_CF = perturbed_LVSGOACF / baseline_LVSGOACF
 ratio_CU = perturbed_LVSGOACU / baseline_LVSGOACU
 ```
 
-`ratio_CF` debe ser ≈ `ratio_CU` (mismo factor de perturbación).
+`ratio_CF` must be ≈ `ratio_CU` (same perturbation factor).
 
 ---
 
-## Problema 4B — Region BWA → RE1
+## Problem 4B — Region BWA → RE1
 
-**¿Qué se rompía antes?** `Setup.Region = 'BWA'` pero `Scenario1.txt` usa
-`set REGION := RE1`. La variable solo se usa para nombrar el CSV de salida
-(`OSEMOSYS_BWA_Energy_Input.csv`), no afecta el modelo en sí — pero los
-archivos quedaban mal etiquetados.
+**What was broken before?** `Setup.Region = 'BWA'` but `Scenario1.txt` uses
+`set REGION := RE1`. The variable is only used to name the output CSV
+(`OSEMOSYS_BWA_Energy_Input.csv`), it doesn't affect the model itself — but
+the files were mislabeled.
 
-### Verificación
+### Verification
 
-**Paso 1 — alineación estática:**
+**Step 1 — static alignment:**
 
 ```powershell
 python verify_rdm_fixes.py
 ```
 
-Buscar: `OK Setup.Region='RE1' alineado con Scenario1.txt`.
+Look for: `OK Setup.Region='RE1' aligned with Scenario1.txt`.
 
-**Paso 2 — nombre del CSV de salida:**
+**Step 2 — output CSV name:**
 
 ```powershell
 Get-ChildItem -Recurse -Filter "OSEMOSYS_*_Energy_Input.csv" | Select-Object Name
 ```
 
-Debe aparecer `OSEMOSYS_RE1_Energy_Input.csv`. **No debe** existir ningún
-`OSEMOSYS_BWA_*`. Si lo hay, es de una corrida vieja — bórralo manualmente.
+`OSEMOSYS_RE1_Energy_Input.csv` should appear. **No** `OSEMOSYS_BWA_*` should
+exist. If it does, it's from an old run — delete it manually.
 
 ---
 
-## Problema 4C — Limpieza de referencias a Scenario2
+## Problem 4C — Cleanup of Scenario2 references
 
-**¿Qué se rompía antes?** Las 13 filas del `Uncertainty_Table` decían
-`"Scenario1 ; Scenario2"` pero `src/workflow/0_Scenarios/` solo contiene
-`Scenario1.txt`. No causaba error pero generaba ruido conceptual.
+**What was broken before?** The 13 rows of `Uncertainty_Table` said
+`"Scenario1 ; Scenario2"` but `src/workflow/0_Scenarios/` only contains
+`Scenario1.txt`. It didn't cause an error but generated conceptual noise.
 
-### Verificación
+### Verification
 
 ```powershell
 python verify_rdm_fixes.py
 ```
 
-Buscar: `OK sin referencias a Scenario2 en Involved_Scenarios`.
+Look for: `OK no references to Scenario2 in Involved_Scenarios`.
 
-Si vuelves a necesitar `Scenario2`, ver `RDM_Remaining_Fixes_Plan.md`
-sección **4C-Opción 2**.
+If you need `Scenario2` again, see `RDM_Remaining_Fixes_Plan.md`
+section **4C-Option 2**.
 
 ---
 
-## Problema 4D — Descripciones filas 2-4
+## Problem 4D — Descriptions for rows 2-4
 
-**¿Qué se rompía antes?** Las cuatro primeras filas decían
-`"Demand Growth - livestock cattle"` aunque aplicaban a LVSCTL (cattle),
-LVSOTH (other), LVSGOA (goat), LVSSHP (sheep). Confuso al revisar resultados.
+**What was broken before?** The first four rows said
+`"Demand Growth - livestock cattle"` even though they applied to LVSCTL (cattle),
+LVSOTH (other), LVSGOA (goat), LVSSHP (sheep). Confusing when reviewing results.
 
-### Verificación
+### Verification
 
 ```powershell
 python verify_rdm_fixes.py
 ```
 
-Buscar: `OK descripciones filas 1-4 corregidas`. Si falla, imprime qué fila
-está mal y cuál era el esperado.
+Look for: `OK descriptions for rows 1-4 corrected`. If it fails, it prints
+which row is wrong and what was expected.
 
 ---
 
-## Problema 2 — CapitalCost ↔ FixedCost agrupado **[el más importante]**
+## Problem 2 — Grouped CapitalCost ↔ FixedCost **[the most important]**
 
-**¿Qué se rompía antes?** No existía perturbación correlacionada para los
-costos de las técnicas renovables. Re-añadirla "fila por técnica" hubiera
-necesitado 12 filas (6 YES_PROP + 6 DEP). El plan propuso un patrón mejor:
-**una sola fila multivalor** YES_PROP + una DEP, cubriendo las 6 técnicas
-agrupadas mediante alineamiento índice-por-índice.
+**What was broken before?** There was no correlated perturbation for the costs
+of renewable technologies. Re-adding it "row per technology" would have needed
+12 rows (6 YES_PROP + 6 DEP). The plan proposed a better pattern: **a single
+multi-value row** YES_PROP + one DEP, covering all 6 technologies grouped via
+index-by-index alignment.
 
-Al implementarlo, descubrimos que `0_experiment_manager.py` tenía una
-**validación demasiado estricta** (`When using dependency, each row must have
-exactly 1 value...`) que bloqueaba el uso multi-valor, **aunque el código de
-iteración sí lo soportaba**. Relajamos la validación a "primary y dependent
-deben tener igual longitud" (que es el requisito real).
+When implementing it, we discovered that `0_experiment_manager.py` had a
+**too strict validation** (`When using dependency, each row must have exactly
+1 value...`) that blocked multi-value usage, **even though the iteration code
+did support it**. We relaxed the validation to "primary and dependent must
+have equal length" (which is the actual requirement).
 
-**Invariante a verificar:** Para cada técnica en
+**Invariant to verify:** For each technology in
 `{PWRSOL001, PWRWND001, PWRBIO001, PWRGEO, PWRCSP001, PWRCSP002}`,
-cada futuro perturbado y cada año, debe cumplirse:
+every perturbed future and every year, the following must hold:
 
 ```
 FixedCost_perturbed[tech, y]     FixedCost_baseline[tech, y]
@@ -199,105 +201,106 @@ FixedCost_perturbed[tech, y]     FixedCost_baseline[tech, y]
 CapitalCost_perturbed[tech, y]   CapitalCost_baseline[tech, y]
 ```
 
-### Verificación
+### Verification
 
-**Paso 1 — Excel:**
+**Step 1 — Excel:**
 
 ```powershell
 python verify_rdm_fixes.py
 ```
 
-Buscar:
+Look for:
 ```
-OK Problema 2: X_Num 16↔17 alineados (PWRSOL001 ; PWRWND001 ; ...)
+OK Problem 2: X_Num 16↔17 aligned (PWRSOL001 ; PWRWND001 ; ...)
 ```
 
-**Paso 2 — funcional (requiere `Results/` poblado por una corrida reciente):**
+**Step 2 — functional (requires `Results/` populated by a recent run):**
 
 ```powershell
 python verify_problem2_ratios.py
 ```
 
-Salida esperada:
+Expected output:
 ```
-OK Scenario1_1: 216 celdas comparadas, max ratio diff = X.XXe-14
-OK Scenario1_2: 216 celdas comparadas, max ratio diff = X.XXe-14
+OK Scenario1_1: 216 cells compared, max ratio diff = X.XXe-14
+OK Scenario1_2: 216 cells compared, max ratio diff = X.XXe-14
 ...
-RESULTADO: TODOS LOS RATIOS PRESERVADOS (Problema 2 funcional)
+RESULT: ALL RATIOS PRESERVED (Problem 2 functional)
 ```
 
-`216 celdas` = 6 técnicas × 36 años. La diferencia de ratio debe ser del orden
-de `1e-13` (precisión floating-point de doble precisión). Si es mayor a
-`1e-6`, hay algo mal.
+`216 cells` = 6 technologies × 36 years. The ratio difference must be on the
+order of `1e-13` (double-precision floating-point accuracy). If it's greater
+than `1e-6`, something is wrong.
 
-**Paso 3 — sanity check de perturbación efectiva:**
+**Step 3 — effective perturbation sanity check:**
 
-Si la salida muestra `⚠️ NO HUBO PERTURBACIÓN`, el valor perturbado es
-idéntico al baseline. Puede ser legítimo (LHS sampleó cerca de 1.0) si solo
-ocurre en uno o dos futuros, pero si todos los futuros lo muestran → revisar
-que las filas X_Num 16-17 estén siendo procesadas (buscar en stdout
-`Dependency (YES_PROP): Row 17 dependent on Row 16`).
+If the output shows `⚠️ NO PERTURBATION OCCURRED`, the perturbed value is
+identical to the baseline. This may be legitimate (LHS sampled close to 1.0)
+if it only happens in one or two futures, but if all futures show it → check
+that rows X_Num 16-17 are being processed (look for
+`Dependency (YES_PROP): Row 17 dependent on Row 16` in stdout).
 
 ---
 
-## Configuración RE/non-RE share (in-band en Uncertainty_Table)
+## RE/non-RE share configuration (in-band in Uncertainty_Table)
 
-**Decisión de diseño:** la configuración del acoplamiento RE/non-RE vive **por
-fila** en `Uncertainty_Table`, no en columnas globales de `Setup`. Cada
-incertidumbre que requiera acoplamiento define su lista de técnicas RE y non-RE
-en columnas opt-in propias, junto a su rango LHS, año inicial, etc.
+**Design decision:** RE/non-RE coupling configuration lives **per row** in
+`Uncertainty_Table`, not in global `Setup` columns. Each uncertainty that
+requires coupling defines its RE and non-RE technology lists in its own opt-in
+columns, alongside its LHS range, initial year, etc.
 
-Hay **dos caminos** funcionalmente equivalentes; elige uno según preferencia:
+There are **two paths** that are functionally equivalent; choose one based on
+preference:
 
-### Camino A — Columnas opt-in `RE_Techs` / `NonRE_Techs` / `Sum_To_Value` (recomendado)
+### Path A — Opt-in columns `RE_Techs` / `NonRE_Techs` / `Sum_To_Value` (recommended)
 
-**Una sola fila** declara explícitamente las dos listas y el target de suma:
+**A single row** explicitly declares both lists and the sum target:
 
-| Columna | Significado |
+| Column | Meaning |
 |---|---|
-| `RE_Techs` | Lista separada por `;` de técnicas renovables. La fila las perturba normal (via `Involved_First_Sets_in_Osemosys`). |
-| `NonRE_Techs` | Lista separada por `;` de técnicas no-renovables a ajustar. |
-| `Sum_To_Value` | Valor target de la suma (por defecto `1.0` si la celda está vacía pero `RE_Techs`/`NonRE_Techs` están populados). |
+| `RE_Techs` | `;`-separated list of renewable technologies. The row perturbs them normally (via `Involved_First_Sets_in_Osemosys`). |
+| `NonRE_Techs` | `;`-separated list of non-renewable technologies to adjust. |
+| `Sum_To_Value` | Target value of the sum (defaults to `1.0` if the cell is empty but `RE_Techs`/`NonRE_Techs` are populated). |
 
-**Activación**: el fixer corre **sólo** si una fila tiene ambas listas populadas.
-Filas con `RE_Techs` o `NonRE_Techs` vacíos no son afectadas. El fixer:
+**Activation**: the fixer runs **only** if a row has both lists populated.
+Rows with empty `RE_Techs` or `NonRE_Techs` are not affected. The fixer:
 
-1. Lee los valores **ya perturbados** de cada técnica en `RE_Techs` por
-   `(Region, Year)` (a partir del `Initial_Year_of_Uncertainty` de la fila).
-2. Calcula `target_nonre_total = Sum_To_Value - sum(RE_values_in_(R,Y))`.
-3. Reescribe **cada** técnica en `NonRE_Techs` al valor uniforme
+1. Reads the **already-perturbed** values of each technology in `RE_Techs` per
+   `(Region, Year)` (from the row's `Initial_Year_of_Uncertainty`).
+2. Computes `target_nonre_total = Sum_To_Value - sum(RE_values_in_(R,Y))`.
+3. Rewrites **each** technology in `NonRE_Techs` to the uniform value
    `target_nonre_total / len(NonRE_Techs)`.
 
-Logs auditables en `Experimental_Platform/Logs/RE_NonRE_Share_Corrections/re_nonre_share_corrections.log`.
+Auditable logs in `Experimental_Platform/Logs/RE_NonRE_Share_Corrections/re_nonre_share_corrections.log`.
 
-### Camino B — Par YES_ADD/DEP multivalor (alternativa matemática)
+### Path B — Multi-value YES_ADD/DEP pair (mathematical alternative)
 
-**Dos filas pareadas** (`Dependency=YES_ADD` + `Dependency=DEP`) implementan
-matemáticamente la suma constante por construcción:
+**Two paired rows** (`Dependency=YES_ADD` + `Dependency=DEP`) mathematically
+implement constant sum by construction:
 
 ```
-new_dep + new_pri = baseline_dep + baseline_pri   (invariante por par de filas)
+new_dep + new_pri = baseline_dep + baseline_pri   (invariant per row pair)
 ```
 
-Si los baselines son uniformes en cada lado (típico para shares), perturbar el
-lado RE a `-X'` propaga delta `(-X' - (-X))` a todos los non-RE → quedan en
-`1-X'`. **No requiere columnas adicionales**; se apoya en el manager existente
-y en la relajación de longitudes (commit `837aa51`).
+If baselines are uniform on each side (typical for shares), perturbing the RE
+side to `-X'` propagates delta `(-X' - (-X))` to all non-RE → they end up at
+`1-X'`. **No additional columns required**; it relies on the existing manager
+and the length relaxation (commit `837aa51`).
 
-### Cuándo usar cada uno
+### When to use each one
 
-- **Camino A** si quieres una sola fila por incertidumbre, con configuración
-  declarativa y target explícito (`Sum_To_Value`). Mejor para incertidumbres
-  que claramente son "shares" y quieres dejar la intención visible.
-- **Camino B** si ya tienes el patrón YES_ADD/DEP en otras incertidumbres y
-  prefieres consistencia, o si necesitas que cada lado tenga su propio rango
-  LHS distinto.
+- **Path A** if you want a single row per uncertainty, with declarative
+  configuration and explicit target (`Sum_To_Value`). Better for uncertainties
+  that are clearly "shares" and you want to make the intention visible.
+- **Path B** if you already have the YES_ADD/DEP pattern in other uncertainties
+  and prefer consistency, or if you need each side to have its own distinct
+  LHS range.
 
-### Pre-requisito en el modelo base
+### Pre-requisite in the base model
 
-Las entradas a perturbar **deben existir** en `src/workflow/0_Scenarios/Scenario1.txt`.
-Para el caso UDC `PWRREN`, eso significa poblar `param UDCMultiplierActivity`
-con slices del tipo:
+The inputs to perturb **must exist** in `src/workflow/0_Scenarios/Scenario1.txt`.
+For the UDC `PWRREN` case, that means populating `param UDCMultiplierActivity`
+with slices of the form:
 
 ```
 [RE1,PWRSOL001,*,*]:
@@ -306,17 +309,18 @@ PWRREN -0.3 -0.3 ... -0.3
 [RE1,PWRCBM001,*,*]:
 2020 ... 2055 :=
 PWRREN  0.7  0.7 ...  0.7
-... (un slice por tech)
+... (one slice per tech)
 ```
 
-Y activar el UDC: `UDCTag[RE1, PWRREN] = 1` (no `0`). Sin esto, las filas RDM
-intentarán perturbar índices que no existen → **silenciosamente sin efecto**.
+And activate the UDC: `UDCTag[RE1, PWRREN] = 1` (not `0`). Without this, the
+RDM rows will attempt to perturb indices that don't exist → **silently with no
+effect**.
 
-### Configuración (Camino A, ejemplo con UDC PWRREN)
+### Configuration (Path A, example with UDC PWRREN)
 
-En `Uncertainty_Table`, **una sola fila** opt-in:
+In `Uncertainty_Table`, **a single** opt-in row:
 
-| Campo | Valor |
+| Field | Value |
 |---|---|
 | `X_Category` | `UDC Renewable Share` |
 | `X_Mathematical_Type` | `Step` |
@@ -325,24 +329,24 @@ En `Uncertainty_Table`, **una sola fila** opt-in:
 | `Min_Value` / `Max_Value` | `-0.5` / `-0.3` |
 | `Exact_Parameters_Involved_in_Osemosys` | `UDCMultiplierActivity` |
 | `Dependency` | `NO` |
-| `Involved_First_Sets_in_Osemosys` | lista RE techs (mismas que `RE_Techs`) |
+| `Involved_First_Sets_in_Osemosys` | RE techs list (same as `RE_Techs`) |
 | `Involved_Second_Sets_in_Osemosys` | `PWRREN` |
 | `RE_Techs` | `PWRSOL001 ; PWRBIO001 ; PWRWND001 ; PWRWND001S ; PWRCSP002 ; PWRCSP001 ; PWRSOL001S ; PWRGEO` |
 | `NonRE_Techs` | `PWRCBM001 ; PWRCOA003 ; PWRCOA_CCS ; PWRBIO_CCS ; PWRNGS001 ; PWRCOA001 ; PWRNGS002 ; PWROHC002 ; PWROHC003 ; PWRNUC ; PWRDSL ; PWRLFG001 ; PWRCOA002` |
-| `Sum_To_Value` | `1.0` (o dejar vacío para default 1.0) |
+| `Sum_To_Value` | `1.0` (or leave empty for default 1.0) |
 
-Al correr `RUN_RDM.py`, el manager imprimirá:
+When running `RUN_RDM.py`, the manager will print:
 ```
 RE/NonRE Fix [X_Num=N]: parameter=UDCMultiplierActivity, second_set='PWRREN',
   |RE|=8, |NonRE|=13, Sum_To_Value=1.0, from_year=2030
 RE/NonRE Fix: applied K correction(s) across all futures.
 ```
 
-### Configuración (Camino B, ejemplo equivalente con YES_ADD/DEP)
+### Configuration (Path B, equivalent example with YES_ADD/DEP)
 
-Dos filas pareadas (sin necesidad de las columnas RE_Techs/NonRE_Techs/Sum_To_Value):
+Two paired rows (no need for the RE_Techs/NonRE_Techs/Sum_To_Value columns):
 
-| Campo | Fila primary (RE) | Fila dependent (non-RE) |
+| Field | Primary row (RE) | Dependent row (non-RE) |
 |---|---|---|
 | `X_Mathematical_Type` | `Step` | `Step` |
 | `Exact_Parameters_Involved_in_Osemosys` | `UDCMultiplierActivity` | `UDCMultiplierActivity` |
@@ -350,13 +354,13 @@ Dos filas pareadas (sin necesidad de las columnas RE_Techs/NonRE_Techs/Sum_To_Va
 | `Involved_First_Sets_in_Osemosys` | RE techs (8) | non-RE techs (13) |
 | `Involved_Second_Sets_in_Osemosys` | `PWRREN` | `PWRREN` |
 
-Aparecerá un WARNING informativo en stdout sobre lengths distintos (8 vs 13);
-es seguro si los baselines son uniformes.
+An informative WARNING will appear in stdout about different lengths (8 vs 13);
+it's safe if the baselines are uniform.
 
-### Verificación
+### Verification
 
-**Paso 1 — confirmar que Setup NO tiene columnas RE_Param/NonRE_Param**
-(este mecanismo se eliminó intencionalmente):
+**Step 1 — confirm Setup does NOT have RE_Param/NonRE_Param columns**
+(this mechanism was intentionally removed):
 
 ```python
 import openpyxl
@@ -364,11 +368,11 @@ wb = openpyxl.load_workbook('src/Interface_RDM.xlsx', data_only=True)
 ws = wb['Setup']
 headers = [c.value for c in ws[1]]
 assert 'RE_Param' not in headers and 'NonRE_Param' not in headers, \
-    "Setup tiene columnas RE_Param/NonRE_Param — el mecanismo Setup-based fue eliminado"
-print('OK: Setup sin columnas RE_Param/NonRE_Param')
+    "Setup has RE_Param/NonRE_Param columns — the Setup-based mechanism was removed"
+print('OK: Setup without RE_Param/NonRE_Param columns')
 ```
 
-**Paso 2 — confirmar que Uncertainty_Table TIENE las columnas opt-in:**
+**Step 2 — confirm Uncertainty_Table HAS the opt-in columns:**
 
 ```python
 import openpyxl
@@ -376,39 +380,39 @@ wb = openpyxl.load_workbook('src/Interface_RDM.xlsx', data_only=True)
 ws = wb['Uncertainty_Table']
 headers = [c.value for c in ws[1]]
 for col in ('RE_Techs', 'NonRE_Techs', 'Sum_To_Value'):
-    assert col in headers, f"Falta columna {col}"
-print('OK: Uncertainty_Table tiene las 3 columnas opt-in')
+    assert col in headers, f"Missing column {col}"
+print('OK: Uncertainty_Table has the 3 opt-in columns')
 ```
 
-**Paso 3 — unit tests del fixer per-row:**
+**Step 3 — unit tests of the per-row fixer:**
 
 ```powershell
 python tests/test_re_nonre_share_per_row.py
 ```
 
-Salida esperada: 7 tests OK (basic, default sum, custom sum, year filter,
+Expected output: 7 tests OK (basic, default sum, custom sum, year filter,
 opt-in, no-op, log).
 
-**Paso 4 — al correr `RUN_RDM.py` debe aparecer una de estas dos líneas:**
+**Step 4 — when running `RUN_RDM.py`, one of these two lines must appear:**
 
 ```
 RE/NonRE Fix: no rows opt-in to this fix (columns RE_Techs/NonRE_Techs both empty).
 ```
-(si ninguna fila usa el feature — comportamiento por defecto)
+(if no row uses the feature — default behavior)
 
-o
+or
 
 ```
 RE/NonRE Fix [X_Num=N]: parameter=..., |RE|=..., |NonRE|=..., Sum_To_Value=...
 RE/NonRE Fix: applied K correction(s) across all futures.
 ```
-(si una fila tiene RE_Techs y NonRE_Techs populados)
+(if a row has RE_Techs and NonRE_Techs populated)
 
-**Paso 5 — verificación funcional**: para cada `(R, Y) >= Initial_Year_of_Uncertainty`,
-confirmar que `sum(RE_values_perturbed) + sum(NonRE_values_perturbed) == Sum_To_Value`:
+**Step 5 — functional verification**: for each `(R, Y) >= Initial_Year_of_Uncertainty`,
+confirm that `sum(RE_values_perturbed) + sum(NonRE_values_perturbed) == Sum_To_Value`:
 
 ```python
-# Pseudocódigo
+# Pseudocode
 for (r, y) in regions_x_years:
     re_sum  = sum(UDC[r, t, PWRREN, y] for t in RE_Techs)   # perturbed
     nonre_sum = sum(UDC[r, t, PWRREN, y] for t in NonRE_Techs)  # perturbed
@@ -417,82 +421,82 @@ for (r, y) in regions_x_years:
 
 ---
 
-## Verificación end-to-end: correr el experimento completo
+## End-to-end verification: run the full experiment
 
-Si quieres rehacer todo desde cero:
+If you want to redo everything from scratch:
 
 ```powershell
 cd src
 python RUN_RDM.py
 ```
 
-Tiempo esperado: ~20 min con `Number_of_Runs=8` y CPLEX en 16 threads.
-Output esperado al final:
+Expected time: ~20 min with `Number_of_Runs=8` and CPLEX on 16 threads.
+Expected output at the end:
 ```
 5 futures processed: 5 optimal, 0 infeasible
 Processing completed successfully.
 ```
 
-Si falla, mirar el stdout — los errores recientes de validación dependencias
-imprimen un mensaje claro con `Row N (primary/dependent) ...`.
+If it fails, look at stdout — recent dependency validation errors print a
+clear message with `Row N (primary/dependent) ...`.
 
 ---
 
-## Inventario de scripts añadidos
+## Inventory of added scripts
 
-| Archivo | Propósito | Idempotente |
+| File | Purpose | Idempotent |
 |---------|-----------|-------------|
-| `apply_rdm_cleanup.py` | Aplica 4A/4B/4C/4D al Excel | ✓ |
-| `apply_rdm_problem2.py` | Añade filas X_Num 16/17 (Problema 2) al Excel | ✓ |
-| `add_re_nonre_columns.py` | Añade columnas RE_Techs / NonRE_Techs / Sum_To_Value a Uncertainty_Table | ✓ |
-| `verify_rdm_fixes.py` | Verificación estática del Excel | ✓ |
-| `verify_problem2_ratios.py` | Verificación funcional ratios CapitalCost/FixedCost | ✓ |
-| `tests/test_re_nonre_share_per_row.py` | Unit tests del fixer RE/NonRE per-row | ✓ |
+| `apply_rdm_cleanup.py` | Applies 4A/4B/4C/4D to the Excel | ✓ |
+| `apply_rdm_problem2.py` | Adds rows X_Num 16/17 (Problem 2) to the Excel | ✓ |
+| `add_re_nonre_columns.py` | Adds RE_Techs / NonRE_Techs / Sum_To_Value columns to Uncertainty_Table | ✓ |
+| `verify_rdm_fixes.py` | Static verification of the Excel | ✓ |
+| `verify_problem2_ratios.py` | Functional verification of CapitalCost/FixedCost ratios | ✓ |
+| `tests/test_re_nonre_share_per_row.py` | Unit tests of the per-row RE/NonRE fixer | ✓ |
 
-Los scripts en la raíz (`apply_*`, `add_*`, `verify_*`) son herramientas
-operativas. Pueden quedar versionados o borrarse según preferencia del equipo;
-los cambios reales viven en el Excel y en `0_experiment_manager.py`.
+The scripts at the root (`apply_*`, `add_*`, `verify_*`) are operational tools.
+They can be kept versioned or deleted according to team preference; the actual
+changes live in the Excel and in `0_experiment_manager.py`.
 
 ---
 
-## Archivos modificados (resumen para revisión de PR)
+## Modified files (summary for PR review)
 
-- `src/Interface_RDM.xlsx` — hoja `Uncertainty_Table` (17 filas, antes 13) con
-  3 columnas opt-in nuevas (`RE_Techs`, `NonRE_Techs`, `Sum_To_Value`); hoja
-  `Setup` igual que antes; `Region=RE1`.
+- `src/Interface_RDM.xlsx` — `Uncertainty_Table` sheet (17 rows, previously 13)
+  with 3 new opt-in columns (`RE_Techs`, `NonRE_Techs`, `Sum_To_Value`); `Setup`
+  sheet same as before; `Region=RE1`.
 - `src/workflow/1_Experiment/0_experiment_manager.py`:
-  - Validación de dependencia multi-valor relajada en dos pasos
-    (ver apéndice). Permite cualquier configuración con al menos
-    un valor en cada lado; longitudes distintas emiten warning.
-  - Nueva función `fix_re_nonre_share_per_row` + wire post-perturbación.
-    Lee las 3 columnas opt-in del `Uncertainty_Table` y aplica el fixer
-    sólo a filas que las populen.
+  - Multi-value dependency validation relaxed in two steps
+    (see appendix). Allows any configuration with at least
+    one value on each side; different lengths emit a warning.
+  - New `fix_re_nonre_share_per_row` function + post-perturbation wiring.
+    Reads the 3 opt-in columns from `Uncertainty_Table` and applies the fixer
+    only to rows that populate them.
 
-Backup del Excel original: `src/Interface_RDM.xlsx.bak`.
+Backup of the original Excel: `src/Interface_RDM.xlsx.bak`.
 
 ---
 
-## Apéndice — Sobre la validación de longitudes en filas con dependencia
+## Appendix — About length validation in dependency rows
 
-La validación en `0_experiment_manager.py:1889-1903` evolucionó en dos pasos durante esta sesión:
+The validation in `0_experiment_manager.py:1889-1903` evolved in two steps during this session:
 
-**Estado original (rechazado):**
+**Original state (rejected):**
 ```python
 if len(pri_first_sets) > 1 or len(dep_first_sets) > 1:
     sys.exit(1)  # "must have exactly 1 value"
 ```
-Bloqueaba cualquier fila con dependencia que tuviera multi-valor. Era falsamente
-estricto: el código de iteración subyacente sí maneja multi-valor.
+Blocked any dependency row that had multi-value. It was falsely strict: the
+underlying iteration code does handle multi-value.
 
-**Primer relajamiento (intermedio):**
+**First relaxation (intermediate):**
 ```python
 if len(pri_first_sets) != len(dep_first_sets):
     sys.exit(1)
 ```
-Permitía multi-valor pero requería simetría. Cubre P2 (6=6 técnicas renovables)
-pero bloquea el caso UDC de Jeeno (8 RE vs 13 non-RE).
+Allowed multi-value but required symmetry. Covers P2 (6=6 renewable
+technologies) but blocks Jeeno's UDC case (8 RE vs 13 non-RE).
 
-**Estado actual (definitivo):**
+**Current state (definitive):**
 ```python
 if len(pri_first_sets) == 0 or len(dep_first_sets) == 0:
     sys.exit(1)
@@ -500,31 +504,31 @@ elif len(pri_first_sets) != len(dep_first_sets):
     print("WARNING: ...lengths differ, dep[i>=len(pri)] paired with last pri...")
 ```
 
-Permite cualquier configuración con al menos 1 valor en cada lado. Cuando las
-longitudes difieren, el código de iteración usa
-`pri_first_sets[min(idx, len(pri)-1)]`, es decir, los dependientes con índice
-mayor o igual a `len(pri)` se parean con el último primary.
+Allows any configuration with at least 1 value on each side. When lengths
+differ, the iteration code uses
+`pri_first_sets[min(idx, len(pri)-1)]`, that is, dependents with index greater
+than or equal to `len(pri)` are paired with the last primary.
 
-### Cuándo es seguro usar longitudes distintas
+### When it's safe to use different lengths
 
-**Seguro** — todos los pri techs comparten el mismo baseline y se mueven al
-mismo new value. Caso típico: UDC shares (RE/non-RE summing to constant).
-Ejemplo: baselines RE = -0.3 para los 8 RE techs, LHS samplea -0.5, todos los
-8 RE pasan a -0.5, delta uniforme = -0.2. YES_ADD propaga -0.2 a los 13 dep
-correctamente.
+**Safe** — all pri techs share the same baseline and move to the same new
+value. Typical case: UDC shares (RE/non-RE summing to constant).
+Example: RE baselines = -0.3 for all 8 RE techs, LHS samples -0.5, all 8 RE go
+to -0.5, uniform delta = -0.2. YES_ADD propagates -0.2 to all 13 dep
+correctly.
 
-**No seguro** — pri techs con baselines distintos. Los últimos dep heredarían
-el delta del último pri específicamente, lo que típicamente no es lo esperado.
-En ese caso usar igualdad estricta o el fixer 3b vía `Setup.RE_Param/NonRE_Param`.
+**Not safe** — pri techs with different baselines. The last dep rows would
+inherit the delta from the last specific pri, which is typically not what's
+expected. In that case use strict equality or the 3b fixer via
+`Setup.RE_Param/NonRE_Param`.
 
-### Cómo verificar tras correr un experimento
+### How to verify after running an experiment
 
-Buscar en el stdout del experimento las líneas tipo:
+Look in the experiment stdout for lines like:
 ```
 WARNING: Dependency rows N (primary) and M (dependent) have different lengths...
 ```
 
-Si aparece y NO esperabas longitudes distintas → revisa la fila citada.
-Si aparece y es intencional → confirma que los baselines del primary son
-uniformes inspeccionando el bloque del parámetro en `Scenario1.txt`.
-
+If it appears and you did NOT expect different lengths → check the cited row.
+If it appears and is intentional → confirm that the primary baselines are
+uniform by inspecting the parameter block in `Scenario1.txt`.
