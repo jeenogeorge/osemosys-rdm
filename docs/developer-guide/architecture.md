@@ -116,7 +116,8 @@ Contains all shared functions:
 | `generate_df_per_param()` | Create DataFrames |
 | `run_osemosys()` | Execute solver |
 | `data_processor_new()` | Process solver output |
-| `interpolation_non_linear_final()` | Non-linear trajectory to scaled final value |
+| `interpolation_non_linear_final()` | Non-linear trajectory to scaled final value (`Explored_Parameter_of_X = Final_Value`) |
+| `interpolation_multiplicative_final()` | Shape-preserving trajectory via year-dependent ramp (`Explored_Parameter_of_X = Final_Value_Multiplicative`) |
 | `interpolation_linear()` | Linear trajectory to scaled final value |
 | `interpolation_logistic_trajectory()` | S-curve trajectory to scaled final value |
 | `interpolation_constant_trajectory()` | Freeze values at uncertainty start year |

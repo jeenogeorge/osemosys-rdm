@@ -70,13 +70,32 @@ The main utility module containing core functions.
 ```{eval-rst}
 .. py:function:: interpolation_non_linear_final(time_list, value_list, multiplier, last_year, initial_year)
 
-   Non-linear interpolation to a modified final value.
+   Non-linear interpolation to a modified final value. Rescales each annual
+   delta by ``m_new/m_original``. For flat baselines (``|m_original| < 1e-9``)
+   the function applies a small damped per-year increment to avoid the spurious
+   linear ramp the original implementation produced.
    
    :param time_list: List of years
    :param value_list: List of base values
    :param multiplier: Final value multiplier
    :param last_year: Last year of analysis
    :param initial_year: Year uncertainty begins
+   :return: List of new values
+
+.. py:function:: interpolation_multiplicative_final(time_list, value_list, final_multiplier, finyear, initial_year)
+
+   Shape-preserving perturbation. Multiplies each baseline point by a year-
+   dependent ramp that grows linearly from 1.0 at ``initial_year`` to
+   ``final_multiplier`` at ``finyear`` (clamped to 1.0 before ``initial_year``
+   and to ``final_multiplier`` after ``finyear``). Codos, plateaus, and other
+   inflections in the baseline are preserved by construction because only the
+   magnitude is rescaled.
+
+   :param time_list: List of years
+   :param value_list: List of base values
+   :param final_multiplier: Multiplier applied at ``finyear``
+   :param finyear: Last year of analysis
+   :param initial_year: Year uncertainty begins (multiplier is 1.0 here)
    :return: List of new values
 
 .. py:function:: interpolation_constant_trajectory(time_list, value_list, initial_year)

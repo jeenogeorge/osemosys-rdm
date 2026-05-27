@@ -249,9 +249,17 @@ Selects curve based on LHS sample
 
 | Value | Description |
 |-------|-------------|
-| Final_Value | Modify the final year value |
+| Final_Value | Modify the final year value (rescales each annual delta by `m_new/m_original`) |
+| Final_Value_Multiplicative | Multiply the baseline by a year-dependent ramp (1.0 at `Initial_Year_of_Uncertainty`, sampled multiplier at the last year). Preserves codos/inflexiones by construction — use this when the baseline is non-monotonic (codos, plateaus, or magnitudes `< 1` like `InputActivityRatio`/`OutputActivityRatio`). |
 | Multiplier | Apply constant multiplier |
 | Change_Curve | Change the profile/shape |
+
+```{tip}
+**When to choose `Final_Value` vs `Final_Value_Multiplicative` for `Time_Series`:**
+
+- `Final_Value` works well for **monotonic** baselines with non-trivial slope (e.g., demand growing roughly linearly). It rescales each year's incremental change so the trajectory still ends at `final × multiplier`.
+- `Final_Value_Multiplicative` is the **shape-preserving** choice. Pick it whenever the baseline has codos, plateaus, or operates in `[0, 1]` (activity ratios). Each baseline point is scaled by a linear ramp that grows from 1.0 at the uncertainty year to the sampled multiplier at the last year — the geometry of the baseline (relative drops, plateaus, peaks) is preserved exactly.
+```
 
 ### Example Entries
 

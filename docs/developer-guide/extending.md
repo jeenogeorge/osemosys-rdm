@@ -10,7 +10,8 @@ OSeMOSYS-RDM supports several mathematical types for uncertainty propagation:
 
 | Type | Function | Description |
 |------|----------|-------------|
-| Time_Series | `interpolation_non_linear_final()` | Non-linear to final value |
+| Time_Series (`Final_Value`) | `interpolation_non_linear_final()` | Non-linear to final value (rescales annual deltas) |
+| Time_Series (`Final_Value_Multiplicative`) | `interpolation_multiplicative_final()` | Year-dependent ramp multiplied against the baseline; preserves codos/inflexiones |
 | Constant | `interpolation_constant_trajectory()` | Maintain constant |
 | Linear | `interpolation_linear()` | Linear interpolation |
 | Logistic | `interpolation_logistic_trajectory()` | S-curve |
@@ -19,6 +20,10 @@ OSeMOSYS-RDM supports several mathematical types for uncertainty propagation:
 
 ```{note}
 **When to use Step vs other types:** All types except `Step` and `Constant` compute `new_final = baseline_final * multiplier`. If the baseline final year value is 0, these types cannot generate variability. Use `Step` for parameters with zero-baseline values — it applies an absolute target value directly.
+```
+
+```{note}
+**`Final_Value` vs `Final_Value_Multiplicative` for `Time_Series`:** `Final_Value` rescales each year's delta by `m_new/m_original` — works well for monotonic baselines with non-trivial slope. `Final_Value_Multiplicative` scales each point by a linear ramp from 1.0 (at `Initial_Year_of_Uncertainty`) to the sampled multiplier (at the last year) — use this whenever the baseline has codos, plateaus, or magnitudes `< 1` (e.g., `InputActivityRatio`, `OutputActivityRatio`). It preserves the shape of the baseline by construction.
 ```
 
 ### Creating a New Type
