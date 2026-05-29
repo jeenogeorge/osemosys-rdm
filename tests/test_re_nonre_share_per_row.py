@@ -2,9 +2,11 @@
 
 Carga la función desde 0_experiment_manager.py sin ejecutar el script entero,
 construye un experiment_dictionary mínimo + un inherited_scenarios con datos
-sintéticos, invoca el fixer y verifica el invariante por (R, Y):
+sintéticos, invoca el fixer y verifica el invariante POR-COEFICIENTE por (R, Y):
 
-  sum(RE_values) + sum(NonRE_values) == Sum_To_Value
+  |mean(RE_values)| + coef_NonRE == Sum_To_Value
+
+(cada non-RE queda en Sum_To_Value - |mean(RE)|, igual que Path B).
 """
 from __future__ import annotations
 
@@ -45,27 +47,38 @@ def make_param_data(entries):
     }
 
 
-def assert_sum(pdata, re_techs, nonre_techs, expected, year_filter=None):
-    """Verifica que sum(RE_values) + sum(NonRE_values) == expected por (R, Y)."""
+def assert_share(pdata, re_techs, nonre_techs, expected, year_filter=None):
+    """Verifica el invariante por-coeficiente |mean(RE)| + coef_NonRE == expected.
+
+    Para cada (R, Y): calcula |mean(valores RE)| y comprueba que cada non-RE
+    quede en expected - |mean(RE)|.
+    """
     re_set = set(re_techs)
     nonre_set = set(nonre_techs)
-    sums = {}
+    re_vals = {}
+    nonre_vals = {}
     for i, v in enumerate(pdata["value"]):
         r = pdata["r"][i]
         t = pdata["t"][i]
         y = pdata["y"][i]
         if year_filter is not None and int(y) < year_filter:
             continue
-        if t in re_set or t in nonre_set:
-            sums.setdefault((r, y), 0.0)
-            sums[(r, y)] += float(v)
-    for (r, y), s in sums.items():
-        assert abs(s - expected) < 1e-9, f"({r}, {y}): suma {s} != {expected}"
-    return len(sums)
+        if t in re_set:
+            re_vals.setdefault((r, y), []).append(float(v))
+        elif t in nonre_set:
+            nonre_vals.setdefault((r, y), []).append(float(v))
+    pairs = set(re_vals) & set(nonre_vals)
+    for (r, y) in pairs:
+        re_coef = abs(sum(re_vals[(r, y)]) / len(re_vals[(r, y)]))
+        expected_nonre = expected - re_coef
+        for nv in nonre_vals[(r, y)]:
+            assert abs(nv - expected_nonre) < 1e-9, \
+                f"({r}, {y}): non-RE {nv} != {expected_nonre} (|mean(RE)|={re_coef})"
+    return len(pairs)
 
 
 def test_basic_sum_to_one(fixer):
-    """Caso típico: RE perturbado a -0.5, non-RE debe quedar en 1.5/13 ≈ 0.115 cada uno."""
+    """Caso típico: RE perturbado a -0.5, cada non-RE debe quedar en 1.0-0.5=0.5."""
     entries = []
     # RE: 8 techs todos a -0.5 (ya perturbados)
     re_techs = ["PWRSOL001", "PWRBIO001", "PWRWND001", "PWRWND001S",
@@ -93,11 +106,11 @@ def test_basic_sum_to_one(fixer):
     }
     corrections = fixer(inh, ["ScenA"], [1], exp_dict, log_dir=None)
     pdata = inh["ScenA"][1]["UDCMultiplierActivity"]
-    n_pairs = assert_sum(pdata, re_techs, nonre_techs, 1.0)
+    n_pairs = assert_share(pdata, re_techs, nonre_techs, 1.0)
     assert n_pairs == 2, f"esperados 2 (R,Y) pairs, got {n_pairs}"
 
-    # Cada non-RE debe ser (1.0 - 8*-0.5) / 13 = 5.0/13 ≈ 0.3846
-    expected_nonre = (1.0 - 8 * (-0.5)) / 13
+    # Cada non-RE debe ser 1.0 - |mean(RE)| = 1.0 - 0.5 = 0.5
+    expected_nonre = 1.0 - abs(-0.5)
     for i, t in enumerate(pdata["t"]):
         if t in nonre_techs:
             assert abs(float(pdata["value"][i]) - expected_nonre) < 1e-9, \
@@ -122,9 +135,9 @@ def test_default_sum_to_value(fixer):
     }
     fixer(inh, ["ScenA"], [1], exp_dict, log_dir=None)
     pdata = inh["ScenA"][1]["UDCMultiplierActivity"]
-    # Expected: NonRE = 1.0 - (-0.4) = 1.4
+    # Expected: NonRE = 1.0 - |-0.4| = 0.6
     nonre_val = float(pdata["value"][1])
-    assert abs(nonre_val - 1.4) < 1e-9, f"NonRE={nonre_val}, expected 1.4"
+    assert abs(nonre_val - 0.6) < 1e-9, f"NonRE={nonre_val}, expected 0.6"
     print("  test_default_sum_to_value: OK")
 
 
@@ -146,11 +159,11 @@ def test_custom_sum_to_value(fixer):
     }
     fixer(inh, ["ScenA"], [1], exp_dict, log_dir=None)
     pdata = inh["ScenA"][1]["UDCMultiplierActivity"]
-    # Expected: target_nonre_total = 0.5 - (-0.2) = 0.7, /2 each = 0.35
+    # Expected: cada non-RE = 0.5 - |-0.2| = 0.3
     for i, t in enumerate(pdata["t"]):
         if t in ("PWRCBM001", "PWRNGS001"):
-            assert abs(float(pdata["value"][i]) - 0.35) < 1e-9, \
-                f"NonRE {t} = {pdata['value'][i]}, expected 0.35"
+            assert abs(float(pdata["value"][i]) - 0.3) < 1e-9, \
+                f"NonRE {t} = {pdata['value'][i]}, expected 0.3"
     print("  test_custom_sum_to_value: OK")
 
 
@@ -176,9 +189,9 @@ def test_year_filter(fixer):
     fixer(inh, ["ScenA"], [1], exp_dict, log_dir=None)
     pdata = inh["ScenA"][1]["UDCMultiplierActivity"]
     # 2025 no debe haberse tocado: PWRCBM001=0.7
-    # 2030 sí: PWRCBM001 = 1.0 - (-0.5) = 1.5
+    # 2030 sí: PWRCBM001 = 1.0 - |-0.5| = 0.5
     assert abs(float(pdata["value"][1]) - 0.7) < 1e-9, "2025 no debió tocarse"
-    assert abs(float(pdata["value"][3]) - 1.5) < 1e-9, "2030 debió corregirse a 1.5"
+    assert abs(float(pdata["value"][3]) - 0.5) < 1e-9, "2030 debió corregirse a 0.5"
     print("  test_year_filter: OK")
 
 
@@ -206,9 +219,10 @@ def test_opt_in_no_re_techs(fixer):
 
 
 def test_no_op_when_already_satisfies(fixer):
-    """Si los valores ya satisfacen la suma, no debe haber correcciones."""
+    """Si los valores ya satisfacen el invariante, no debe haber correcciones."""
+    # non-RE ya en 1.0 - |-0.5| = 0.5 -> sin corrección
     entries = [("RE1", "PWRSOL001", "2030", "PWRREN", -0.5),
-               ("RE1", "PWRCBM001", "2030", "PWRREN", 1.5)]
+               ("RE1", "PWRCBM001", "2030", "PWRREN", 0.5)]
     inh = {"ScenA": {1: {"UDCMultiplierActivity": make_param_data(entries)}}}
     exp_dict = {
         18: {

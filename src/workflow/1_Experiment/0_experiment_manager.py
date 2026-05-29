@@ -497,7 +497,13 @@ def fix_emission_limit_consistency(inherited_scenarios, scenario_list, all_futur
 #   perturbed by the main pipeline). For each (Region, Year) the non-RE
 #   side is rewritten uniformly to:
 #
-#       new_NonRE_value = (Sum_To_Value - sum(RE_values_in_(R,Y))) / len(NonRE_Techs)
+#       new_NonRE_value = Sum_To_Value - |mean(RE_values_in_(R,Y))|
+#
+#   This enforces a PER-COEFFICIENT share invariant
+#   (|coef_RE| + coef_NonRE == Sum_To_Value), matching Path B (YES_ADD/DEP).
+#   Assumptions: the RE group is uniform (all RE techs share one coefficient,
+#   as is the case for a share constraint) and follows the sign convention
+#   RE negative / non-RE positive (hence the abs()).
 #
 #   Per row design: configuration lives next to the uncertainty that needs
 #   it. Rows without these columns populated are unaffected.
@@ -512,9 +518,10 @@ def fix_re_nonre_share_per_row(inherited_scenarios, scenario_list, all_futures,
     NonRE_Techs populated, this function:
       1. Identifies the parameter to adjust (Exact_Parameters_Involved_in_Osemosys).
       2. Identifies the optional second set (e.g. UDC name).
-      3. For each (Region, Year), reads the perturbed values of RE_Techs,
-         computes the residual `Sum_To_Value - sum(RE)`, and rewrites the
-         NonRE_Techs uniformly so the total matches.
+      3. For each (Region, Year), reads the perturbed values of RE_Techs and
+         rewrites each NonRE_Techs coefficient to `Sum_To_Value - |mean(RE)|`,
+         enforcing the per-coefficient share invariant
+         `|coef_RE| + coef_NonRE == Sum_To_Value`.
 
     Returns
     -------
@@ -610,8 +617,13 @@ def fix_re_nonre_share_per_row(inherited_scenarios, scenario_list, all_futures,
                     if re_found == 0:
                         continue
 
-                    target_nonre_total = sum_to_value - re_sum
-                    new_value_each = target_nonre_total / len(nonre_techs)
+                    # Per-coefficient share invariant: |coef_RE| + coef_NonRE
+                    # == Sum_To_Value. The RE group is uniform (all techs share
+                    # one coefficient), so its magnitude is the mean over the RE
+                    # techs actually present. abs() handles the sign convention
+                    # (RE coefficients are negative, non-RE positive).
+                    re_coef = abs(re_sum / re_found)
+                    new_value_each = sum_to_value - re_coef
 
                     for t in nonre_techs:
                         i = idx_by_key.get((r, t, y))
