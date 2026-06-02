@@ -239,6 +239,46 @@ def test_no_op_when_already_satisfies(fixer):
     print("  test_no_op_when_already_satisfies: OK")
 
 
+def test_multiple_second_sets(fixer):
+    """Dos UDC en la misma fila: ambos deben corregirse independientemente.
+
+    Regresión del bug 'solo se lee el primer second-set' + colisión de claves:
+    el mismo tech aparece bajo PWRREN y PWRREN2 en el mismo (R, Y) pero con
+    valores RE distintos, así que cada UDC tiene un target non-RE distinto.
+      - PWRREN : RE=-0.3 -> non-RE = 1.0 - 0.3 = 0.7
+      - PWRREN2: RE=-0.6 -> non-RE = 1.0 - 0.6 = 0.4
+    Con el código viejo PWRREN2 quedaba intacto (en 0.9).
+    """
+    entries = [
+        # UDC PWRREN
+        ("RE1", "PWRSOL001", "2030", "PWRREN", -0.3),
+        ("RE1", "PWRCBM001", "2030", "PWRREN", 0.9),   # debe pasar a 0.7
+        # UDC PWRREN2 (mismo tech, mismo (R,Y), valor RE distinto)
+        ("RE1", "PWRSOL001", "2030", "PWRREN2", -0.6),
+        ("RE1", "PWRCBM001", "2030", "PWRREN2", 0.9),  # debe pasar a 0.4
+    ]
+    inh = {"ScenA": {1: {"UDCMultiplierActivity": make_param_data(entries)}}}
+    exp_dict = {
+        18: {
+            "RE_Techs": ["PWRSOL001"],
+            "NonRE_Techs": ["PWRCBM001"],
+            "Sum_To_Value": 1.0,
+            "Exact_Parameters_Involved_in_Osemosys": ["UDCMultiplierActivity"],
+            "Involved_Second_Sets_in_Osemosys": ["PWRREN", "PWRREN2"],
+            "Initial_Year_of_Uncertainty": 2030,
+        }
+    }
+    corrections = fixer(inh, ["ScenA"], [1], exp_dict, log_dir=None)
+    pdata = inh["ScenA"][1]["UDCMultiplierActivity"]
+    # index 1 = non-RE bajo PWRREN, index 3 = non-RE bajo PWRREN2
+    assert abs(float(pdata["value"][1]) - 0.7) < 1e-9, \
+        f"PWRREN non-RE = {pdata['value'][1]}, expected 0.7"
+    assert abs(float(pdata["value"][3]) - 0.4) < 1e-9, \
+        f"PWRREN2 non-RE = {pdata['value'][3]}, expected 0.4 (segundo UDC ignorado por el bug)"
+    assert len(corrections) == 2, f"esperadas 2 correcciones (una por UDC), got {len(corrections)}"
+    print("  test_multiple_second_sets: OK")
+
+
 def test_log_written(fixer):
     """Si hay correcciones y log_dir, debe escribirse el log."""
     entries = [("RE1", "PWRSOL001", "2030", "PWRREN", -0.5),
@@ -275,6 +315,7 @@ def main() -> int:
         ("test_year_filter", test_year_filter),
         ("test_opt_in_no_re_techs", test_opt_in_no_re_techs),
         ("test_no_op_when_already_satisfies", test_no_op_when_already_satisfies),
+        ("test_multiple_second_sets", test_multiple_second_sets),
         ("test_log_written", test_log_written),
     ]:
         try:

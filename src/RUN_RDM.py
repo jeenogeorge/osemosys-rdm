@@ -44,6 +44,12 @@ region = str( setup_table.loc[ 0 ,'Region'] )
 'Parameters to print'
 parameters_to_print = book.parse( 'To_Print' , 0)
 
+'Keep .sol/.lp files for inspection instead of deleting them (optional Setup flag, default No)'
+if 'Keep_Sol_Files' in setup_table.columns:
+    keep_sol_files = str( setup_table.loc[ 0 ,'Keep_Sol_Files'] ).strip().lower() == 'yes'
+else:
+    keep_sol_files = False
+
 if run_base_future == 'Yes':
     # ' Step 1: Delete ResultsPath param'
     
@@ -220,7 +226,7 @@ if run_base_future == 'Yes':
     print('Step 9 finished')
 
     # Save solution status summary for all base futures
-    check_sol_status()
+    check_sol_status(keep_sol_files=keep_sol_files)
 
     end_1 = time.time()
     time_elapsed_1 = -start1 + end_1
@@ -255,7 +261,7 @@ if run_RDM == 'Yes':
     print('Step 11 finished\n')
 
     # Save solution status summary for all futures (base + RDM)
-    check_sol_status()
+    check_sol_status(keep_sol_files=keep_sol_files)
 
     end_3 = time.time()
     time_elapsed_3 = -start3 + end_3
