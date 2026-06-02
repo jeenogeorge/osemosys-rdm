@@ -58,7 +58,9 @@ def _delete_solver_files(sol_path):
         os.remove(lp_path)
 
 
-def main():
+def main(keep_sol_files=False):
+    # When keep_sol_files is True, the .sol/.lp files are NOT deleted after
+    # reading their status, so they can be inspected manually afterwards.
     # Resolve paths relative to this script
     script_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.abspath(os.path.join(script_dir, '..', '..'))
@@ -123,9 +125,12 @@ def main():
         for name, status in results:
             f.write(f'{name}: {status}\n')
 
-    # Delete .sol and .lp files after reading all statuses
-    for sol_path in sol_files_to_delete:
-        _delete_solver_files(sol_path)
+    # Delete .sol and .lp files after reading all statuses (unless asked to keep them)
+    if keep_sol_files:
+        print(f'Keeping {len(sol_files_to_delete)} .sol/.lp file(s) for inspection (Keep_Sol_Files=Yes).')
+    else:
+        for sol_path in sol_files_to_delete:
+            _delete_solver_files(sol_path)
 
     print(f'Results written to: {output_path}')
     print(f'{len(results)} futures processed: {optimal_count} optimal, {infeasible_count} infeasible')

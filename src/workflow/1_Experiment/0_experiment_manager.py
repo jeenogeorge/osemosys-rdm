@@ -497,7 +497,13 @@ def fix_emission_limit_consistency(inherited_scenarios, scenario_list, all_futur
 #   perturbed by the main pipeline). For each (Region, Year) the non-RE
 #   side is rewritten uniformly to:
 #
-#       new_NonRE_value = (Sum_To_Value - sum(RE_values_in_(R,Y))) / len(NonRE_Techs)
+#       new_NonRE_value = Sum_To_Value - |mean(RE_values_in_(R,Y))|
+#
+#   This enforces a PER-COEFFICIENT share invariant
+#   (|coef_RE| + coef_NonRE == Sum_To_Value), matching Path B (YES_ADD/DEP).
+#   Assumptions: the RE group is uniform (all RE techs share one coefficient,
+#   as is the case for a share constraint) and follows the sign convention
+#   RE negative / non-RE positive (hence the abs()).
 #
 #   Per row design: configuration lives next to the uncertainty that needs
 #   it. Rows without these columns populated are unaffected.
@@ -511,10 +517,12 @@ def fix_re_nonre_share_per_row(inherited_scenarios, scenario_list, all_futures,
     For each X_Num row in experiment_dictionary with both RE_Techs and
     NonRE_Techs populated, this function:
       1. Identifies the parameter to adjust (Exact_Parameters_Involved_in_Osemosys).
-      2. Identifies the optional second set (e.g. UDC name).
-      3. For each (Region, Year), reads the perturbed values of RE_Techs,
-         computes the residual `Sum_To_Value - sum(RE)`, and rewrites the
-         NonRE_Techs uniformly so the total matches.
+      2. Identifies every optional second set (e.g. UDC names) and enforces the
+         invariant independently for each one.
+      3. For each (Region, Year), reads the perturbed values of RE_Techs and
+         rewrites each NonRE_Techs coefficient to `Sum_To_Value - |mean(RE)|`,
+         enforcing the per-coefficient share invariant
+         `|coef_RE| + coef_NonRE == Sum_To_Value`.
 
     Returns
     -------
@@ -538,12 +546,15 @@ def fix_re_nonre_share_per_row(inherited_scenarios, scenario_list, all_futures,
             continue
         parameter = params[0]
 
+        # Honor EVERY second set listed (e.g. multiple UDC names), not just the
+        # first. Each second set defines an INDEPENDENT sum-to-constant group, so
+        # the invariant is enforced per second-set value in the loop below.
+        # A row with no real second set falls back to [None] (the parameter has
+        # no second dimension to filter on).
         second_sets = row_info.get('Involved_Second_Sets_in_Osemosys') or []
-        second_set = None
-        for cand in second_sets:
-            if cand and cand != '-':
-                second_set = cand
-                break
+        second_set_values = [c for c in second_sets if c and c != '-']
+        if not second_set_values:
+            second_set_values = [None]
 
         initial_year = row_info.get('Initial_Year_of_Uncertainty')
         try:
@@ -553,7 +564,7 @@ def fix_re_nonre_share_per_row(inherited_scenarios, scenario_list, all_futures,
 
         n_rows_active += 1
         print(f'    RE/NonRE Fix [X_Num={x_num}]: parameter={parameter}, '
-              f'second_set={second_set!r}, |RE|={len(re_techs)}, |NonRE|={len(nonre_techs)}, '
+              f'second_sets={second_set_values!r}, |RE|={len(re_techs)}, |NonRE|={len(nonre_techs)}, '
               f'Sum_To_Value={sum_to_value}, from_year={initial_year_int}')
 
         for scen in scenario_list:
@@ -566,62 +577,71 @@ def fix_re_nonre_share_per_row(inherited_scenarios, scenario_list, all_futures,
                 pdata = sd.get(parameter)
                 if pdata is None:
                     continue
-                # Detect optional second-set column key (e.g. 'u' for UDC)
-                second_key = None
-                if second_set is not None:
-                    for candidate in ('u', 'e', 'f', 's'):
-                        if candidate in pdata and second_set in [str(x) for x in pdata[candidate]]:
-                            second_key = candidate
-                            break
+                # Each second set (UDC) is an independent sum-to-constant group;
+                # process them one at a time so techs shared across UDCs at the
+                # same (r, y) never collide in idx_by_key below.
+                for second_set in second_set_values:
+                    # Detect optional second-set column key (e.g. 'u' for UDC)
+                    second_key = None
+                    if second_set is not None:
+                        for candidate in ('u', 'e', 'f', 's'):
+                            if candidate in pdata and second_set in [str(x) for x in pdata[candidate]]:
+                                second_key = candidate
+                                break
 
-                # Build a lookup: (r, t, y) -> idx, filtered by second_set when relevant
-                idx_by_key = {}
-                n_entries = len(pdata.get('value', []))
-                for i in range(n_entries):
-                    r = str(pdata['r'][i])
-                    t = str(pdata['t'][i])
-                    y = str(pdata['y'][i])
-                    if second_key is not None and str(pdata[second_key][i]) != second_set:
-                        continue
-                    idx_by_key[(r, t, y)] = i
-
-                # Collect all (r, y) pairs the RE side covers
-                ry_pairs = set()
-                for t in re_techs:
-                    for (r, tt, y), _i in idx_by_key.items():
-                        if tt == t:
-                            ry_pairs.add((r, y))
-
-                for (r, y) in sorted(ry_pairs):
-                    if initial_year_int is not None:
-                        try:
-                            if int(y) < initial_year_int:
-                                continue
-                        except (TypeError, ValueError):
-                            pass
-
-                    re_sum = 0.0
-                    re_found = 0
-                    for t in re_techs:
-                        i = idx_by_key.get((r, t, y))
-                        if i is not None:
-                            re_sum += float(pdata['value'][i])
-                            re_found += 1
-                    if re_found == 0:
-                        continue
-
-                    target_nonre_total = sum_to_value - re_sum
-                    new_value_each = target_nonre_total / len(nonre_techs)
-
-                    for t in nonre_techs:
-                        i = idx_by_key.get((r, t, y))
-                        if i is None:
+                    # Build a lookup: (r, t, y) -> idx, filtered by second_set when relevant
+                    idx_by_key = {}
+                    n_entries = len(pdata.get('value', []))
+                    for i in range(n_entries):
+                        r = str(pdata['r'][i])
+                        t = str(pdata['t'][i])
+                        y = str(pdata['y'][i])
+                        if second_key is not None and str(pdata[second_key][i]) != second_set:
                             continue
-                        old = float(pdata['value'][i])
-                        new = round(new_value_each, 10)
-                        if abs(old - new) > 1e-9:
-                            pdata['value'][i] = new
-                            corrections.append((x_num, scen, fut, r, y, t, old, new))
+                        idx_by_key[(r, t, y)] = i
+
+                    # Collect all (r, y) pairs the RE side covers
+                    ry_pairs = set()
+                    for t in re_techs:
+                        for (r, tt, y), _i in idx_by_key.items():
+                            if tt == t:
+                                ry_pairs.add((r, y))
+
+                    for (r, y) in sorted(ry_pairs):
+                        if initial_year_int is not None:
+                            try:
+                                if int(y) < initial_year_int:
+                                    continue
+                            except (TypeError, ValueError):
+                                pass
+
+                        re_sum = 0.0
+                        re_found = 0
+                        for t in re_techs:
+                            i = idx_by_key.get((r, t, y))
+                            if i is not None:
+                                re_sum += float(pdata['value'][i])
+                                re_found += 1
+                        if re_found == 0:
+                            continue
+
+                        # Per-coefficient share invariant: |coef_RE| + coef_NonRE
+                        # == Sum_To_Value. The RE group is uniform (all techs share
+                        # one coefficient), so its magnitude is the mean over the RE
+                        # techs actually present. abs() handles the sign convention
+                        # (RE coefficients are negative, non-RE positive).
+                        re_coef = abs(re_sum / re_found)
+                        new_value_each = sum_to_value - re_coef
+
+                        for t in nonre_techs:
+                            i = idx_by_key.get((r, t, y))
+                            if i is None:
+                                continue
+                            old = float(pdata['value'][i])
+                            new = round(new_value_each, 10)
+                            if abs(old - new) > 1e-9:
+                                pdata['value'][i] = new
+                                corrections.append((x_num, scen, fut, r, y, t, old, new))
 
     if log_dir and corrections:
         os.makedirs(log_dir, exist_ok=True)

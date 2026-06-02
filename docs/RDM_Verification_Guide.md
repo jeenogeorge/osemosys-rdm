@@ -249,8 +249,10 @@ that rows X_Num 16-17 are being processed (look for
 requires coupling defines its RE and non-RE technology lists in its own opt-in
 columns, alongside its LHS range, initial year, etc.
 
-There are **two paths** that are functionally equivalent; choose one based on
-preference:
+There are **two paths**. Both enforce the same per-coefficient share invariant
+(`|coef_RE| + coef_NonRE = Sum_To_Value`) for the typical case of uniform share
+coefficients, so for that case they are functionally equivalent; choose one
+based on preference:
 
 ### Path A — Opt-in columns `RE_Techs` / `NonRE_Techs` / `Sum_To_Value` (recommended)
 
@@ -267,9 +269,15 @@ Rows with empty `RE_Techs` or `NonRE_Techs` are not affected. The fixer:
 
 1. Reads the **already-perturbed** values of each technology in `RE_Techs` per
    `(Region, Year)` (from the row's `Initial_Year_of_Uncertainty`).
-2. Computes `target_nonre_total = Sum_To_Value - sum(RE_values_in_(R,Y))`.
+2. Computes the RE coefficient magnitude `re_coef = |mean(RE_values_in_(R,Y))|`.
 3. Rewrites **each** technology in `NonRE_Techs` to the uniform value
-   `target_nonre_total / len(NonRE_Techs)`.
+   `Sum_To_Value - re_coef`.
+
+This enforces a **per-coefficient** share invariant
+`|coef_RE| + coef_NonRE = Sum_To_Value` — the same relationship Path B produces
+by construction (see below). Assumptions: the `RE_Techs` group is uniform (all
+share one coefficient, as is the case for a share constraint) and follows the
+sign convention RE negative / non-RE positive (hence the `abs`).
 
 Auditable logs in `Experimental_Platform/Logs/RE_NonRE_Share_Corrections/re_nonre_share_corrections.log`.
 
@@ -315,6 +323,37 @@ PWRREN  0.7  0.7 ...  0.7
 And activate the UDC: `UDCTag[RE1, PWRREN] = 1` (not `0`). Without this, the
 RDM rows will attempt to perturb indices that don't exist → **silently with no
 effect**.
+
+> **`UDCTag` semantics** (verified in `model.v.5.4.txt`, constraints `UDC1`/`UDC2`):
+> `0` = inequality (`Σ ≤ UDCConstant`), `1` = **equality** (`Σ = UDCConstant`),
+> `-1` (default) = constraint not generated. So `UDCTag=1` imposes an *exact*
+> renewable share. The committed BAU keeps `UDCTag[RE1,PWRREN]=0` with no PWRREN
+> multipliers on purpose, so the reference case is unconstrained.
+
+#### Generating the RE-share base without touching the committed BAU
+
+Rather than hand-editing `Scenario1.txt` (the committed BAU), use the
+reproducible generator:
+
+```
+python make_re_share_base.py
+```
+
+It reads the committed BAU and writes a **separate** base file to
+`src/workflow/RE_Share_Base/Scenario1.txt` (outside `0_Scenarios/`, so
+`RUN_RDM.py` does not auto-run it as an extra scenario) with:
+
+- `UDCTag[RE1,PWRREN] = 1`;
+- PWRREN `UDCMultiplierActivity` slices for the RE / non-RE techs, coefficient
+  `0` before `FROM_YEAR` (2030, matching `Initial_Year_of_Uncertainty`, so the
+  constraint is `0 = 0` and inert in historical years → avoids historical
+  infeasibility) and `-0.3` / `0.7` from 2030 onward.
+
+To run the experiment, copy that file over
+`src/workflow/0_Scenarios/Scenario1.txt` (keep a backup of the BAU to restore
+afterwards). This is the reproducible form of the manual “run Scenario2 as
+Scenario1” workaround. If the equality proves infeasible, set `UDC_TAG = "0"`
+in the generator for an inequality (renewable *floor*) instead.
 
 ### Configuration (Path A, example with UDC PWRREN)
 

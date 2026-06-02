@@ -4085,22 +4085,309 @@ def transform_output_sol_optimized(df, sheet_vars_structure, sheet_sets_structur
 
 
 
+# ---------------------------------------------------------------------------#
+# Post-processed (derived) parameters
+# ---------------------------------------------------------------------------#
+# These parameters are NOT solved by the optimiser. In the OSeMOSYS model file
+# (model.v.5.4.txt) ProductionByTechnology is declared but never used by any
+# constraint, and the ByMode/Use/Annual variants are not declared at all, so the
+# solver cannot return values for them. They are reconstructed here after solving
+# from RateOfActivity / CapitalInvestment / AccumulatedNewStorageCapacity and the
+# model inputs (OutputActivityRatio, InputActivityRatio, YearSplit, OperationalLife,
+# DiscountRateIdv, ResidualStorageCapacity), replicating the OSeMOSYS-MUIO
+# post-processing in DataFileClass.generateCSVfromCBC.
+#
+# Each derived parameter maps to the raw solver variable it needs parsed from the
+# .sol file even if that variable was not explicitly selected in the To_Print sheet.
+DERIVED_PARAMETERS = {
+    'ProductionByTechnologyByMode':        'RateOfActivity',
+    'ProductionByTechnology':              'RateOfActivity',
+    'ProductionByTechnologyAnnual':        'RateOfActivity',
+    'RateOfProductionByTechnologyByMode':  'RateOfActivity',
+    'RateOfProductionByTechnology':        'RateOfActivity',
+    'UseByTechnologyByMode':               'RateOfActivity',
+    'UseByTechnology':                     'RateOfActivity',
+    'UseByTechnologyAnnual':               'RateOfActivity',
+    'RateOfUseByTechnologyByMode':         'RateOfActivity',
+    'RateOfUseByTechnology':               'RateOfActivity',
+    'AnnualizedInvestmentCost':            'CapitalInvestment',
+    'TotalStorageCapacity':                'AccumulatedNewStorageCapacity',
+}
+
+# Canonical output columns (kept in this order at the front of the CSV/Parquet)
+_BASE_OUTPUT_COLS = [
+    'Strategy', 'Future.ID', 'REGION', 'COMMODITY', 'TECHNOLOGY', 'EMISSION', 'YEAR',
+    'TIMESLICE', 'MODE_OF_OPERATION', 'SEASON', 'DAYTYPE', 'DAILYTIMEBRACKET', 'STORAGE',
+    'STORAGEINTRADAY', 'STORAGEINTRAYEAR', 'UDC',
+]
+
+
+def _normalize_key(series):
+    """Canonical join key so that '2020.0', '2020' and 2020 all compare equal."""
+    s = series.astype(str).str.strip()
+    s = s.str.replace(r'\.0$', '', regex=True)
+    return s.replace({'nan': '', 'None': '', '<NA>': ''})
+
+
+def _locate_input_file(output_file):
+    """Find the per-future *_Input.(parquet|csv) sitting next to the .sol/.txt output."""
+    prefix = output_file.rsplit('_Output', 1)[0]
+    for cand in (prefix + '_Input.parquet', prefix + '_Input.csv'):
+        if os.path.exists(cand):
+            return cand
+    return None
+
+
+def _read_input_dataset(input_file):
+    """Read the wide stacked input dataset (one column per parameter)."""
+    if input_file is None:
+        return None
+    if input_file.endswith('.parquet'):
+        return pd.read_parquet(input_file)
+    # base-future Input.csv is comma-separated; RDM Input.csv is ';'-separated
+    with open(input_file, 'r') as fh:
+        head = fh.readline()
+    sep = ';' if head.count(';') > head.count(',') else ','
+    return pd.read_csv(input_file, sep=sep, low_memory=False)
+
+
+def _extract_long(df, name, dims, drop_zero=False):
+    """Extract a single variable/parameter from a wide stacked frame as a long
+    frame with the given dimension columns (normalised) plus a numeric value column.
+
+    drop_zero=True also discards rows whose value is exactly 0. This is needed for the
+    RDM per-future *_Input.parquet, which is a fully expanded matrix where every empty
+    cell was filled with 0 (so notna() alone would keep ~all rows as spurious zeros)."""
+    if df is None or name not in df.columns:
+        return pd.DataFrame(columns=dims + [name])
+    val = pd.to_numeric(df[name], errors='coerce')
+    mask = (val.notna() & (val != 0)) if drop_zero else val.notna()
+    keep = [c for c in dims if c in df.columns]
+    sub = df.loc[mask, keep].copy()
+    sub[name] = val[mask].values
+    for c in dims:
+        sub[c] = _normalize_key(sub[c]) if c in sub.columns else ''
+    return sub.reset_index(drop=True)
+
+
+def _annualized_investment_cost(capinv, oplife, dridv):
+    """AnnualizedInvestmentCost = rolling sum, over the last OperationalLife years,
+    of CapitalInvestment * CRF, where CRF = (1-(1+d)^-1)/(1-(1+d)^-N)."""
+    if capinv is None or capinv.empty:
+        return None
+    # Region is taken from the solver-side CapitalInvestment; OperationalLife and
+    # DiscountRateIdv are matched on technology (the RDM input dataset has no region).
+    aic = capinv.merge(oplife, on=['TECHNOLOGY'], how='left')
+    # Discount rate: prefer a technology-specific value, else a single default
+    tech_rate = {}
+    default_rate = 0.0
+    if dridv is not None and not dridv.empty:
+        ts = dridv[dridv['TECHNOLOGY'].astype(str).str.strip() != '']
+        tech_rate = dict(zip(ts['TECHNOLOGY'], ts['DiscountRateIdv']))
+        glob = dridv[dridv['TECHNOLOGY'].astype(str).str.strip() == '']['DiscountRateIdv']
+        if len(glob):
+            default_rate = float(glob.iloc[0])
+        elif len(dridv):
+            default_rate = float(dridv['DiscountRateIdv'].iloc[0])
+    aic['DiscountRateIdv'] = aic['TECHNOLOGY'].map(tech_rate)
+    aic['DiscountRateIdv'] = pd.to_numeric(aic['DiscountRateIdv'], errors='coerce').fillna(default_rate)
+    aic['OperationalLife'] = pd.to_numeric(aic['OperationalLife'], errors='coerce').fillna(1.0)
+    aic.loc[aic['OperationalLife'] < 1, 'OperationalLife'] = 1.0
+    d = aic['DiscountRateIdv']
+    N = aic['OperationalLife']
+    denom = 1 - (1 + d) ** (-N)
+    crf = ((1 - (1 + d) ** (-1)) / denom).where(denom != 0, 0.0)
+    aic['CIxCRF'] = aic['CapitalInvestment'] * crf
+    aic['YEAR_i'] = pd.to_numeric(aic['YEAR'], errors='coerce')
+    aic = aic.dropna(subset=['YEAR_i'])
+    aic['YEAR_i'] = aic['YEAR_i'].astype(int)
+    parts = []
+    for _, g in aic.groupby(['REGION', 'TECHNOLOGY']):
+        n = int(g['OperationalLife'].iloc[0])
+        g = g.sort_values('YEAR_i').copy()
+        s = g.set_index('YEAR_i')['CIxCRF']
+        full = s.reindex(range(s.index.min(), s.index.max() + 1), fill_value=0.0)
+        rolled = full.rolling(window=n, min_periods=1).sum()
+        g['AnnualizedInvestmentCost'] = rolled.reindex(s.index).values
+        parts.append(g)
+    return pd.concat(parts, ignore_index=True) if parts else None
+
+
+def compute_derived_parameters(df_output_sol, input_df, requested, strategy, fut_id):
+    """Reconstruct the requested post-processed parameters as long frames (one value
+    column each), ready to be concatenated to the wide stacked solver output."""
+    frames = []
+
+    def emit(df, value_col, dims):
+        """Shape a computed frame into the canonical wide stacked layout, dropping zeros."""
+        if df is None or len(df) == 0:
+            return None
+        res = pd.DataFrame()
+        res['Strategy'] = [strategy] * len(df)
+        res['Future.ID'] = [fut_id] * len(df)
+        for c in _BASE_OUTPUT_COLS[2:]:
+            res[c] = df[c].values if (c in dims and c in df.columns) else ''
+        res[value_col] = pd.to_numeric(df[value_col], errors='coerce').fillna(0.0).values
+        res = res[res[value_col] != 0]
+        return res if len(res) else None
+
+    # RateOfActivity carries the region (solver output). The activity ratios and YearSplit
+    # come from the model inputs, which (in the RDM per-future dataset) have no region column
+    # and are zero-filled; so they are read without region (region is taken from RateOfActivity)
+    # and with zeros dropped. The join is region-agnostic, matching the single-region
+    # OSeMOSYS-MUIO post-processing (which joins on technology/mode/timeslice/year).
+    roa = _extract_long(df_output_sol, 'RateOfActivity',
+                        ['REGION', 'TECHNOLOGY', 'TIMESLICE', 'MODE_OF_OPERATION', 'YEAR'])
+    oar = _extract_long(input_df, 'OutputActivityRatio',
+                        ['COMMODITY', 'TECHNOLOGY', 'MODE_OF_OPERATION', 'YEAR'], drop_zero=True)
+    iar = _extract_long(input_df, 'InputActivityRatio',
+                        ['COMMODITY', 'TECHNOLOGY', 'MODE_OF_OPERATION', 'YEAR'], drop_zero=True)
+    ys = _extract_long(input_df, 'YearSplit', ['TIMESLICE', 'YEAR'], drop_zero=True)
+
+    def flow_family(ratio, names):
+        """Production/Use family: ByMode, summed-over-mode, annual, and their rates."""
+        if not any(n in requested for n in names.values()):
+            return
+        if roa.empty or ratio.empty:
+            return
+        ratio_col = ratio.columns[-1]
+        base = roa.merge(ratio, on=['TECHNOLOGY', 'MODE_OF_OPERATION', 'YEAR'], how='inner')
+        if base.empty:
+            return
+        # Rate*ByMode = ratio * RateOfActivity ; *ByMode = ratio * YearSplit * RateOfActivity
+        base['rate_by_mode'] = base['RateOfActivity'] * base[ratio_col]
+        if not ys.empty:
+            base = base.merge(ys, on=['TIMESLICE', 'YEAR'], how='left')
+            base['YearSplit'] = pd.to_numeric(base['YearSplit'], errors='coerce').fillna(0.0)
+        else:
+            base['YearSplit'] = 0.0
+        base['by_mode'] = base['rate_by_mode'] * base['YearSplit']
+        mode_dims = ['REGION', 'COMMODITY', 'TECHNOLOGY', 'MODE_OF_OPERATION', 'TIMESLICE', 'YEAR']
+        tech_dims = ['REGION', 'COMMODITY', 'TECHNOLOGY', 'TIMESLICE', 'YEAR']
+        out = {}
+        if names['by_mode'] in requested:
+            out[names['by_mode']] = emit(base.rename(columns={'by_mode': names['by_mode']}),
+                                         names['by_mode'], mode_dims)
+        if names['rate_by_mode'] in requested:
+            out[names['rate_by_mode']] = emit(base.rename(columns={'rate_by_mode': names['rate_by_mode']}),
+                                              names['rate_by_mode'], mode_dims)
+        # Sum over mode of operation
+        g = base.groupby(['REGION', 'COMMODITY', 'TECHNOLOGY', 'TIMESLICE', 'YEAR'], as_index=False).agg(
+            by_tech=('by_mode', 'sum'), rate=('rate_by_mode', 'sum'))
+        if names['by_tech'] in requested:
+            out[names['by_tech']] = emit(g.rename(columns={'by_tech': names['by_tech']}),
+                                         names['by_tech'], tech_dims)
+        if names['rate'] in requested:
+            out[names['rate']] = emit(g.rename(columns={'rate': names['rate']}), names['rate'], tech_dims)
+        # Annual = sum over timeslice
+        if names['annual'] in requested:
+            ga = g.groupby(['REGION', 'COMMODITY', 'TECHNOLOGY', 'YEAR'], as_index=False)['by_tech'].sum()
+            out[names['annual']] = emit(ga.rename(columns={'by_tech': names['annual']}),
+                                        names['annual'], ['REGION', 'COMMODITY', 'TECHNOLOGY', 'YEAR'])
+        for fr in out.values():
+            if fr is not None:
+                frames.append(fr)
+
+    flow_family(oar, {'by_mode': 'ProductionByTechnologyByMode',
+                      'rate_by_mode': 'RateOfProductionByTechnologyByMode',
+                      'by_tech': 'ProductionByTechnology',
+                      'rate': 'RateOfProductionByTechnology',
+                      'annual': 'ProductionByTechnologyAnnual'})
+    flow_family(iar, {'by_mode': 'UseByTechnologyByMode',
+                      'rate_by_mode': 'RateOfUseByTechnologyByMode',
+                      'by_tech': 'UseByTechnology',
+                      'rate': 'RateOfUseByTechnology',
+                      'annual': 'UseByTechnologyAnnual'})
+
+    if 'AnnualizedInvestmentCost' in requested:
+        capinv = _extract_long(df_output_sol, 'CapitalInvestment', ['REGION', 'TECHNOLOGY', 'YEAR'])
+        oplife = _extract_long(input_df, 'OperationalLife', ['TECHNOLOGY'], drop_zero=True)
+        dridv = _extract_long(input_df, 'DiscountRateIdv', ['TECHNOLOGY'], drop_zero=True)
+        fr = emit(_annualized_investment_cost(capinv, oplife, dridv),
+                  'AnnualizedInvestmentCost', ['REGION', 'TECHNOLOGY', 'YEAR'])
+        if fr is not None:
+            frames.append(fr)
+
+    if 'TotalStorageCapacity' in requested:
+        accstor = _extract_long(df_output_sol, 'AccumulatedNewStorageCapacity', ['REGION', 'STORAGE', 'YEAR'])
+        resid = _extract_long(input_df, 'ResidualStorageCapacity', ['STORAGE', 'YEAR'], drop_zero=True)
+        if not accstor.empty or not resid.empty:
+            merged = accstor.merge(resid, on=['STORAGE', 'YEAR'], how='outer')
+            for c in ('AccumulatedNewStorageCapacity', 'ResidualStorageCapacity'):
+                merged[c] = pd.to_numeric(merged.get(c, 0.0), errors='coerce').fillna(0.0)
+            merged['TotalStorageCapacity'] = (merged['AccumulatedNewStorageCapacity']
+                                              + merged['ResidualStorageCapacity'])
+            fr = emit(merged, 'TotalStorageCapacity', ['REGION', 'STORAGE', 'YEAR'])
+            if fr is not None:
+                frames.append(fr)
+
+    return frames
+
+
 def data_processor_new(output_file, model_structure, strategy, fut_id, solver, parameters_to_print, output_file_type):
+    # Identify which selected parameters are post-processed (derived), and which raw
+    # solver variables they need parsed from the .sol even if not explicitly selected.
+    selected = get_selected_parameters(parameters_to_print)
+    requested_derived = [p for p in selected if p in DERIVED_PARAMETERS]
+    helper_vars = sorted({DERIVED_PARAMETERS[p] for p in requested_derived})
+
+    # Force the helper raw variables to be parsed (on a copy, so the caller is untouched).
+    params_for_parse = parameters_to_print.copy()
+    helpers_added = []
+    if helper_vars:
+        params_for_parse['Select'] = params_for_parse['Select'].astype(str)
+        existing = set(params_for_parse['Parameter'])
+        for hv in helper_vars:
+            if hv in existing:
+                params_for_parse.loc[params_for_parse['Parameter'] == hv, 'Select'] = 'X'
+            else:
+                params_for_parse = pd.concat(
+                    [params_for_parse, pd.DataFrame([{'Parameter': hv, 'Select': 'X'}])],
+                    ignore_index=True)
+            if hv not in selected:
+                helpers_added.append(hv)
+
     # Parse the .sol file
     if solver == 'cbc':
-        df = parse_cbc_sol_file(output_file, parameters_to_print)
+        df = parse_cbc_sol_file(output_file, params_for_parse)
     elif solver == 'cplex':
-        df = parse_cplex_sol_file(output_file, parameters_to_print)
+        df = parse_cplex_sol_file(output_file, params_for_parse)
     elif solver == 'gurobi':
-        df = parse_gurobi_sol_file(output_file, parameters_to_print)
+        df = parse_gurobi_sol_file(output_file, params_for_parse)
     elif solver == 'glpk':
-        df = parse_glpk_sol_file(output_file, parameters_to_print)
-    
+        df = parse_glpk_sol_file(output_file, params_for_parse)
+
     # Call the function
     sheet_sets_structure, sheet_vars_structure = process_structure_file(model_structure)
-    
+
     # Transform the data
     df_output_sol = transform_output_sol_optimized(df, sheet_vars_structure, sheet_sets_structure, strategy, fut_id)
+
+    # Reconstruct post-processed parameters that the solver does not return
+    if requested_derived:
+        try:
+            input_df = _read_input_dataset(_locate_input_file(output_file))
+            derived_frames = compute_derived_parameters(
+                df_output_sol, input_df, set(requested_derived), strategy, fut_id)
+        except Exception as exc:
+            print(f"Warning: could not compute derived parameters for {output_file}: {exc}")
+            derived_frames = []
+
+        if derived_frames:
+            # Drop helper columns/rows that were only needed as inputs to the calculation
+            if helpers_added:
+                mask_drop = pd.Series(False, index=df_output_sol.index)
+                for hv in helpers_added:
+                    if hv in df_output_sol.columns:
+                        mask_drop |= df_output_sol[hv].astype(str).str.strip().ne('')
+                df_output_sol = df_output_sol[~mask_drop].drop(
+                    columns=[c for c in helpers_added if c in df_output_sol.columns])
+
+            df_output_sol = pd.concat([df_output_sol] + derived_frames,
+                                      ignore_index=True, sort=False).fillna('')
+            value_cols = [c for c in df_output_sol.columns if c not in _BASE_OUTPUT_COLS]
+            df_output_sol = df_output_sol[
+                [c for c in _BASE_OUTPUT_COLS if c in df_output_sol.columns] + value_cols]
 
     if output_file_type == 'csv':
         # Change the output name for the CSV

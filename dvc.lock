@@ -9,26 +9,26 @@ stages:
       size: 6646
     - path: src/Interface_RDM.xlsx
       hash: md5
-      md5: 964401126dff45e9b198c209c442bd9e
-      size: 26824
+      md5: f4104d1f53cfcd1312acd086721b6f31
+      size: 19438
     - path: src/workflow/0_Scenarios/
       hash: md5
-      md5: 9f9a06ac2088b1e9f8630e943e2881b2.dir
-      size: 1023911
+      md5: 7de5200e6f0d95db5553e03c0bea84ac.dir
+      size: 1199864
       nfiles: 1
     - path: src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
       hash: md5
-      md5: aa08338be1ab0e980e80d82c13659945
-      size: 16839
+      md5: d5b508f33bfaeb22c7afd445136dcc32
+      size: 16964
     outs:
     - path: src/workflow/1_Experiment/Executables/
       hash: md5
-      md5: c4310dbde366e1f35b2e3e71a0f6a9c7.dir
-      size: 28735459
+      md5: 15458ec9cfea2a04715ff0683497c265.dir
+      size: 33302077
       nfiles: 3
     - path: src/workflow/1_Experiment/base_future_metrics.json
       hash: md5
-      md5: 6a37fe5dbf2d283dc94109bc5f6198e5
+      md5: fc10448f9c9ee94c8cd0dc4ecbc92659
       size: 119
   rdm_experiment:
     cmd: python scripts/run_rdm_experiment.py
@@ -39,62 +39,62 @@ stages:
       size: 7799
     - path: src/Interface_RDM.xlsx
       hash: md5
-      md5: 964401126dff45e9b198c209c442bd9e
-      size: 26824
+      md5: f4104d1f53cfcd1312acd086721b6f31
+      size: 19438
     - path: src/workflow/0_Scenarios/
       hash: md5
-      md5: 9f9a06ac2088b1e9f8630e943e2881b2.dir
-      size: 1023911
+      md5: 7de5200e6f0d95db5553e03c0bea84ac.dir
+      size: 1199864
       nfiles: 1
     - path: src/workflow/1_Experiment/0_From_Confection/B1_Model_Structure.xlsx
       hash: md5
-      md5: aa08338be1ab0e980e80d82c13659945
-      size: 16839
+      md5: d5b508f33bfaeb22c7afd445136dcc32
+      size: 16964
     - path: src/workflow/2_Miscellaneous/shape_of_demand.csv
       hash: md5
       md5: 5cfd4909193033e968a8e3441b3bf7ae
       size: 2421
     outs:
-    - path: src/Results/
+    - path: Results/
       hash: md5
-      md5: 08cd230f59a088b35a6ff14dd0ad86f9.dir
-      size: 114662650
-      nfiles: 2
+      md5: 4c4cf49604fd2b79fb21cb9aca047fcb.dir
+      size: 576951572
+      nfiles: 5
     - path: src/workflow/1_Experiment/Experimental_Platform/
       hash: md5
-      md5: eb451de82926da22a6ae09c7436f4566.dir
-      size: 44132380
-      nfiles: 10
+      md5: ad27ac46a14a649a0bb9f4fdab94c3e0.dir
+      size: 123127192
+      nfiles: 22
     - path: src/workflow/1_Experiment/rdm_experiment_metrics.json
       hash: md5
-      md5: 52a65b1e41f9430430220a604137e1c4
+      md5: a635f70c7afd2b6ea9a7c8f5582ed5b9
       size: 157
   postprocess:
     cmd: python scripts/run_postprocess.py
     deps:
+    - path: Results/
+      hash: md5
+      md5: 4c4cf49604fd2b79fb21cb9aca047fcb.dir
+      size: 576951572
+      nfiles: 5
     - path: scripts/run_postprocess.py
       hash: md5
       md5: 5ec7af655696cf470f8cc47c4fc3d8fe
       size: 4374
-    - path: src/Results/
-      hash: md5
-      md5: 08cd230f59a088b35a6ff14dd0ad86f9.dir
-      size: 114662650
-      nfiles: 2
     - path: src/workflow/1_Experiment/1_output_dataset_creator.py
       hash: md5
-      md5: 047a8f2cd70b0df61cb55fa36ece94b7
+      md5: 1da123d1ad77a2c8b20e1c501cf2149a
       size: 3832
     - path: src/workflow/1_Experiment/Executables/
       hash: md5
-      md5: feded31afe249163f362cfaeee96aa6c.dir
-      size: 56822199
+      md5: 4b1c20e619205e3721e52e5dccfc0b21.dir
+      size: 66475327
       nfiles: 5
     - path: src/workflow/1_Experiment/Experimental_Platform/
       hash: md5
-      md5: eb451de82926da22a6ae09c7436f4566.dir
-      size: 44132380
-      nfiles: 10
+      md5: ad27ac46a14a649a0bb9f4fdab94c3e0.dir
+      size: 123127192
+      nfiles: 22
     - path: src/workflow/1_Experiment/local_dataset_creator_0.py
       hash: md5
       md5: f0e1ad42c333787454426d19d9d0b8d1
@@ -106,8 +106,8 @@ stages:
     outs:
     - path: src/workflow/3_Postprocessing/postprocess_metrics.json
       hash: md5
-      md5: 5cb1a5db94f726530f489b2c0011f20b
-      size: 326
+      md5: 5cb3693b9058e17ad91ddb449afcf7e8
+      size: 137
   prim_files_creator:
     cmd: python scripts/run_prim_files_creator.py
     deps:
