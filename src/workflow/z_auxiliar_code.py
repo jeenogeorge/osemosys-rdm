@@ -621,11 +621,18 @@ def isolate_params(scenario_file_name):
         sub_matriz=[]
         a=0
         for j in range(len(matriz)):
-            if name_params[i] in matriz[j]:
-                a=1
+            # Detect the start of this parameter's block by matching the
+            # 'param <NAME>' declaration EXACTLY. A substring test (the old
+            # behaviour) wrongly latched onto parameters whose name contains
+            # this one, e.g. 'TotalAnnualMinCapacity' matching the earlier
+            # 'param TotalAnnualMinCapacityInvestment' block.
+            if a==0:
+                tokens = matriz[j].split()
+                if len(tokens) >= 2 and tokens[0] == 'param' and tokens[1] == name_params[i]:
+                    a=1
             if a==1 and ';' not in matriz[j]:
                 sub_matriz.append(matriz[j])
-            
+
             if a==1 and ';' in matriz[j]:
                 break
 
